@@ -92,13 +92,21 @@ const Product = () => {
   const isLoggedIn = !!user;
 
   const loadProduct = useCallback(async () => {
-    if (!pid || pid === "undefined") {
+    if (!pid || pid === "undefined" || pid === "null") {
+      console.log("Invalid product ID:", pid);
       setProductData(false);
       return;
     }
 
     try {
-      const res = await axios.get(`${backendUrl}/api/product/single/${pid}`);
+      console.log("Loading product:", pid);
+      console.log("Backend URL:", backendUrl);
+
+      const res = await axios.get(`${backendUrl}/api/product/single/${pid}`, {
+        timeout: 10000,
+      });
+
+      console.log("PRODUCT RESPONSE:", res?.data);
 
       if (res?.data?.success && res?.data?.product) {
         const product = res.data.product;
@@ -116,20 +124,34 @@ const Product = () => {
       }
     } catch (error) {
       console.error("LOAD PRODUCT ERROR:", error);
-      toast.error(error?.response?.data?.message || "Failed to load product");
+
+      if (error.code === "ECONNABORTED") {
+        toast.error("Product request timed out");
+      } else {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to load product"
+        );
+      }
+
       setProductData(false);
     }
   }, [backendUrl, pid]);
 
   const loadBranches = useCallback(async () => {
     try {
-      const res = await axios.get(`${backendUrl}/api/branch/list`);
+      const res = await axios.get(`${backendUrl}/api/branch/list`, {
+        timeout: 8000,
+      });
+
       if (res.data?.success) {
         setBranches(Array.isArray(res.data.branches) ? res.data.branches : []);
       } else {
         setBranches([]);
       }
-    } catch {
+    } catch (error) {
+      console.log("BRANCH LOAD ERROR:", error?.message);
       setBranches([]);
     }
   }, [backendUrl]);
@@ -146,6 +168,7 @@ const Product = () => {
           Authorization: `Bearer ${token}`,
           token,
         },
+        timeout: 8000,
       });
 
       if (res.data.success) {
@@ -159,7 +182,7 @@ const Product = () => {
   }, [backendUrl, pid, token]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined") {
+    if (!pid || pid === "undefined" || pid === "null") {
       setProductData(false);
       return;
     }
@@ -169,7 +192,7 @@ const Product = () => {
   }, [pid, loadProduct, loadBranches]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined") {
+    if (!pid || pid === "undefined" || pid === "null") {
       setCanReview(false);
       return;
     }
@@ -178,7 +201,10 @@ const Product = () => {
   }, [loadCanReview, pid]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined") return;
+    if (!pid || pid === "undefined" || pid === "null") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
     if (location.hash === "#reviews") {
       setActiveTab("reviews");
@@ -1233,6 +1259,8 @@ const Product = () => {
                     stock={item.stock}
                     branch={item.branch}
                     badgeMode="none"
+                    previewVideo={item.previewVideo}
+                    autoPlayPreview={true}
                   />
                 ))}
               </div>
@@ -1587,8 +1615,8 @@ const Product = () => {
                   </div>
                 </div>
               </div>
-            </div> 
-          </div>
+            </div>
+          </div> 
         </div>
       )}
     </>
