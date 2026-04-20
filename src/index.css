@@ -1,0 +1,99 @@
+/* Fonts - Combined for better performance */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Outfit:wght@100..900&family=Prata&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Universal Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    overflow-x: hidden; 
+    width: 100%;
+    /* Matching the minimalist theme background */
+    background-color: #ffffff; 
+}
+
+/* Scrollbar - Hidden but still scrollable */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Typography Helpers */
+.montserrat-black {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+}
+
+.prata-regular {
+    font-family: "Prata", serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* Navigation State */
+a.active hr {
+    display: block;
+}
+
+@media (max-width: 640px) {
+    a.active {
+        background-color: black;
+        color: white;
+    }
+}
+
+/* Ant Design Carousel Fixes */
+.ant-carousel .slick-slider,
+.ant-carousel .slick-list,
+.ant-carousel .slick-track,
+.ant-carousel .slick-slide > div {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.ant-carousel img {
+    display: block !important;
+}
+
+.ant-carousel .slick-prev,
+.ant-carousel .slick-next {
+    color: #414141 !important;
+    font-size: 24px;
+    z-index: 20;
+}
+
+/* --- ANIMATIONS --- */
+
+/* Fade In Up Entrance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+/* Racing Animation */
+@keyframes race {
+  0% { transform: translateX(-100px) scaleX(1); }
+  48% { transform: translateX(100vw) scaleX(1); }
+  50% { transform: translateX(100vw) scaleX(-1); } 
+  98% { transform: translateX(-100px) scaleX(-1); }
+  100% { transform: translateX(-100px) scaleX(1); }
+}
+
+
