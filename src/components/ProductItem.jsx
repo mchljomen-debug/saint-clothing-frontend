@@ -32,6 +32,7 @@ const getColorLabel = ({ color, colorHex }) => {
 
 const ProductItem = ({
   id,
+  _id,
   images = [],
   name = "",
   price = 0,
@@ -48,6 +49,8 @@ const ProductItem = ({
 }) => {
   const { currency, products, user } = useContext(ShopContext);
   const navigate = useNavigate();
+
+  const productId = _id || id || "";
 
   const isLoggedIn = !!user;
   const safeBranch = branch || "branch1";
@@ -84,7 +87,7 @@ const ProductItem = ({
 
   useEffect(() => {
     setPreviewImage(defaultImage);
-  }, [defaultImage, id]);
+  }, [defaultImage, productId]);
 
   const totalStock = getTotalStock(stock);
   const isOutOfStock = totalStock <= 0;
@@ -101,12 +104,20 @@ const ProductItem = ({
 
   const showDiscountBadge = !isOutOfStock && hasDiscount;
 
+  const handleNavigateToProduct = () => {
+    if (!productId) {
+      console.log("❌ Missing product ID:", { id, _id, name });
+      return;
+    }
+
+    console.log("✅ Navigating to product:", productId, name);
+    navigate(`/product/${productId}`);
+    window.scrollTo(0, 0);
+  };
+
   return (
     <div
-      onClick={() => {
-        navigate(`/product/${id}`);
-        window.scrollTo(0, 0);
-      }}
+      onClick={handleNavigateToProduct}
       className={`group cursor-pointer bg-white border transition-all duration-300 overflow-hidden ${
         isOutOfStock
           ? "border-gray-300 opacity-90"
@@ -171,12 +182,22 @@ const ProductItem = ({
                   key={variant._id}
                   type="button"
                   onClick={() => {
+                    if (!variant._id) {
+                      console.log("❌ Missing variant ID:", variant);
+                      return;
+                    }
+
+                    console.log(
+                      "✅ Navigating to variant:",
+                      variant._id,
+                      variant.name
+                    );
                     navigate(`/product/${variant._id}`);
                     window.scrollTo(0, 0);
                   }}
                   onMouseEnter={() => setPreviewImage(variantImage)}
                   className={`w-4 h-4 sm:w-5 sm:h-5 border-2 rounded-full transition-all ${
-                    String(variant._id) === String(id)
+                    String(variant._id) === String(productId)
                       ? "border-black scale-110"
                       : "border-gray-300 hover:border-black"
                   }`}
