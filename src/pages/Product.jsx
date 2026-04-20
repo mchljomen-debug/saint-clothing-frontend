@@ -99,14 +99,14 @@ const Product = () => {
     }
 
     try {
-      console.log("Loading product:", pid);
-      console.log("Backend URL:", backendUrl);
+      console.log("Loading product ID:", pid);
+      console.log("Request URL:", `${backendUrl}/api/product/single/${pid}`);
 
       const res = await axios.get(`${backendUrl}/api/product/single/${pid}`, {
         timeout: 10000,
       });
 
-      console.log("PRODUCT RESPONSE:", res?.data);
+      console.log("Single product response:", res.data);
 
       if (res?.data?.success && res?.data?.product) {
         const product = res.data.product;
@@ -119,26 +119,22 @@ const Product = () => {
         setQuantity(1);
         setShowSizeChart(false);
       } else {
+        console.log("Backend said no product:", res?.data);
         toast.error(res?.data?.message || "Product not found");
         setProductData(false);
       }
     } catch (error) {
       console.error("LOAD PRODUCT ERROR:", error);
-
-      if (error.code === "ECONNABORTED") {
-        toast.error("Product request timed out");
-      } else {
-        toast.error(
-          error?.response?.data?.message ||
-            error?.message ||
-            "Failed to load product"
-        );
-      }
-
+      console.log("Error response:", error?.response?.data);
+      toast.error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to load product"
+      );
       setProductData(false);
     }
   }, [backendUrl, pid]);
-
+  
   const loadBranches = useCallback(async () => {
     try {
       const res = await axios.get(`${backendUrl}/api/branch/list`, {
@@ -338,9 +334,9 @@ const Product = () => {
 
   const averageRating = reviews.length
     ? (
-        reviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) /
-        reviews.length
-      ).toFixed(1)
+      reviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) /
+      reviews.length
+    ).toFixed(1)
     : "0.0";
 
   const finalPrice = useMemo(() => {
@@ -404,19 +400,19 @@ const Product = () => {
       if (productData.groupCode && item.groupCode) {
         return (
           String(item.groupCode).trim().toLowerCase() ===
-            String(productData.groupCode).trim().toLowerCase() &&
+          String(productData.groupCode).trim().toLowerCase() &&
           String(item.color || "").trim().toLowerCase() ===
-            String(productData.color || "").trim().toLowerCase()
+          String(productData.color || "").trim().toLowerCase()
         );
       }
 
       return (
         String(item.name || "").trim().toLowerCase() ===
-          String(productData.name || "").trim().toLowerCase() &&
+        String(productData.name || "").trim().toLowerCase() &&
         String(item.category || "").trim().toLowerCase() ===
-          String(productData.category || "").trim().toLowerCase() &&
+        String(productData.category || "").trim().toLowerCase() &&
         String(item.color || "").trim().toLowerCase() ===
-          String(productData.color || "").trim().toLowerCase()
+        String(productData.color || "").trim().toLowerCase()
       );
     });
 
@@ -569,7 +565,7 @@ const Product = () => {
         orbit.radius - 0.3,
         0.8
       )}m`;
-    } catch {}
+    } catch { }
   };
 
   const zoomOutModel = () => {
@@ -579,7 +575,7 @@ const Product = () => {
     try {
       const orbit = viewer.getCameraOrbit();
       viewer.cameraOrbit = `${orbit.theta} ${orbit.phi} ${orbit.radius + 0.3}m`;
-    } catch {}
+    } catch { }
   };
 
   const resetModelView = () => {
@@ -589,7 +585,7 @@ const Product = () => {
     try {
       viewer.cameraOrbit = "0deg 75deg 2.2m";
       viewer.fieldOfView = "30deg";
-    } catch {}
+    } catch { }
   };
 
   const toggleAutoRotate = () => {
@@ -755,7 +751,7 @@ const Product = () => {
                 <div className="order-2 sm:order-1 border-t sm:border-t-0 sm:border-r border-black/5 p-2">
                   <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:max-h-[470px] scrollbar-hide pb-1 sm:pb-0">
                     {Array.isArray(productData.images) &&
-                    productData.images.length > 0 ? (
+                      productData.images.length > 0 ? (
                       productData.images.map((img, idx) => {
                         const imageUrl = `${backendUrl}/uploads/${img}`;
                         const isActive = selectedImage === imageUrl;
@@ -765,11 +761,10 @@ const Product = () => {
                             key={idx}
                             type="button"
                             onClick={() => setSelectedImage(imageUrl)}
-                            className={`group relative shrink-0 w-16 h-16 sm:w-full sm:h-[74px] rounded-[12px] sm:rounded-[14px] overflow-hidden transition-all duration-300 ${
-                              isActive
+                            className={`group relative shrink-0 w-16 h-16 sm:w-full sm:h-[74px] rounded-[12px] sm:rounded-[14px] overflow-hidden transition-all duration-300 ${isActive
                                 ? "ring-2 ring-black scale-[1.02]"
                                 : "ring-1 ring-black/10 hover:ring-black/30"
-                            }`}
+                              }`}
                           >
                             <img
                               src={imageUrl}
@@ -862,11 +857,10 @@ const Product = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <span
                       key={star}
-                      className={`text-base ${
-                        star <= Math.round(Number(averageRating))
+                      className={`text-base ${star <= Math.round(Number(averageRating))
                           ? "text-yellow-400"
                           : "text-gray-300"
-                      }`}
+                        }`}
                     >
                       ★
                     </span>
@@ -940,11 +934,10 @@ const Product = () => {
                         key={variant._id}
                         type="button"
                         onClick={() => navigate(`/product/${variant._id}`)}
-                        className={`group flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
-                          String(variant._id) === String(productData._id)
+                        className={`group flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${String(variant._id) === String(productData._id)
                             ? "border-black bg-black text-white"
                             : "border-black/10 bg-white hover:border-black"
-                        }`}
+                          }`}
                       >
                         <span
                           className="w-4 h-4 rounded-full border border-black/20"
@@ -984,20 +977,18 @@ const Product = () => {
                         type="button"
                         onClick={() => !isOut && setSize(s)}
                         disabled={isOut}
-                        className={`min-w-[52px] sm:min-w-[54px] px-3 py-2.5 rounded-xl border text-[13px] sm:text-sm font-black uppercase tracking-[0.08em] transition-all relative ${
-                          size === s
+                        className={`min-w-[52px] sm:min-w-[54px] px-3 py-2.5 rounded-xl border text-[13px] sm:text-sm font-black uppercase tracking-[0.08em] transition-all relative ${size === s
                             ? "bg-black text-white border-black"
                             : "bg-white border-black/10 text-[#0A0D17]"
-                        } ${isOut ? "opacity-30 cursor-not-allowed" : "hover:border-black"}`}
+                          } ${isOut ? "opacity-30 cursor-not-allowed" : "hover:border-black"}`}
                       >
                         {s}
                         {isPreferred && !isOut && (
                           <span
-                            className={`absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.08em] ${
-                              size === s
+                            className={`absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.08em] ${size === s
                                 ? "bg-white text-black"
                                 : "bg-black text-white"
-                            }`}
+                              }`}
                           >
                             Pref
                           </span>
@@ -1102,11 +1093,10 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={handleShow3D}
-                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition ${
-                    has3DModel
+                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition ${has3DModel
                       ? "border-black bg-white text-black hover:bg-black hover:text-white"
                       : "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   Show 3D
                 </button>
@@ -1123,11 +1113,10 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("description")}
-                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${
-                    activeTab === "description"
+                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${activeTab === "description"
                       ? "border-b-2 border-black text-black"
                       : "text-gray-400"
-                  }`}
+                    }`}
                 >
                   Description
                 </button>
@@ -1135,11 +1124,10 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("branches")}
-                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${
-                    activeTab === "branches"
+                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${activeTab === "branches"
                       ? "border-b-2 border-black text-black"
                       : "text-gray-400"
-                  }`}
+                    }`}
                 >
                   Available Branches
                 </button>
@@ -1147,11 +1135,10 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("reviews")}
-                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${
-                    activeTab === "reviews"
+                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${activeTab === "reviews"
                       ? "border-b-2 border-black text-black"
                       : "text-gray-400"
-                  }`}
+                    }`}
                 >
                   Reviews ({reviews.length})
                 </button>
@@ -1184,11 +1171,10 @@ const Product = () => {
                           </h3>
 
                           <span
-                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] ${
-                              item.available
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] ${item.available
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
-                            }`}
+                              }`}
                           >
                             {item.available ? "Available" : "Not Available"}
                           </span>
@@ -1585,8 +1571,8 @@ const Product = () => {
                       {isModelViewerFile
                         ? "Interactive 3D model"
                         : isVideoFile
-                        ? "Video preview"
-                        : "Image fallback preview"}
+                          ? "Video preview"
+                          : "Image fallback preview"}
                     </p>
                   </div>
 
@@ -1616,7 +1602,7 @@ const Product = () => {
                 </div>
               </div>
             </div>
-          </div> 
+          </div>
         </div>
       )}
     </>
