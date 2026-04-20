@@ -66,9 +66,7 @@ const Product = () => {
   const { products, currency, addToCart, backendUrl, user, token } =
     useContext(ShopContext);
 
-  const params = useParams();
-  const pid = params.productId || params.id || "";
-
+  const { productId: pid } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -92,25 +90,13 @@ const Product = () => {
   const isLoggedIn = !!user;
 
   const loadProduct = useCallback(async () => {
-    if (!pid || pid === "undefined" || pid === "null") {
-      console.log("Invalid product ID:", pid);
-      setProductData(false);
-      return;
-    }
+    if (!pid || pid === "undefined") return;
 
     try {
-      console.log("Loading product ID:", pid);
-      console.log("Request URL:", `${backendUrl}/api/product/single/${pid}`);
+      const res = await axios.get(`${backendUrl}/api/product/single/${pid}`);
 
-      const res = await axios.get(`${backendUrl}/api/product/single/${pid}`, {
-        timeout: 10000,
-      });
-
-      console.log("Single product response:", res.data);
-
-      if (res?.data?.success && res?.data?.product) {
+      if (res.data.success) {
         const product = res.data.product;
-
         setProductData(product);
         setSelectedImage(
           product.images?.[0] ? `${backendUrl}/uploads/${product.images[0]}` : ""
@@ -119,35 +105,22 @@ const Product = () => {
         setQuantity(1);
         setShowSizeChart(false);
       } else {
-        console.log("Backend said no product:", res?.data);
-        toast.error(res?.data?.message || "Product not found");
-        setProductData(false);
+        toast.error(res.data.message || "Failed to load product");
       }
     } catch (error) {
-      console.error("LOAD PRODUCT ERROR:", error);
-      console.log("Error response:", error?.response?.data);
-      toast.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to load product"
-      );
-      setProductData(false);
+      toast.error(error?.response?.data?.message || "Failed to load product");
     }
   }, [backendUrl, pid]);
-  
+
   const loadBranches = useCallback(async () => {
     try {
-      const res = await axios.get(`${backendUrl}/api/branch/list`, {
-        timeout: 8000,
-      });
-
+      const res = await axios.get(`${backendUrl}/api/branch/list`);
       if (res.data?.success) {
         setBranches(Array.isArray(res.data.branches) ? res.data.branches : []);
       } else {
         setBranches([]);
       }
-    } catch (error) {
-      console.log("BRANCH LOAD ERROR:", error?.message);
+    } catch {
       setBranches([]);
     }
   }, [backendUrl]);
@@ -164,7 +137,6 @@ const Product = () => {
           Authorization: `Bearer ${token}`,
           token,
         },
-        timeout: 8000,
       });
 
       if (res.data.success) {
@@ -178,29 +150,18 @@ const Product = () => {
   }, [backendUrl, pid, token]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined" || pid === "null") {
-      setProductData(false);
-      return;
-    }
-
+    if (!pid || pid === "undefined") return;
     loadProduct();
     loadBranches();
-  }, [pid, loadProduct, loadBranches]);
+  }, [loadProduct, loadBranches, pid]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined" || pid === "null") {
-      setCanReview(false);
-      return;
-    }
-
+    if (!pid || pid === "undefined") return;
     loadCanReview();
   }, [loadCanReview, pid]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined" || pid === "null") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
+    if (!pid || pid === "undefined") return;
 
     if (location.hash === "#reviews") {
       setActiveTab("reviews");
@@ -271,7 +232,7 @@ const Product = () => {
   }, [products, productData]);
 
   const normalizedStock = useMemo(() => {
-    if (!productData || productData === false) return {};
+    if (!productData) return {};
 
     const result = {};
     SIZE_ORDER.forEach((s) => {
@@ -282,7 +243,7 @@ const Product = () => {
   }, [productData]);
 
   const availableSizes = useMemo(() => {
-    if (!productData || productData === false) return [];
+    if (!productData) return [];
 
     const backendSizes = Array.isArray(productData.sizes)
       ? productData.sizes.map((s) => String(s).toUpperCase())
@@ -334,13 +295,13 @@ const Product = () => {
 
   const averageRating = reviews.length
     ? (
-      reviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) /
-      reviews.length
-    ).toFixed(1)
+        reviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) /
+        reviews.length
+      ).toFixed(1)
     : "0.0";
 
   const finalPrice = useMemo(() => {
-    if (!productData || productData === false) return "0.00";
+    if (!productData) return "0.00";
 
     const originalPrice = Number(productData.price || 0);
     const discount = Number(productData.salePercent || 0);
@@ -356,7 +317,7 @@ const Product = () => {
   }, [productData]);
 
   const displayColor = useMemo(() => {
-    if (!productData || productData === false) return "Default";
+    if (!productData) return "Default";
     return productData.color || "Default";
   }, [productData]);
 
@@ -383,7 +344,7 @@ const Product = () => {
     : "";
 
   const availableBranches = useMemo(() => {
-    if (!productData || productData === false || !Array.isArray(products)) return [];
+    if (!productData || !Array.isArray(products)) return [];
 
     const activeBranchList = branches.filter((b) => b.isActive);
 
@@ -400,19 +361,19 @@ const Product = () => {
       if (productData.groupCode && item.groupCode) {
         return (
           String(item.groupCode).trim().toLowerCase() ===
-          String(productData.groupCode).trim().toLowerCase() &&
+            String(productData.groupCode).trim().toLowerCase() &&
           String(item.color || "").trim().toLowerCase() ===
-          String(productData.color || "").trim().toLowerCase()
+            String(productData.color || "").trim().toLowerCase()
         );
       }
 
       return (
         String(item.name || "").trim().toLowerCase() ===
-        String(productData.name || "").trim().toLowerCase() &&
+          String(productData.name || "").trim().toLowerCase() &&
         String(item.category || "").trim().toLowerCase() ===
-        String(productData.category || "").trim().toLowerCase() &&
+          String(productData.category || "").trim().toLowerCase() &&
         String(item.color || "").trim().toLowerCase() ===
-        String(productData.color || "").trim().toLowerCase()
+          String(productData.color || "").trim().toLowerCase()
       );
     });
 
@@ -565,7 +526,9 @@ const Product = () => {
         orbit.radius - 0.3,
         0.8
       )}m`;
-    } catch { }
+    } catch {
+      //
+    }
   };
 
   const zoomOutModel = () => {
@@ -575,7 +538,9 @@ const Product = () => {
     try {
       const orbit = viewer.getCameraOrbit();
       viewer.cameraOrbit = `${orbit.theta} ${orbit.phi} ${orbit.radius + 0.3}m`;
-    } catch { }
+    } catch {
+      //
+    }
   };
 
   const resetModelView = () => {
@@ -585,7 +550,9 @@ const Product = () => {
     try {
       viewer.cameraOrbit = "0deg 75deg 2.2m";
       viewer.fieldOfView = "30deg";
-    } catch { }
+    } catch {
+      //
+    }
   };
 
   const toggleAutoRotate = () => {
@@ -600,6 +567,19 @@ const Product = () => {
 
     setIsAutoRotating((prev) => !prev);
   };
+
+  if (!productData) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#F5F5F5]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-sm font-bold uppercase tracking-[0.25em] text-gray-400">
+            Loading Product
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleBuyNow = () => {
     if (!size) {
@@ -689,36 +669,6 @@ const Product = () => {
     }
   };
 
-  if (productData === null) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#F5F5F5]">
-        <div className="text-center">
-          <div className="w-10 h-10 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-sm font-bold uppercase tracking-[0.25em] text-gray-400">
-            Loading Product
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (productData === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] px-4">
-        <div className="text-center">
-          <p className="text-lg font-black uppercase text-black">Product not found</p>
-          <button
-            type="button"
-            onClick={() => navigate("/collection")}
-            className="mt-4 px-5 py-3 bg-black text-white text-sm font-black uppercase rounded-xl"
-          >
-            Back to Collection
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <style>{`
@@ -743,15 +693,15 @@ const Product = () => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-transparent pt-[12px] sm:pt-[20px] pb-8 sm:pb-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.95fr] gap-4 md:gap-5 xl:gap-6 items-start">
-            <div className="bg-white border border-black/10 rounded-[18px] sm:rounded-[20px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] overflow-hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-[82px_1fr] gap-0">
+      <div className="min-h-screen bg-transparent pt-[20px] pb-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-[1fr_0.95fr] gap-4 xl:gap-6 items-start">
+            <div className="bg-white border border-black/10 rounded-[20px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] overflow-hidden">
+              <div className="grid sm:grid-cols-[82px_1fr] gap-0">
                 <div className="order-2 sm:order-1 border-t sm:border-t-0 sm:border-r border-black/5 p-2">
-                  <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:max-h-[470px] scrollbar-hide pb-1 sm:pb-0">
+                  <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:max-h-[470px] scrollbar-hide">
                     {Array.isArray(productData.images) &&
-                      productData.images.length > 0 ? (
+                    productData.images.length > 0 ? (
                       productData.images.map((img, idx) => {
                         const imageUrl = `${backendUrl}/uploads/${img}`;
                         const isActive = selectedImage === imageUrl;
@@ -761,10 +711,11 @@ const Product = () => {
                             key={idx}
                             type="button"
                             onClick={() => setSelectedImage(imageUrl)}
-                            className={`group relative shrink-0 w-16 h-16 sm:w-full sm:h-[74px] rounded-[12px] sm:rounded-[14px] overflow-hidden transition-all duration-300 ${isActive
+                            className={`group relative shrink-0 w-16 h-16 sm:w-full sm:h-[74px] rounded-[14px] overflow-hidden transition-all duration-300 ${
+                              isActive
                                 ? "ring-2 ring-black scale-[1.02]"
                                 : "ring-1 ring-black/10 hover:ring-black/30"
-                              }`}
+                            }`}
                           >
                             <img
                               src={imageUrl}
@@ -785,7 +736,7 @@ const Product = () => {
                 <div className="order-1 sm:order-2 p-0">
                   <div className="group relative w-full aspect-square overflow-hidden bg-white">
                     {productData.onSale && Number(productData.salePercent) > 0 && (
-                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 bg-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-1.5 rounded-full shadow-lg">
+                      <div className="absolute top-3 right-3 z-20 bg-red-600 text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">
                         {productData.salePercent}% Off
                       </div>
                     )}
@@ -820,12 +771,12 @@ const Product = () => {
               </div>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[20px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-4 sm:p-5 xl:p-6">
+            <div className="bg-white border border-black/10 rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-4 md:p-5 xl:p-6">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] sm:tracking-[0.28em] text-gray-500">
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-500">
                   Streetwear Archive
                 </p>
-                <h1 className="mt-2 text-xl sm:text-2xl md:text-3xl xl:text-4xl font-black italic uppercase tracking-tight text-[#0A0D17] leading-tight">
+                <h1 className="mt-2 text-2xl md:text-3xl xl:text-4xl font-black italic uppercase tracking-tight text-[#0A0D17] leading-none">
                   {productData.name}
                 </h1>
               </div>
@@ -857,10 +808,11 @@ const Product = () => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <span
                       key={star}
-                      className={`text-base ${star <= Math.round(Number(averageRating))
+                      className={`text-base ${
+                        star <= Math.round(Number(averageRating))
                           ? "text-yellow-400"
                           : "text-gray-300"
-                        }`}
+                      }`}
                     >
                       ★
                     </span>
@@ -895,12 +847,12 @@ const Product = () => {
                 <div className="mt-4">
                   {productData.onSale && Number(productData.salePercent) > 0 ? (
                     <div className="flex flex-col gap-1">
-                      <p className="text-sm sm:text-base md:text-lg font-black text-gray-400 line-through italic leading-none">
+                      <p className="text-base md:text-lg font-black text-gray-400 line-through italic leading-none">
                         {currency}
                         {Number(productData.price || 0).toFixed(2)}
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-2xl sm:text-3xl md:text-4xl font-black italic text-red-600 leading-none break-words">
+                        <p className="text-3xl md:text-4xl font-black italic text-red-600 leading-none">
                           {currency}
                           {finalPrice}
                         </p>
@@ -910,7 +862,7 @@ const Product = () => {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-2xl sm:text-3xl md:text-4xl font-black italic text-[#0A0D17] leading-none break-words">
+                    <p className="text-3xl md:text-4xl font-black italic text-[#0A0D17] leading-none">
                       {currency}
                       {Number(productData.price || 0).toFixed(2)}
                     </p>
@@ -934,10 +886,11 @@ const Product = () => {
                         key={variant._id}
                         type="button"
                         onClick={() => navigate(`/product/${variant._id}`)}
-                        className={`group flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${String(variant._id) === String(productData._id)
+                        className={`group flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
+                          String(variant._id) === String(productData._id)
                             ? "border-black bg-black text-white"
                             : "border-black/10 bg-white hover:border-black"
-                          }`}
+                        }`}
                       >
                         <span
                           className="w-4 h-4 rounded-full border border-black/20"
@@ -977,18 +930,20 @@ const Product = () => {
                         type="button"
                         onClick={() => !isOut && setSize(s)}
                         disabled={isOut}
-                        className={`min-w-[52px] sm:min-w-[54px] px-3 py-2.5 rounded-xl border text-[13px] sm:text-sm font-black uppercase tracking-[0.08em] transition-all relative ${size === s
+                        className={`min-w-[54px] px-3 py-2 rounded-xl border text-sm font-black uppercase tracking-[0.08em] transition-all relative ${
+                          size === s
                             ? "bg-black text-white border-black"
                             : "bg-white border-black/10 text-[#0A0D17]"
-                          } ${isOut ? "opacity-30 cursor-not-allowed" : "hover:border-black"}`}
+                        } ${isOut ? "opacity-30 cursor-not-allowed" : "hover:border-black"}`}
                       >
                         {s}
                         {isPreferred && !isOut && (
                           <span
-                            className={`absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.08em] ${size === s
+                            className={`absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.08em] ${
+                              size === s
                                 ? "bg-white text-black"
                                 : "bg-black text-white"
-                              }`}
+                            }`}
                           >
                             Pref
                           </span>
@@ -1064,7 +1019,7 @@ const Product = () => {
                 )}
               </div>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="mt-6 grid sm:grid-cols-2 gap-2.5">
                 <button
                   ref={addToCartBtnRef}
                   onClick={handleAddToCart}
@@ -1081,7 +1036,7 @@ const Product = () => {
                 </button>
               </div>
 
-              <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="mt-2.5 grid sm:grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={handleTryItOn}
@@ -1093,10 +1048,11 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={handleShow3D}
-                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition ${has3DModel
+                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition ${
+                    has3DModel
                       ? "border-black bg-white text-black hover:bg-black hover:text-white"
                       : "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
-                    }`}
+                  }`}
                 >
                   Show 3D
                 </button>
@@ -1106,17 +1062,18 @@ const Product = () => {
 
           <div
             id="reviews-section"
-            className="mt-8 bg-white border border-black/10 rounded-[20px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-4 md:p-5"
+            className="mt-8 bg-white border border-black/10 rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-4 md:p-5"
           >
             <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3 mb-5 flex-wrap">
-              <div className="flex gap-2 sm:gap-3 flex-wrap">
+              <div className="flex gap-3 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setActiveTab("description")}
-                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${activeTab === "description"
+                  className={`px-2.5 py-2 text-sm font-black uppercase tracking-[0.1em] ${
+                    activeTab === "description"
                       ? "border-b-2 border-black text-black"
                       : "text-gray-400"
-                    }`}
+                  }`}
                 >
                   Description
                 </button>
@@ -1124,10 +1081,11 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("branches")}
-                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${activeTab === "branches"
+                  className={`px-2.5 py-2 text-sm font-black uppercase tracking-[0.1em] ${
+                    activeTab === "branches"
                       ? "border-b-2 border-black text-black"
                       : "text-gray-400"
-                    }`}
+                  }`}
                 >
                   Available Branches
                 </button>
@@ -1135,10 +1093,11 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("reviews")}
-                  className={`px-2 py-2 text-[12px] sm:text-sm font-black uppercase tracking-[0.1em] ${activeTab === "reviews"
+                  className={`px-2.5 py-2 text-sm font-black uppercase tracking-[0.1em] ${
+                    activeTab === "reviews"
                       ? "border-b-2 border-black text-black"
                       : "text-gray-400"
-                    }`}
+                  }`}
                 >
                   Reviews ({reviews.length})
                 </button>
@@ -1158,7 +1117,7 @@ const Product = () => {
                   product available.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   {availableBranches.length > 0 ? (
                     availableBranches.map((item) => (
                       <div
@@ -1171,10 +1130,11 @@ const Product = () => {
                           </h3>
 
                           <span
-                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] ${item.available
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] ${
+                              item.available
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
-                              }`}
+                            }`}
                           >
                             {item.available ? "Available" : "Not Available"}
                           </span>
@@ -1214,20 +1174,20 @@ const Product = () => {
           </div>
 
           {styleRecommendations.length > 0 && (
-            <div className="mt-8 bg-white border border-black/10 rounded-[20px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-4 sm:p-5 md:p-6">
-              <div className="text-center mb-5 sm:mb-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.34em] text-gray-400">
+            <div className="mt-8 bg-white border border-black/10 rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-4 md:p-5">
+              <div className="text-center mb-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.34em] text-gray-400">
                   Saint Styling
                 </p>
-                <h2 className="mt-2 text-lg sm:text-xl md:text-2xl font-black uppercase text-[#0A0D17] leading-tight">
+                <h2 className="mt-2 text-xl md:text-2xl font-black uppercase text-[#0A0D17]">
                   Complete the Look
                 </h2>
-                <p className="mt-2 text-xs sm:text-sm text-gray-500 leading-relaxed max-w-[560px] mx-auto">
+                <p className="mt-2 text-sm text-gray-500">
                   Pieces that match this product best
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {styleRecommendations.map((item) => (
                   <ProductItem
                     key={item._id}
@@ -1271,7 +1231,7 @@ const Product = () => {
             className="absolute inset-0 w-full h-full bg-black/35 backdrop-blur-[2px]"
           />
 
-          <div className="absolute top-0 right-0 h-full w-full sm:max-w-[430px] bg-white border-l border-black/10 shadow-[-18px_0_60px_rgba(0,0,0,0.16)] [animation:slidePanelIn_.22s_ease] flex flex-col">
+          <div className="absolute top-0 right-0 h-full w-full max-w-[430px] bg-white border-l border-black/10 shadow-[-18px_0_60px_rgba(0,0,0,0.16)] [animation:slidePanelIn_.22s_ease] flex flex-col">
             <div className="flex items-center justify-between gap-3 px-4 md:px-5 py-4 border-b border-black/10 bg-[#F8F8F5]">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-500">
@@ -1348,7 +1308,7 @@ const Product = () => {
             </div>
 
             <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-4 items-stretch">
+              <div className="grid md:grid-cols-[1.1fr_0.9fr] gap-4 items-stretch">
                 <div className="rounded-[16px] border border-white/10 bg-white/[0.03] p-4 flex flex-col justify-between">
                   <div>
                     <p className="text-base font-black uppercase tracking-[0.08em] text-white">
@@ -1423,7 +1383,7 @@ const Product = () => {
               </button>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] overflow-hidden">
+            <div className="flex-1 grid lg:grid-cols-[1fr_320px] overflow-hidden">
               <div className="relative flex items-center justify-center p-4 md:p-8">
                 <div className="absolute top-4 left-4 md:top-6 md:left-6 flex flex-wrap gap-2 z-20">
                   <button
@@ -1461,7 +1421,7 @@ const Product = () => {
                   )}
                 </div>
 
-                <div className="w-full h-[52vh] sm:h-[60vh] lg:h-[70vh] max-h-[680px] rounded-[24px] sm:rounded-[28px] border border-white/10 bg-[#111111] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                <div className="w-full h-[70vh] max-h-[680px] rounded-[28px] border border-white/10 bg-[#111111] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
                   {has3DModel ? (
                     isVideoFile ? (
                       <video
@@ -1571,8 +1531,8 @@ const Product = () => {
                       {isModelViewerFile
                         ? "Interactive 3D model"
                         : isVideoFile
-                          ? "Video preview"
-                          : "Image fallback preview"}
+                        ? "Video preview"
+                        : "Image fallback preview"}
                     </p>
                   </div>
 
@@ -1601,7 +1561,7 @@ const Product = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> 
           </div>
         </div>
       )}
