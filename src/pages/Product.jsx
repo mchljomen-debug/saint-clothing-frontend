@@ -66,7 +66,9 @@ const Product = () => {
   const { products, currency, addToCart, backendUrl, user, token } =
     useContext(ShopContext);
 
-  const { productId: pid } = useParams();
+  const params = useParams();
+  const pid = params.productId || params.id || "";
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -109,7 +111,6 @@ const Product = () => {
         setQuantity(1);
         setShowSizeChart(false);
       } else {
-        console.log("PRODUCT RESPONSE:", res?.data);
         toast.error(res?.data?.message || "Product not found");
         setProductData(false);
       }
@@ -158,13 +159,21 @@ const Product = () => {
   }, [backendUrl, pid, token]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined") return;
+    if (!pid || pid === "undefined") {
+      setProductData(false);
+      return;
+    }
+
     loadProduct();
     loadBranches();
   }, [pid, loadProduct, loadBranches]);
 
   useEffect(() => {
-    if (!pid || pid === "undefined") return;
+    if (!pid || pid === "undefined") {
+      setCanReview(false);
+      return;
+    }
+
     loadCanReview();
   }, [loadCanReview, pid]);
 
@@ -534,9 +543,7 @@ const Product = () => {
         orbit.radius - 0.3,
         0.8
       )}m`;
-    } catch {
-      //
-    }
+    } catch {}
   };
 
   const zoomOutModel = () => {
@@ -546,9 +553,7 @@ const Product = () => {
     try {
       const orbit = viewer.getCameraOrbit();
       viewer.cameraOrbit = `${orbit.theta} ${orbit.phi} ${orbit.radius + 0.3}m`;
-    } catch {
-      //
-    }
+    } catch {}
   };
 
   const resetModelView = () => {
@@ -558,9 +563,7 @@ const Product = () => {
     try {
       viewer.cameraOrbit = "0deg 75deg 2.2m";
       viewer.fieldOfView = "30deg";
-    } catch {
-      //
-    }
+    } catch {}
   };
 
   const toggleAutoRotate = () => {
@@ -1230,8 +1233,6 @@ const Product = () => {
                     stock={item.stock}
                     branch={item.branch}
                     badgeMode="none"
-                    previewVideo={item.previewVideo}
-                    autoPlayPreview={true}
                   />
                 ))}
               </div>
