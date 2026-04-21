@@ -62,6 +62,21 @@ const getTotalStockFromObject = (stock) => {
 
 const normalizeBranch = (value) => String(value || "").trim().toLowerCase();
 
+const getMediaUrl = (value, backendUrl) => {
+  if (!value) return "";
+  const stringValue = String(value).trim();
+
+  if (
+    stringValue.startsWith("http://") ||
+    stringValue.startsWith("https://") ||
+    stringValue.startsWith("data:")
+  ) {
+    return stringValue;
+  }
+
+  return `${backendUrl}/uploads/${stringValue.replace(/^\/+/, "")}`;
+};
+
 const Product = () => {
   const { products, currency, addToCart, backendUrl, user, token } =
     useContext(ShopContext);
@@ -113,7 +128,7 @@ const Product = () => {
 
         setProductData(product);
         setSelectedImage(
-          product.images?.[0] ? `${backendUrl}/uploads/${product.images[0]}` : ""
+          product.images?.[0] ? getMediaUrl(product.images[0], backendUrl) : ""
         );
         setSize("");
         setQuantity(1);
@@ -367,9 +382,7 @@ const Product = () => {
   const has3DModel = !!productData?.model3d;
 
   const previewVideoUrl = productData?.previewVideo
-    ? String(productData.previewVideo).startsWith("http")
-      ? productData.previewVideo
-      : `${backendUrl}/uploads/${productData.previewVideo}`
+    ? getMediaUrl(productData.previewVideo, backendUrl)
     : "";
 
   const modelFileName = String(productData?.model3d || "").toLowerCase();
@@ -382,7 +395,7 @@ const Product = () => {
     modelFileName.endsWith(".glb") || modelFileName.endsWith(".gltf");
 
   const previewFileUrl = has3DModel
-    ? `${backendUrl}/uploads/${productData.model3d}`
+    ? getMediaUrl(productData.model3d, backendUrl)
     : "";
 
   const availableBranches = useMemo(() => {
@@ -765,7 +778,7 @@ const Product = () => {
                     {Array.isArray(productData.images) &&
                     productData.images.length > 0 ? (
                       productData.images.map((img, idx) => {
-                        const imageUrl = `${backendUrl}/uploads/${img}`;
+                        const imageUrl = getMediaUrl(img, backendUrl);
                         const isActive = selectedImage === imageUrl;
 
                         return (
@@ -1320,7 +1333,7 @@ const Product = () => {
             <div className="flex-1 overflow-y-auto p-4">
               <div className="overflow-hidden rounded-[18px] border border-black/10 bg-[#FAFAF8]">
                 <img
-                  src={`${backendUrl}/uploads/${productData.sizeChartImage}`}
+                  src={getMediaUrl(productData.sizeChartImage, backendUrl)}
                   alt="Size chart"
                   className="w-full h-auto object-contain"
                 />
@@ -1516,7 +1529,7 @@ const Product = () => {
                       />
                     ) : productData.images?.[0] ? (
                       <img
-                        src={`${backendUrl}/uploads/${productData.images[0]}`}
+                        src={getMediaUrl(productData.images[0], backendUrl)}
                         alt={productData.name}
                         className="w-full h-full object-contain bg-black"
                       />
@@ -1534,7 +1547,7 @@ const Product = () => {
                     )
                   ) : productData.images?.[0] ? (
                     <img
-                      src={`${backendUrl}/uploads/${productData.images[0]}`}
+                      src={getMediaUrl(productData.images[0], backendUrl)}
                       alt={productData.name}
                       className="w-full h-full object-contain bg-black"
                     />
