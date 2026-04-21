@@ -1,14 +1,23 @@
 import React, { useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { Carousel } from "antd";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+const resolveImage = (img) => {
+  if (!img) return "";
+  const value = String(img).trim();
+
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  if (value.startsWith("/uploads/")) return `${backendUrl}${value}`;
+
+  return `${backendUrl}/uploads/${value.replace(/^\/+/, "")}`;
+};
+
 const Hero = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const shopContext = useContext(ShopContext) || {};
   const contextUser = shopContext.user || null;
 
@@ -18,13 +27,6 @@ const Hero = () => {
       "Welcome back, {name}! Ready to explore the latest from Saint Clothing?",
     slides: [],
   });
-
-  const resolveImage = (img) => {
-    if (!img) return "";
-    if (img.startsWith("http")) return img;
-    if (img.startsWith("/uploads")) return `${backendUrl}${img}`;
-    return "";
-  };
 
   const fetchHero = useCallback(async () => {
     try {
@@ -60,6 +62,13 @@ const Hero = () => {
 
   useEffect(() => {
     fetchHero();
+
+    const handleRefresh = () => fetchHero();
+    window.addEventListener("hero-refresh", handleRefresh);
+
+    return () => {
+      window.removeEventListener("hero-refresh", handleRefresh);
+    };
   }, [fetchHero]);
 
   const resolvedUserName = useMemo(() => {
@@ -120,14 +129,31 @@ const Hero = () => {
       window.scrollTo(0, 0);
       return;
     }
+
+    if (action === "bestseller") {
+      const el = document.getElementById("best-seller-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        navigate("/collection");
+      }
+      return;
+    }
+
+    if (action === "latest") {
+      const el = document.getElementById("latest-collection-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        navigate("/collection");
+      }
+    }
   };
 
   if (!heroData.slides.length) return null;
 
   return (
     <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden bg-black">
-
-      {/* 🔥 GREETING AT TOP */}
       {isLoggedInUser && tickerMessage && (
         <div className="ticker-wrap">
           <div className="ticker-track">
@@ -170,7 +196,6 @@ const Hero = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/20" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-            {/* 🔥 PUSH CONTENT DOWN */}
             <div className="absolute inset-0 flex items-center px-5 sm:px-6 md:px-14 lg:px-24 z-10 pt-12 sm:pt-14">
               <div className="max-w-3xl">
                 <h1 className="text-white uppercase font-black text-3xl sm:text-5xl md:text-7xl leading-[0.95]">
@@ -193,7 +218,6 @@ const Hero = () => {
         ))}
       </Carousel>
 
-      {/* 🔥 STYLE */}
       <style jsx="true">{`
         .ticker-wrap {
           position: absolute;
