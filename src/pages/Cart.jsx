@@ -6,6 +6,25 @@ import { toast } from "react-toastify";
 import ProductItem from "../components/ProductItem";
 import useRecommendations from "../hooks/useRecommendations";
 
+const getMediaUrl = (value, backendUrl) => {
+  if (!value) return "";
+  const stringValue = String(value).trim();
+
+  if (
+    stringValue.startsWith("http://") ||
+    stringValue.startsWith("https://") ||
+    stringValue.startsWith("data:")
+  ) {
+    return stringValue;
+  }
+
+  if (stringValue.startsWith("/uploads/")) {
+    return `${backendUrl}${stringValue}`;
+  }
+
+  return `${backendUrl}/uploads/${stringValue.replace(/^\/+/, "")}`;
+};
+
 const Cart = () => {
   const {
     products,
@@ -84,7 +103,8 @@ const Cart = () => {
   }, [cartData, selectedItems]);
 
   const allSelected =
-    cartData.length > 0 && cartData.every((item) => selectedItems[getItemKey(item)]);
+    cartData.length > 0 &&
+    cartData.every((item) => selectedItems[getItemKey(item)]);
 
   const selectedItemsCount = selectedCartData.length;
 
@@ -96,7 +116,10 @@ const Cart = () => {
   }, [selectedCartData]);
 
   const selectedTotalQuantity = useMemo(() => {
-    return selectedCartData.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    return selectedCartData.reduce(
+      (sum, item) => sum + Number(item.quantity || 0),
+      0
+    );
   }, [selectedCartData]);
 
   const selectedProductIds = useMemo(() => {
@@ -104,11 +127,15 @@ const Cart = () => {
   }, [selectedCartData]);
 
   const selectedCategories = useMemo(() => {
-    return [...new Set(selectedCartData.map((item) => item.category).filter(Boolean))];
+    return [
+      ...new Set(selectedCartData.map((item) => item.category).filter(Boolean)),
+    ];
   }, [selectedCartData]);
 
   const selectedColors = useMemo(() => {
-    return [...new Set(selectedCartData.map((item) => item.color).filter(Boolean))];
+    return [
+      ...new Set(selectedCartData.map((item) => item.color).filter(Boolean)),
+    ];
   }, [selectedCartData]);
 
   const { recommendations: recommendedProducts } = useRecommendations({
@@ -218,19 +245,32 @@ const Cart = () => {
         <div className="grid lg:grid-cols-[1.5fr_0.72fr] gap-8 items-start">
           <div className="bg-white border border-black/5 rounded-3xl shadow-sm overflow-hidden">
             <div className="hidden md:grid grid-cols-[0.5fr_3fr_1fr_1fr_0.6fr] gap-4 px-6 py-5 border-b border-black/5 bg-[#FCFCFA]">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Pick</p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Product</p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400 text-center">Quantity</p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400 text-center">Price</p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400 text-right">Remove</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                Pick
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                Product
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400 text-center">
+                Quantity
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400 text-center">
+                Price
+              </p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400 text-right">
+                Remove
+              </p>
             </div>
 
             <div>
               {cartData.map((item) => {
                 const key = getItemKey(item);
                 const isSelected = !!selectedItems[key];
-                const imageSrc =
-                  item.images?.length > 0 ? `${backendUrl}/uploads/${item.images[0]}` : "";
+                const imageSrc = item.images?.length
+                  ? getMediaUrl(item.images[0], backendUrl)
+                  : item.image
+                  ? getMediaUrl(item.image, backendUrl)
+                  : "";
                 const finalPrice = getFinalPrice(item);
 
                 return (
@@ -292,7 +332,9 @@ const Cart = () => {
                         <div className="inline-flex items-center border border-black/10 rounded-xl overflow-hidden">
                           <button
                             type="button"
-                            onClick={() => handleQtyChange(item, item.quantity - 1)}
+                            onClick={() =>
+                              handleQtyChange(item, item.quantity - 1)
+                            }
                             className="w-10 h-10 text-lg font-bold hover:bg-black hover:text-white transition"
                           >
                             −
@@ -301,12 +343,16 @@ const Cart = () => {
                             type="number"
                             min={1}
                             value={item.quantity}
-                            onChange={(e) => handleQtyChange(item, e.target.value)}
+                            onChange={(e) =>
+                              handleQtyChange(item, e.target.value)
+                            }
                             className="w-12 h-10 text-center text-sm font-bold outline-none border-x border-black/10"
                           />
                           <button
                             type="button"
-                            onClick={() => handleQtyChange(item, item.quantity + 1)}
+                            onClick={() =>
+                              handleQtyChange(item, item.quantity + 1)
+                            }
                             className="w-10 h-10 text-lg font-bold hover:bg-black hover:text-white transition"
                           >
                             +
@@ -318,15 +364,18 @@ const Cart = () => {
                         {item.onSale && Number(item.salePercent) > 0 ? (
                           <div className="flex flex-col">
                             <span className="text-xs text-gray-400 line-through font-semibold">
-                              {currency}{Number(item.price || 0).toFixed(2)}
+                              {currency}
+                              {Number(item.price || 0).toFixed(2)}
                             </span>
                             <span className="text-base font-bold text-[#ED3500]">
-                              {currency}{finalPrice.toFixed(2)}
+                              {currency}
+                              {finalPrice.toFixed(2)}
                             </span>
                           </div>
                         ) : (
                           <span className="text-base font-bold text-black">
-                            {currency}{Number(item.price || 0).toFixed(2)}
+                            {currency}
+                            {Number(item.price || 0).toFixed(2)}
                           </span>
                         )}
                       </div>
@@ -359,12 +408,16 @@ const Cart = () => {
               <div className="mt-6 space-y-4">
                 <div className="flex justify-between items-center text-sm text-gray-600">
                   <span>Selected items</span>
-                  <span className="font-bold text-black">{selectedItemsCount}</span>
+                  <span className="font-bold text-black">
+                    {selectedItemsCount}
+                  </span>
                 </div>
 
                 <div className="flex justify-between items-center text-sm text-gray-600">
                   <span>Total quantity</span>
-                  <span className="font-bold text-black">{selectedTotalQuantity}</span>
+                  <span className="font-bold text-black">
+                    {selectedTotalQuantity}
+                  </span>
                 </div>
 
                 <div className="border-t border-black/5 pt-4 flex justify-between items-end">
@@ -443,4 +496,4 @@ const Cart = () => {
   );
 };
 
-export default Cart;  
+export default Cart;
