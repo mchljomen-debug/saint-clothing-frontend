@@ -166,27 +166,59 @@ const Orders = () => {
     });
   };
 
-  const getOrderImageUrl = (image) => {
-    if (!image) return assets.fallback_image;
+  const extractImageValue = (input) => {
+    if (!input) return "";
 
-    const finalImage = Array.isArray(image) ? image[0] : image;
-    const imageString = String(finalImage || "").trim();
+    if (Array.isArray(input)) {
+      for (const item of input) {
+        const found = extractImageValue(item);
+        if (found) return found;
+      }
+      return "";
+    }
 
-    if (!imageString) return assets.fallback_image;
+    if (typeof input === "object") {
+      return (
+        input.secure_url ||
+        input.url ||
+        input.image ||
+        input.src ||
+        input.path ||
+        input.filename ||
+        ""
+      );
+    }
+
+    return String(input).trim();
+  };
+
+  const buildAssetUrl = (value, folder = "") => {
+    const clean = extractImageValue(value);
+
+    if (!clean) return assets.fallback_image;
 
     if (
-      imageString.startsWith("http://") ||
-      imageString.startsWith("https://") ||
-      imageString.startsWith("data:")
+      clean.startsWith("http://") ||
+      clean.startsWith("https://") ||
+      clean.startsWith("data:")
     ) {
-      return imageString;
+      return clean;
     }
 
-    if (imageString.startsWith("/uploads/")) {
-      return `${backendUrl}${imageString}`;
+    if (clean.startsWith("/uploads/")) {
+      return `${backendUrl}${clean}`;
     }
 
-    return `${backendUrl}/uploads/${imageString}`;
+    if (clean.startsWith("uploads/")) {
+      return `${backendUrl}/${clean}`;
+    }
+
+    const normalizedFolder = folder ? `${folder.replace(/^\/+|\/+$/g, "")}/` : "";
+    return `${backendUrl}/uploads/${normalizedFolder}${clean}`;
+  };
+
+  const getOrderImageUrl = (image) => {
+    return buildAssetUrl(image);
   };
 
   const notifyStatusChanges = (orders) => {
@@ -200,10 +232,7 @@ const Orders = () => {
       const normalized = normalizeStatus(order.status);
       nextMap[order._id] = normalized;
 
-      if (
-        previousMap[order._id] &&
-        previousMap[order._id] !== normalized
-      ) {
+      if (previousMap[order._id] && previousMap[order._id] !== normalized) {
         toast.info(
           `Order ${order._id.slice(-8).toUpperCase()} updated: ${normalized}`
         );
@@ -406,7 +435,9 @@ const Orders = () => {
                               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                               src={getOrderImageUrl(item.image)}
                               alt={item.name}
+                              loading="lazy"
                               onError={(e) => {
+                                e.currentTarget.onerror = null;
                                 e.currentTarget.src = assets.fallback_image;
                               }}
                             />
@@ -687,7 +718,9 @@ const Orders = () => {
                   src={getOrderImageUrl(selectedReviewItem.image)}
                   alt={selectedReviewItem.name}
                   className="h-24 w-20 rounded-[14px] border border-black/10 object-cover"
+                  loading="lazy"
                   onError={(e) => {
+                    e.currentTarget.onerror = null;
                     e.currentTarget.src = assets.fallback_image;
                   }}
                 />
@@ -730,7 +763,7 @@ const Orders = () => {
                   Cancel
                 </button>
 
-                <button 
+                <button
                   type="button"
                   onClick={submitReview}
                   disabled={submittingReview}
