@@ -1,9 +1,11 @@
-import React, { useContext, useMemo } from 'react';
-import { ShopContext } from '../context/ShopContext';
-import Title from './Title';
+import React, { useContext, useMemo } from "react";
+import { ShopContext } from "../context/ShopContext";
+import Title from "./Title";
 
 const CartTotal = ({ items = null }) => {
   const { currency, delivery_fee, getCartAmount } = useContext(ShopContext);
+
+  const shippingFee = Number(delivery_fee || 0);
 
   const getFinalPrice = (item) => {
     const basePrice = Number(item?.price || 0);
@@ -27,32 +29,40 @@ const CartTotal = ({ items = null }) => {
     return Number(getCartAmount() || 0);
   }, [items, getCartAmount]);
 
-  const total = subtotal === 0 ? 0 : subtotal + Number(delivery_fee || 0);
+  const total = subtotal > 0 ? subtotal + shippingFee : 0;
 
   return (
-    <div className='w-full'>
-      <div className='text-2xl'>
-        <Title text1={'CART'} text2={'TOTALS'} />
+    <div className="w-full">
+      <div className="text-2xl">
+        <Title text1={"CART"} text2={"TOTALS"} />
       </div>
 
-      <div className='flex flex-col gap-2 mt-2 text-sm'>
-        <div className='flex justify-between'>
-          <p>Subtotal</p>
-          <p>{currency} {subtotal.toFixed(2)}</p>
-        </div>
+      <div className="mt-4 rounded-2xl border border-black/10 bg-white p-4">
+        <div className="flex flex-col gap-3 text-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-gray-600">Subtotal</p>
+            <p className="font-medium">
+              {currency} {subtotal.toFixed(2)}
+            </p>
+          </div>
 
-        <hr />
+          <hr />
 
-        <div className='flex justify-between'>
-          <p>Shipping Fee</p>
-          <p>{currency} {Number(delivery_fee || 0).toFixed(2)}</p>
-        </div>
+          <div className="flex items-center justify-between">
+            <p className="text-gray-600">Shipping Fee</p>
+            <p className="font-medium">
+              {currency} {subtotal > 0 ? shippingFee.toFixed(2) : "0.00"}
+            </p>
+          </div>
 
-        <hr />
+          <hr />
 
-        <div className='flex justify-between'>
-          <b>Total</b>
-          <b>{currency} {total.toFixed(2)}</b>
+          <div className="flex items-center justify-between text-base">
+            <b>Total</b>
+            <b>
+              {currency} {total.toFixed(2)}
+            </b>
+          </div>
         </div>
       </div>
     </div>
