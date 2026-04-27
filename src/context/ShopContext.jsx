@@ -1,4 +1,10 @@
-import React, { createContext, useEffect, useState, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -42,6 +48,42 @@ const ShopContextProvider = ({ children }) => {
     setCartCount(0);
   }, []);
 
+  const fetchCurrentUser = useCallback(
+    async (userToken = token) => {
+      if (!userToken) return null;
+
+      try {
+        const response = await axios.post(
+          `${backendUrl}/api/user/me`,
+          {},
+          {
+            headers: getAuthHeaders(userToken),
+          }
+        );
+
+        if (response.data.success && response.data.user) {
+          setUser(response.data.user);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          return response.data.user;
+        }
+
+        return null;
+      } catch (error) {
+        console.log(
+          "Fetch current user error:",
+          error.response?.data || error.message
+        );
+
+        if (error.response?.status === 401) {
+          clearAuthData();
+        }
+
+        return null;
+      }
+    },
+    [backendUrl, token, getAuthHeaders, clearAuthData]
+  );
+
   const getProductsData = useCallback(async () => {
     try {
       const response = await axios.get(`${backendUrl}/api/product/list`);
@@ -56,6 +98,7 @@ const ShopContextProvider = ({ children }) => {
             const matchingKey = Object.keys(stockObj).find(
               (key) => String(key).toUpperCase() === size
             );
+
             normalizedStock[size] = Number(
               matchingKey ? stockObj[matchingKey] : 0
             );
@@ -103,7 +146,10 @@ const ShopContextProvider = ({ children }) => {
             const nextString = JSON.stringify(backendCart);
 
             if (prevString !== nextString) {
-              localStorage.setItem(`cart_${userId}`, JSON.stringify(backendCart));
+              localStorage.setItem(
+                `cart_${userId}`,
+                JSON.stringify(backendCart)
+              );
               setCartCount(calculateCartCount(backendCart));
               return backendCart;
             }
@@ -299,35 +345,42 @@ const ShopContextProvider = ({ children }) => {
       const savedToken = localStorage.getItem("token");
       const savedUser = localStorage.getItem("user");
 
-      if (savedToken && savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          setToken(savedToken);
-          setUser(parsedUser);
-        } catch {
-          clearAuthData();
+      let activeUser = null;
+
+      if (savedToken) {
+        setToken(savedToken);
+
+        if (savedUser) {
+          try {
+            const parsedUser = JSON.parse(savedUser);
+            setUser(parsedUser);
+            activeUser = parsedUser;
+          } catch {
+            clearAuthData();
+          }
+        }
+
+        const freshUser = await fetchCurrentUser(savedToken);
+        if (freshUser) {
+          activeUser = freshUser;
         }
       }
 
       await getProductsData();
 
-      if (savedToken && savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          await fetchCart(savedToken, parsedUser._id, true);
-        } catch {
-          clearAuthData();
-        }
+      if (savedToken && activeUser?._id) {
+        await fetchCart(savedToken, activeUser._id, true);
       }
 
       setAuthReady(true);
     };
 
     loadAppData();
-  }, [getProductsData, fetchCart, clearAuthData]);
+  }, [getProductsData, fetchCart, fetchCurrentUser, clearAuthData]);
 
   useEffect(() => {
     if (token && user?._id) {
+      fetchCurrentUser(token);
       fetchCart(token, user._id, true);
       startCartPolling();
     } else {
@@ -335,11 +388,19 @@ const ShopContextProvider = ({ children }) => {
     }
 
     return () => stopCartPolling();
-  }, [token, user, fetchCart, startCartPolling, stopCartPolling]);
+  }, [
+    token,
+    user?._id,
+    fetchCurrentUser,
+    fetchCart,
+    startCartPolling,
+    stopCartPolling,
+  ]);
 
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && token && user?._id) {
+        fetchCurrentUser(token);
         fetchCart(token, user._id, true);
         getProductsData();
       }
@@ -347,18 +408,21 @@ const ShopContextProvider = ({ children }) => {
 
     const handleStorage = () => {
       if (token && user?._id) {
+        fetchCurrentUser(token);
         fetchCart(token, user._id, true);
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleVisibility);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleVisibility);
     };
-  }, [token, user, fetchCart, getProductsData]);
+  }, [token, user?._id, fetchCurrentUser, fetchCart, getProductsData]);
 
   const getCartAmount = useCallback(() => {
     return Object.entries(cartItems).reduce((acc, [itemId, sizes]) => {
@@ -367,6 +431,7 @@ const ShopContextProvider = ({ children }) => {
 
       const basePrice = Number(product.price || 0);
       const salePercent = Number(product.salePercent || 0);
+
       const finalPrice =
         product.onSale && salePercent > 0
           ? basePrice - (basePrice * salePercent) / 100
@@ -405,6 +470,7 @@ const ShopContextProvider = ({ children }) => {
     setUser,
     authReady,
     fetchCart,
+    fetchCurrentUser,
     getProductsData,
     clearAuthData,
     getAuthHeaders,
