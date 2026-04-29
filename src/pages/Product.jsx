@@ -1113,38 +1113,14 @@ const Product = () => {
                 </div>
               </div>
               <div className="mt-5 rounded-[20px] border border-black/10 bg-gradient-to-b from-[#FAFAF8] to-[#F3F3F0] p-4 sm:p-5 shadow-[0_8px_20px_rgba(0,0,0,0.04)]">
-                <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">
-                    Availability
-                  </p>
-
-                  {isProductOutOfStock ? (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-red-600 shadow-sm">
-                      <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                      Out of Stock
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-green-700 shadow-sm">
-                      <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                      In Stock
-                    </span>
-                  )}
-                </div>
-
-                {isProductOutOfStock && (
-                  <p className="mb-3 text-xs font-semibold text-red-500">
-                    This product is currently unavailable in all sizes.
-                  </p>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     ref={addToCartBtnRef}
                     onClick={handleAddToCart}
                     disabled={isProductOutOfStock}
                     className={`h-11 rounded-xl font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                      : "bg-black text-white hover:translate-y-[-1px] shadow-lg"
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-black text-white hover:translate-y-[-1px] shadow-lg"
                       }`}
                   >
                     {isProductOutOfStock ? "Out of Stock" : "Add to Cart"}
@@ -1154,8 +1130,8 @@ const Product = () => {
                     onClick={handleBuyNow}
                     disabled={isProductOutOfStock}
                     className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
-                      ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "border-black bg-white text-black hover:bg-black hover:text-white"
+                        ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "border-black bg-white text-black hover:bg-black hover:text-white"
                       }`}
                   >
                     {isProductOutOfStock ? "Unavailable" : "Buy Now"}
