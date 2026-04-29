@@ -169,7 +169,27 @@ const PlaceOrder = () => {
       };
 
       setSavedAddress(mainAddress);
-      setFormData(mainAddress);
+
+      setFormData((prev) => {
+        const alreadyEditing =
+          prev.firstName ||
+          prev.lastName ||
+          prev.email ||
+          prev.phone ||
+          prev.houseUnit ||
+          prev.street ||
+          prev.barangay ||
+          prev.city ||
+          prev.province ||
+          prev.region ||
+          prev.zipcode ||
+          prev.psgcRegionCode ||
+          prev.psgcProvinceCode ||
+          prev.psgcMunicipalityCode ||
+          prev.psgcBarangayCode;
+
+        return alreadyEditing ? prev : mainAddress;
+      });
 
       const hasAddress =
         mainAddress.street ||
@@ -178,9 +198,12 @@ const PlaceOrder = () => {
         mainAddress.province ||
         mainAddress.region;
 
-      setAddressMode(hasAddress ? "saved" : "other");
+      setAddressMode((prev) => {
+        if (prev === "other") return "other";
+        return hasAddress ? "saved" : "other";
+      });
     }
-  }, [navigate, user]);
+  }, [navigate, user?._id]);
 
   const onChangeHandler = (e) => {
     const { name, value } = e.target;

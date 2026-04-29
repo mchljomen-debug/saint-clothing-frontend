@@ -1,4 +1,3 @@
-// MyAccount.jsx
 import React, { useState, useContext, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
@@ -64,17 +63,17 @@ export default function MyAccount() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
-    if (user) {
-      setFirstName(getFirstName(user));
-      setLastName(getLastName(user));
-      setEmail(user.email || "");
-      setPhone(String(user.phone || "").replace(/\D/g, ""));
-      setAddress({
-        ...emptyAddress,
-        ...(user.address || {}),
-      });
-    }
-  }, [user]);
+    if (!user || isEditing) return;
+
+    setFirstName(getFirstName(user));
+    setLastName(getLastName(user));
+    setEmail(user.email || "");
+    setPhone(String(user.phone || "").replace(/\D/g, ""));
+    setAddress({
+      ...emptyAddress,
+      ...(user.address || {}),
+    });
+  }, [user, isEditing]);
 
   const handlePhoneChange = (value) => {
     setPhone(value.replace(/\D/g, ""));
@@ -233,10 +232,10 @@ export default function MyAccount() {
   const avatarSrc = avatarFile
     ? URL.createObjectURL(avatarFile)
     : user?.avatar
-    ? user.avatar.startsWith("http")
-      ? user.avatar
-      : `${backendUrl}${user.avatar.startsWith("/") ? user.avatar : `/${user.avatar}`}`
-    : "/profile_icon.png";
+      ? user.avatar.startsWith("http")
+        ? user.avatar
+        : `${backendUrl}${user.avatar.startsWith("/") ? user.avatar : `/${user.avatar}`}`
+      : "/profile_icon.png";
 
   return (
     <div className="min-h-screen bg-transparent font-['Outfit'] pt-[50px] pb-16">
