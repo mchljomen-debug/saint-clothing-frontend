@@ -2,24 +2,45 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const getItemCode = (item) =>
-  String(item?.code ?? item?.psgcCode ?? item?.psgc_id ?? item?.id ?? "");
+const normalizeItem = (item = {}) => {
+  const code = String(
+    item.code ||
+      item.psgcCode ||
+      item.psgc_id ||
+      item.psgc10DigitCode ||
+      item.regionCode ||
+      item.provinceCode ||
+      item.cityCode ||
+      item.municipalityCode ||
+      item.id ||
+      ""
+  );
 
-const getItemName = (item) =>
-  item?.name ??
-  item?.regionName ??
-  item?.provinceName ??
-  item?.cityName ??
-  item?.municipalityName ??
-  item?.cityMunicipalityName ??
-  item?.area_name ??
-  "";
+  const name = String(
+    item.name ||
+      item.regionName ||
+      item.provinceName ||
+      item.cityName ||
+      item.municipalityName ||
+      item.cityMunicipalityName ||
+      item.area_name ||
+      ""
+  );
 
-const getBarangayCode = (item) =>
-  String(item?.code ?? item?.psgcCode ?? item?.psgc_id ?? item?.id ?? "");
+  return { code, name };
+};
 
-const getBarangayName = (item) =>
-  item?.name ?? item?.barangayName ?? item?.brgyName ?? item?.area_name ?? "";
+const normalizeList = (payload) => {
+  const list = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload)
+    ? payload
+    : [];
+
+  return list
+    .map(normalizeItem)
+    .filter((item) => item.code && item.name);
+};
 
 const ShippingAddressFields = ({
   formData,
@@ -40,12 +61,10 @@ const ShippingAddressFields = ({
   const selectClass =
     "bg-white border border-black/10 py-3 px-4 w-full outline-none rounded-xl text-sm font-semibold text-[#0A0D17] focus:border-black";
 
-  const safeList = (res) => (Array.isArray(res.data?.data) ? res.data.data : []);
-
   const fetchRegions = async () => {
     try {
       const res = await axios.get(`${backendUrl}/api/address/regions`);
-      setRegions(safeList(res));
+      setRegions(normalizeList(res.data));
     } catch (error) {
       console.log("REGIONS ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load regions");
@@ -57,7 +76,7 @@ const ShippingAddressFields = ({
       const res = await axios.get(`${backendUrl}/api/address/provinces`, {
         params: { reg },
       });
-      setProvinces(safeList(res));
+      setProvinces(normalizeList(res.data));
     } catch (error) {
       console.log("PROVINCES ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load provinces");
@@ -69,7 +88,7 @@ const ShippingAddressFields = ({
       const res = await axios.get(`${backendUrl}/api/address/municipalities`, {
         params: { reg, prv },
       });
-      setCities(safeList(res));
+      setCities(normalizeList(res.data));
     } catch (error) {
       console.log("CITIES ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load cities");
@@ -81,7 +100,7 @@ const ShippingAddressFields = ({
       const res = await axios.get(`${backendUrl}/api/address/barangays`, {
         params: { mun },
       });
-      setBarangays(safeList(res));
+      setBarangays(normalizeList(res.data));
     } catch (error) {
       console.log("BARANGAYS ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load barangays");
@@ -89,7 +108,7 @@ const ShippingAddressFields = ({
   };
 
   useEffect(() => {
-    fetchRegions();
+    if (backendUrl) fetchRegions();
   }, [backendUrl]);
 
   useEffect(() => {
@@ -107,7 +126,6 @@ const ShippingAddressFields = ({
         await fetchCities(regionCode, "");
       } else {
         await fetchProvinces(regionCode);
-
         if (provinceCode) {
           await fetchCities(regionCode, provinceCode);
         }
@@ -153,19 +171,17 @@ const ShippingAddressFields = ({
       <select
         value={formData.psgcRegionCode || ""}
         onChange={async (e) => {
-          const value = String(e.target.value);
-          const selected = regions.find(
-            (r) => String(getItemCode(r)) === String(value)
-          );
-          const isNCR = value === "1300000000";
+          const code = e.target.value;
+          const selected = regions.find((item) => item.code === code);
+          const isNCR = code === "1300000000";
 
           setFormData((prev) => ({
             ...prev,
-            region: getItemName(selected),
+            region: selected?.name || "",
             province: "",
             city: "",
             barangay: "",
-            psgcRegionCode: value,
+            psgcRegionCode: code,
             psgcProvinceCode: "",
             psgcMunicipalityCode: "",
             psgcBarangayCode: "",
@@ -176,45 +192,38 @@ const ShippingAddressFields = ({
           setBarangays([]);
           setSkipProvince(isNCR);
 
-          if (!value) return;
+          if (!code) return;
 
           if (isNCR) {
-            await fetchCities(value, "");
+            await fetchCities(code, "");
           } else {
-            await fetchProvinces(value);
+            await fetchProvinces(code);
           }
         }}
         className={`${selectClass} ${readOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
         disabled={readOnly}
       >
         <option value="">Select Region</option>
-        {regions.map((r, index) => {
-          const code = getItemCode(r);
-          const name = getItemName(r);
-
-          return (
-            <option key={`${code}-${index}`} value={code}>
-              {name}
-            </option>
-          );
-        })}
+        {regions.map((item) => (
+          <option key={item.code} value={item.code}>
+            {item.name}
+          </option>
+        ))}
       </select>
 
       {!skipProvince && (
         <select
           value={formData.psgcProvinceCode || ""}
           onChange={async (e) => {
-            const value = String(e.target.value);
-            const selected = provinces.find(
-              (p) => String(getItemCode(p)) === String(value)
-            );
+            const code = e.target.value;
+            const selected = provinces.find((item) => item.code === code);
 
             setFormData((prev) => ({
               ...prev,
-              province: getItemName(selected),
+              province: selected?.name || "",
               city: "",
               barangay: "",
-              psgcProvinceCode: value,
+              psgcProvinceCode: code,
               psgcMunicipalityCode: "",
               psgcBarangayCode: "",
             }));
@@ -222,93 +231,74 @@ const ShippingAddressFields = ({
             setCities([]);
             setBarangays([]);
 
-            if (value) {
-              await fetchCities(formData.psgcRegionCode, value);
+            if (code) {
+              await fetchCities(formData.psgcRegionCode, code);
             }
           }}
           className={`${selectClass} ${readOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
           disabled={readOnly || !provinces.length}
         >
           <option value="">Select Province</option>
-          {provinces.map((p, index) => {
-            const code = getItemCode(p);
-            const name = getItemName(p);
-
-            return (
-              <option key={`${code}-${index}`} value={code}>
-                {name}
-              </option>
-            );
-          })}
+          {provinces.map((item) => (
+            <option key={item.code} value={item.code}>
+              {item.name}
+            </option>
+          ))}
         </select>
       )}
 
       <select
         value={formData.psgcMunicipalityCode || ""}
         onChange={async (e) => {
-          const value = String(e.target.value);
-          const selected = cities.find(
-            (c) => String(getItemCode(c)) === String(value)
-          );
+          const code = e.target.value;
+          const selected = cities.find((item) => item.code === code);
 
           setFormData((prev) => ({
             ...prev,
-            city: getItemName(selected),
+            city: selected?.name || "",
             barangay: "",
-            psgcMunicipalityCode: value,
+            psgcMunicipalityCode: code,
             psgcBarangayCode: "",
           }));
 
           setBarangays([]);
 
-          if (value) {
-            await fetchBarangays(value);
+          if (code) {
+            await fetchBarangays(code);
           }
         }}
         className={`${selectClass} ${readOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
         disabled={readOnly || !cities.length}
       >
         <option value="">Select City / Municipality</option>
-        {cities.map((c, index) => {
-          const code = getItemCode(c);
-          const name = getItemName(c);
-
-          return (
-            <option key={`${code}-${index}`} value={code}>
-              {name}
-            </option>
-          );
-        })}
+        {cities.map((item) => (
+          <option key={item.code} value={item.code}>
+            {item.name}
+          </option>
+        ))}
       </select>
 
       <select
         value={formData.psgcBarangayCode || ""}
         onChange={(e) => {
-          const value = String(e.target.value);
-          const selected = barangays.find(
-            (b) => String(getBarangayCode(b)) === String(value)
-          );
+          const code = e.target.value;
+          const selected = barangays.find((item) => item.code === code);
 
           setFormData((prev) => ({
             ...prev,
-            barangay: getBarangayName(selected),
-            psgcBarangayCode: value,
+            barangay: selected?.name || "",
+            psgcBarangayCode: code,
           }));
         }}
         className={`${selectClass} ${readOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
         disabled={readOnly || !barangays.length}
       >
         <option value="">Select Barangay</option>
-        {barangays.map((b, index) => {
-          const code = getBarangayCode(b);
-          const name = getBarangayName(b);
-
-          return (
-            <option key={`${code}-${index}`} value={code}>
-              {name}
-            </option>
-          );
-        })}
+        {barangays.map((item) => (
+          <option key={item.code} value={item.code}>
+            {item.name}
+          </option>
+        ))}
       </select>
 
       <input
