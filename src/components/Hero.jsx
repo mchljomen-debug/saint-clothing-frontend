@@ -37,6 +37,7 @@ const Hero = () => {
     slides: [],
   });
 
+  /* ================= FETCH HERO ================= */
   const fetchHero = useCallback(async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/hero`);
@@ -83,7 +84,10 @@ const Hero = () => {
     };
   }, [fetchHero]);
 
-  const isLoggedInUser = Boolean(token && (user?._id || user?.id || user?.email));
+  /* ================= LOGIN STATE ================= */
+  const isLoggedInUser = Boolean(
+    token && (user?._id || user?.id || user?.email)
+  );
 
   const resolvedUserName = useMemo(() => {
     if (!isLoggedInUser) return "";
@@ -95,37 +99,43 @@ const Hero = () => {
     return "";
   }, [isLoggedInUser, user]);
 
+  /* ================= FIXED LOGIN COUNT ================= */
   useEffect(() => {
-    if (!isLoggedInUser || !user?._id) {
+    if (!isLoggedInUser || !user?._id || !token) {
       setGreetingPrefix("");
       return;
     }
 
     const loginCountKey = `saint_login_count_${user._id}`;
-    const sessionKey = `saint_login_session_counted_${user._id}`;
+    const lastTokenKey = `saint_last_login_token_${user._id}`;
 
-    const hasCountedThisSession = sessionStorage.getItem(sessionKey) === "true";
-
+    const lastToken = localStorage.getItem(lastTokenKey);
     let count = Number(localStorage.getItem(loginCountKey) || 0);
 
-    if (!hasCountedThisSession) {
+    // ✅ ONLY COUNT REAL LOGIN (token change)
+    if (lastToken !== token) {
       count += 1;
       localStorage.setItem(loginCountKey, String(count));
-      sessionStorage.setItem(sessionKey, "true");
+      localStorage.setItem(lastTokenKey, token);
     }
 
+    // ✅ GREETING DECISION
     if (count <= 1) {
       setGreetingPrefix(heroData.newUserGreeting || "Welcome");
     } else {
-      setGreetingPrefix(heroData.returningUserGreeting || "Welcome back");
+      setGreetingPrefix(
+        heroData.returningUserGreeting || "Welcome back"
+      );
     }
   }, [
     isLoggedInUser,
     user?._id,
+    token,
     heroData.newUserGreeting,
     heroData.returningUserGreeting,
   ]);
 
+  /* ================= TICKER ================= */
   const tickerMessage = useMemo(() => {
     if (!isLoggedInUser || !resolvedUserName || !heroData.tickerEnabled) {
       return "";
@@ -136,6 +146,7 @@ const Hero = () => {
       .replaceAll("{name}", resolvedUserName);
   }, [isLoggedInUser, resolvedUserName, heroData, greetingPrefix]);
 
+  /* ================= ACTION ================= */
   const handleAction = (action) => {
     if (action === "collection") {
       navigate("/collection");
@@ -167,6 +178,8 @@ const Hero = () => {
 
   return (
     <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden bg-black">
+      
+      {/* ================= TICKER ================= */}
       {isLoggedInUser && tickerMessage && (
         <div className="ticker-wrap">
           <div className="ticker-track">
@@ -184,6 +197,7 @@ const Hero = () => {
         </div>
       )}
 
+      {/* ================= HERO ================= */}
       <Carousel
         arrows
         infinite
@@ -193,7 +207,6 @@ const Hero = () => {
         effect="fade"
         dots
         pauseOnHover={false}
-        className="hero-carousel"
       >
         {heroData.slides.map((slide, index) => (
           <div
@@ -215,13 +228,13 @@ const Hero = () => {
                   {slide.title}
                 </h1>
 
-                <p className="mt-4 md:mt-5 text-sm md:text-base text-white/70 max-w-lg leading-relaxed">
+                <p className="mt-4 text-sm md:text-base text-white/70 max-w-lg">
                   {slide.description}
                 </p>
 
                 <button
                   onClick={() => handleAction(slide.action)}
-                  className="mt-6 md:mt-8 bg-white text-black px-7 sm:px-8 md:px-10 py-3 md:py-4 uppercase tracking-[0.22em] md:tracking-[0.25em] text-[10px] md:text-xs font-bold hover:bg-transparent hover:text-white border border-white transition"
+                  className="mt-6 bg-white text-black px-8 py-3 uppercase tracking-[0.22em] text-xs font-bold border border-white hover:bg-transparent hover:text-white transition"
                 >
                   {slide.cta}
                 </button>
@@ -247,32 +260,9 @@ const Hero = () => {
           animation: tickerLoop 25s linear infinite;
         }
 
-        .ticker-text {
-          display: flex;
-          white-space: nowrap;
-          padding: 10px 0;
-        }
-
-        .ticker-item {
-          padding-right: 28px;
-          color: white;
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-        }
-
-        .ticker-separator {
-          margin: 0 16px;
-          opacity: 0.5;
-        }
-
         @keyframes tickerLoop {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
       `}</style>
     </div>
