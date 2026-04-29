@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useMemo,
 } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +13,14 @@ import axios from "axios";
 export const ShopContext = createContext();
 
 const SIZE_ORDER = ["S", "M", "L", "XL", "2XL", "3XL"];
+
+const DEFAULT_CATEGORIES = [
+  "Tshirt",
+  "Long Sleeve",
+  "Jorts",
+  "Mesh Shorts",
+  "Crop Jersey",
+];
 
 const ShopContextProvider = ({ children }) => {
   const currency = "₱";
@@ -30,6 +39,14 @@ const ShopContextProvider = ({ children }) => {
 
   const navigate = useNavigate();
   const pollingRef = useRef(null);
+
+  const categoryOptions = useMemo(() => {
+    const productCategories = (products || [])
+      .map((item) => item.category)
+      .filter(Boolean);
+
+    return Array.from(new Set([...DEFAULT_CATEGORIES, ...productCategories]));
+  }, [products]);
 
   const getAuthHeaders = useCallback((userToken) => {
     if (!userToken) return {};
@@ -448,6 +465,7 @@ const ShopContextProvider = ({ children }) => {
 
   const value = {
     products,
+    categoryOptions,
     currency,
     delivery_fee,
     search,
@@ -479,4 +497,4 @@ const ShopContextProvider = ({ children }) => {
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 };
 
-export default ShopContextProvider; 
+export default ShopContextProvider;

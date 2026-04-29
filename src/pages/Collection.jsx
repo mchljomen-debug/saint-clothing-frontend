@@ -6,8 +6,14 @@ import { assets } from "../assets/assets";
 import useRecommendations from "../hooks/useRecommendations";
 
 const Collection = () => {
-  const { products, search, showSearch, user, backendUrl } =
-    useContext(ShopContext);
+  const {
+    products,
+    search,
+    showSearch,
+    user,
+    backendUrl,
+    categoryOptions,
+  } = useContext(ShopContext);
 
   const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState("");
@@ -17,13 +23,7 @@ const Collection = () => {
 
   const productsPerPage = 20;
 
-  const categories = [
-    "Tshirt",
-    "Long Sleeve",
-    "Jorts",
-    "Mesh Shorts",
-    "Crop Jersey",
-  ];
+  const categories = useMemo(() => categoryOptions || [], [categoryOptions]);
 
   const favoriteCategories = useMemo(
     () => user?.preferences?.favoriteCategories || [],
@@ -61,7 +61,9 @@ const Collection = () => {
       );
     }
 
-    if (category) list = list.filter((p) => p.category === category);
+    if (category) {
+      list = list.filter((p) => p.category === category);
+    }
 
     if (colorFilter.length > 0) {
       list = list.filter((p) => colorFilter.includes(p.color));
@@ -73,8 +75,7 @@ const Collection = () => {
       list.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
     } else {
       list.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
       );
     }
 
@@ -84,7 +85,7 @@ const Collection = () => {
   const { recommendations: styleRecommendations } = useRecommendations({
     backendUrl,
     products,
-    category: category || favoriteCategories[0] || "Tshirt",
+    category: category || favoriteCategories[0] || categories[0] || "Tshirt",
     color: colorFilter[0] || "",
     userId: user?._id || null,
     limit: 4,
@@ -97,30 +98,30 @@ const Collection = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
   const start = (currentPage - 1) * productsPerPage;
-  const currentProducts = filteredProducts.slice(
-    start,
-    start + productsPerPage
-  );
+  const currentProducts = filteredProducts.slice(start, start + productsPerPage);
 
   const goToPage = (p) => {
+    if (p < 1 || p > totalPages) return;
     setCurrentPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="pt-[20px] px-4 sm:px-5 md:px-8 lg:px-12 xl:px-16 pb-12 min-h-screen bg-gradient-to-b from-white via-gray-50 to-white font-['Outfit']">
-
-      {/* HEADER */}
       <div className="flex flex-col gap-6 md:flex-row md:justify-between md:items-end mb-8 pb-5 border-b">
-
         <div>
           <Title text1="THE" text2="ARCHIVE" />
           <p className="text-[10px] text-gray-400 mt-3 uppercase tracking-[0.4em]">
             Essential Silhouettes & Modern Uniforms
           </p>
+
+          {category && (
+            <p className="mt-3 text-[11px] font-black uppercase tracking-[0.2em] text-black">
+              Showing: {category}
+            </p>
+          )}
         </div>
 
-        {/* ✅ FIXED RESPONSIVE SORT */}
         <div className="w-full sm:w-auto flex justify-start md:justify-end">
           <div className="w-[170px] sm:w-auto md:min-w-[220px]">
             <select
@@ -129,25 +130,23 @@ const Collection = () => {
               className="w-full sm:w-auto sm:min-w-[220px] bg-black text-white h-[40px] sm:h-[46px] px-3 sm:px-5 text-[9px] sm:text-[10px] uppercase font-bold tracking-[0.12em] sm:tracking-[0.2em] cursor-pointer hover:bg-gray-800 transition-all rounded-[10px]"
             >
               <option value="relavent">
-                {favoriteCategories.length > 0 ? "SORT: FOR YOU" : "SORT: RELEVANCE"}
+                {favoriteCategories.length > 0
+                  ? "SORT: FOR YOU"
+                  : "SORT: RELEVANCE"}
               </option>
               <option value="low-high">PRICE: LOW TO HIGH</option>
               <option value="high-low">PRICE: HIGH TO LOW</option>
             </select>
           </div>
         </div>
-
       </div>
 
-      {/* STYLE RECOMMENDATIONS */}
       {styleRecommendations.length > 0 && (
         <div className="mb-10 border rounded-[18px] p-4 sm:p-6 bg-white">
           <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">
             Style Recommendations
           </p>
-          <h2 className="text-lg font-black mt-2 uppercase">
-            Wear It With
-          </h2>
+          <h2 className="text-lg font-black mt-2 uppercase">Wear It With</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
             {styleRecommendations.map((item) => (
@@ -158,10 +157,7 @@ const Collection = () => {
       )}
 
       <div className="flex flex-col lg:flex-row gap-8">
-
-        {/* ✅ STICKY SLIM FILTER */}
         <div className="w-full lg:w-[180px] xl:w-[200px] shrink-0 lg:self-start">
-
           <div
             onClick={() => setShowFilter(!showFilter)}
             className="flex justify-between border-b pb-2 cursor-pointer lg:cursor-default"
@@ -171,10 +167,9 @@ const Collection = () => {
             </p>
 
             <img
-              className={`h-2 lg:hidden ${
-                showFilter ? "rotate-180" : ""
-              }`}
+              className={`h-2 lg:hidden ${showFilter ? "rotate-180" : ""}`}
               src={assets.dropdown_icon}
+              alt=""
             />
           </div>
 
@@ -184,8 +179,6 @@ const Collection = () => {
             } lg:block mt-6 lg:sticky lg:top-[96px]`}
           >
             <div className="rounded-[16px] border border-black/10 bg-[#FAFAF8] p-3 space-y-5">
-
-              {/* CATEGORY */}
               <div>
                 <p className="text-[10px] text-gray-400 uppercase mb-3 tracking-[0.2em]">
                   Category
@@ -204,23 +197,28 @@ const Collection = () => {
                 ))}
               </div>
 
-              {/* COLOR */}
               <div>
                 <p className="text-[10px] text-gray-400 uppercase mb-3 tracking-[0.2em]">
                   Color
                 </p>
 
-                {availableColors.map((c) => (
-                  <label key={c} className="flex items-center gap-2 mb-2">
-                    <input
-                      type="checkbox"
-                      checked={colorFilter.includes(c)}
-                      onChange={() => toggleColor(c)}
-                      className="accent-black"
-                    />
-                    <span className="text-[10px] uppercase">{c}</span>
-                  </label>
-                ))}
+                {availableColors.length > 0 ? (
+                  availableColors.map((c) => (
+                    <label key={c} className="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={colorFilter.includes(c)}
+                        onChange={() => toggleColor(c)}
+                        className="accent-black"
+                      />
+                      <span className="text-[10px] uppercase">{c}</span>
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-[10px] text-gray-400 uppercase">
+                    No colors found
+                  </p>
+                )}
               </div>
 
               {(category || colorFilter.length > 0) && (
@@ -234,39 +232,64 @@ const Collection = () => {
                   Clear
                 </button>
               )}
-
             </div>
           </div>
         </div>
 
-        {/* PRODUCTS */}
         <div className="flex-1">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {currentProducts.map((item) => (
-              <ProductItem key={item._id} {...item} />
-            ))}
-          </div>
+          {currentProducts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {currentProducts.map((item) => (
+                <ProductItem key={item._id} {...item} />
+              ))}
+            </div>
+          ) : (
+            <div className="min-h-[300px] flex items-center justify-center border border-black/10 rounded-[18px] bg-white">
+              <div className="text-center">
+                <p className="text-sm font-black uppercase tracking-[0.2em]">
+                  No products found
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Try clearing the filters.
+                </p>
+              </div>
+            </div>
+          )}
 
-          {/* PAGINATION */}
           {totalPages > 1 && (
-            <div className="mt-10 flex justify-center gap-2">
-              <button onClick={() => goToPage(currentPage - 1)}>
+            <div className="mt-10 flex justify-center gap-2 flex-wrap">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border rounded disabled:opacity-40"
+              >
                 Prev
               </button>
 
               {Array.from({ length: totalPages }, (_, i) => (
-                <button key={i} onClick={() => goToPage(i + 1)}>
+                <button
+                  key={i}
+                  onClick={() => goToPage(i + 1)}
+                  className={`px-4 py-2 border rounded ${
+                    currentPage === i + 1
+                      ? "bg-black text-white"
+                      : "bg-white text-black"
+                  }`}
+                >
                   {i + 1}
                 </button>
               ))}
 
-              <button onClick={() => goToPage(currentPage + 1)}>
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border rounded disabled:opacity-40"
+              >
                 Next
               </button>
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
