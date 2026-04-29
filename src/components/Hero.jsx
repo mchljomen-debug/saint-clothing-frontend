@@ -245,60 +245,57 @@ const Hero = () => {
       </Carousel>
 
       <style jsx="true">{`
-      .ticker-wrap {
-        position: absolute;
-        top: 14px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: min(92%, 1180px);
-        overflow: hidden;
-        z-index: 40;
+  .ticker-wrap {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    overflow: hidden;
+    z-index: 40;
 
-        background: rgba(255, 255, 255, 0.78);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 
-        border: 1px solid rgba(255, 255, 255, 0.65);
-        border-radius: 999px;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
-      }
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
 
-      .ticker-track {
-        display: flex;
-        width: max-content;
-        animation: tickerLoop 25s linear infinite;
-      }
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: tickerLoop 25s linear infinite;
+  }
 
-      .ticker-text {
-        display: flex;
-        white-space: nowrap;
-        padding: 9px 0;
-      }
+  .ticker-text {
+    display: flex;
+    white-space: nowrap;
+    padding: 10px 0;
+  }
 
-      .ticker-item {
-        padding-right: 26px;
-        color: #0a0d17;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.11em;
-        text-transform: uppercase;
-      }
+  .ticker-item {
+    padding-right: 28px;
+    color: #0A0D17;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 
-      .ticker-separator {
-        margin: 0 14px;
-        opacity: 0.35;
-        color: #0a0d17;
-      }
+  .ticker-separator {
+    margin: 0 16px;
+    opacity: 0.35;
+    color: #0A0D17;
+  }
 
-      @keyframes tickerLoop {
-        0% {
-          transform: translateX(0);
-        }
-        100% {
-          transform: translateX(-50%);
-        }
-      }
-    `}</style>
+  @keyframes tickerLoop {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+`}</style>
     </div>
   );
 };
