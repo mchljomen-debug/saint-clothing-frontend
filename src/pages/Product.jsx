@@ -1120,209 +1120,210 @@ const Product = () => {
                   </button>
                 </div>
               </div>
-              <button
-                ref={addToCartBtnRef}
-                onClick={handleAddToCart}
-                disabled={isProductOutOfStock}
-                className={`h-11 rounded-xl font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-black text-white hover:translate-y-[-1px] shadow-lg"
-                  }`}
-              >
-                {isProductOutOfStock ? "Out of Stock" : "Add to Cart"}
-              </button>
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  ref={addToCartBtnRef}
+                  onClick={handleAddToCart}
+                  disabled={isProductOutOfStock}
+                  className={`h-11 rounded-xl font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-black text-white hover:translate-y-[-1px] shadow-lg"
+                    }`}
+                >
+                  {isProductOutOfStock ? "Out of Stock" : "Add to Cart"}
+                </button>
 
-              <button
-                onClick={handleBuyNow}
-                disabled={isProductOutOfStock}
-                className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
-                  ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "border-black bg-white text-black hover:bg-black hover:text-white"
-                  }`}
-              >
-                {isProductOutOfStock ? "Unavailable" : "Buy Now"}
-              </button>
+                <button
+                  onClick={handleBuyNow}
+                  disabled={isProductOutOfStock}
+                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
+                      ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "border-black bg-white text-black hover:bg-black hover:text-white"
+                    }`}
+                >
+                  {isProductOutOfStock ? "Unavailable" : "Buy Now"}
+                </button>
+              </div>
+
+              <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleTryItOn}
+                  className="h-11 rounded-xl bg-black text-white font-black uppercase tracking-[0.14em] hover:opacity-95 transition text-sm"
+                >
+                  Try It On
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleShow3D}
+                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition text-sm ${has3DModel
+                    ? "border-black bg-white text-black hover:bg-black hover:text-white"
+                    : "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
+                    }`}
+                >
+                  Show 3D
+                </button>
+              </div>
             </div>
-
-            <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          </div>
+        <div
+          id="reviews-section"
+          className="mt-6 sm:mt-8 bg-white border border-black/10 rounded-[18px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-3.5 sm:p-5"
+        >
+          <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3 mb-4 sm:mb-5 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
               <button
                 type="button"
-                onClick={handleTryItOn}
-                className="h-11 rounded-xl bg-black text-white font-black uppercase tracking-[0.14em] hover:opacity-95 transition text-sm"
+                onClick={() => setActiveTab("description")}
+                className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "description"
+                  ? "bg-black text-white"
+                  : "bg-[#F5F5F2] text-gray-500 hover:text-black"
+                  }`}
               >
-                Try It On
+                Description
               </button>
 
               <button
                 type="button"
-                onClick={handleShow3D}
-                className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition text-sm ${has3DModel
-                  ? "border-black bg-white text-black hover:bg-black hover:text-white"
-                  : "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
+                onClick={() => setActiveTab("branches")}
+                className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "branches"
+                  ? "bg-black text-white"
+                  : "bg-[#F5F5F2] text-gray-500 hover:text-black"
                   }`}
               >
-                Show 3D
+                Branches
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("reviews")}
+                className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "reviews"
+                  ? "bg-black text-white"
+                  : "bg-[#F5F5F2] text-gray-500 hover:text-black"
+                  }`}
+              >
+                Reviews ({reviews.length})
               </button>
             </div>
           </div>
 
-          <div
-            id="reviews-section"
-            className="mt-6 sm:mt-8 bg-white border border-black/10 rounded-[18px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-3.5 sm:p-5"
-          >
-            <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3 mb-4 sm:mb-5 flex-wrap">
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("description")}
-                  className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "description"
-                    ? "bg-black text-white"
-                    : "bg-[#F5F5F2] text-gray-500 hover:text-black"
-                    }`}
-                >
-                  Description
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("branches")}
-                  className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "branches"
-                    ? "bg-black text-white"
-                    : "bg-[#F5F5F2] text-gray-500 hover:text-black"
-                    }`}
-                >
-                  Branches
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("reviews")}
-                  className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "reviews"
-                    ? "bg-black text-white"
-                    : "bg-[#F5F5F2] text-gray-500 hover:text-black"
-                    }`}
-                >
-                  Reviews ({reviews.length})
-                </button>
-              </div>
+          {activeTab === "description" && (
+            <div className="text-gray-600 leading-7 text-sm sm:text-base">
+              <p>{productData.description || "No description available."}</p>
             </div>
+          )}
 
-            {activeTab === "description" && (
-              <div className="text-gray-600 leading-7 text-sm sm:text-base">
-                <p>{productData.description || "No description available."}</p>
-              </div>
-            )}
+          {activeTab === "branches" && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500 font-semibold">
+                Check which Saint Clothing branch currently has this exact
+                product available.
+              </p>
 
-            {activeTab === "branches" && (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-500 font-semibold">
-                  Check which Saint Clothing branch currently has this exact
-                  product available.
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {availableBranches.length > 0 ? (
+                  availableBranches.map((item) => (
+                    <div
+                      key={item.branch}
+                      className="border border-black/10 rounded-2xl p-4 bg-[#FAFAF8]"
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h3 className="text-base font-black uppercase text-[#0A0D17]">
+                          {item.branchName}
+                        </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {availableBranches.length > 0 ? (
-                    availableBranches.map((item) => (
-                      <div
-                        key={item.branch}
-                        className="border border-black/10 rounded-2xl p-4 bg-[#FAFAF8]"
-                      >
-                        <div className="flex items-center justify-between gap-3 mb-3">
-                          <h3 className="text-base font-black uppercase text-[#0A0D17]">
-                            {item.branchName}
-                          </h3>
-
-                          <span
-                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] ${item.available
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                              }`}
-                          >
-                            {item.available ? "Available" : "Not Available"}
-                          </span>
-                        </div>
-
-                        <p className="text-sm text-gray-600">
-                          Branch Code:{" "}
-                          <span className="font-bold uppercase">{item.branch}</span>
-                        </p>
-
-                        <p className="text-sm text-gray-600 mt-1">
-                          Stock for this product:{" "}
-                          <span className="font-bold">{item.totalStock}</span>
-                        </p>
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] ${item.available
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                            }`}
+                        >
+                          {item.available ? "Available" : "Not Available"}
+                        </span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-500 font-semibold">
-                      No branch data available.
+
+                      <p className="text-sm text-gray-600">
+                        Branch Code:{" "}
+                        <span className="font-bold uppercase">{item.branch}</span>
+                      </p>
+
+                      <p className="text-sm text-gray-600 mt-1">
+                        Stock for this product:{" "}
+                        <span className="font-bold">{item.totalStock}</span>
+                      </p>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === "reviews" && (
-              <ReviewSection
-                productId={productData._id}
-                reviews={reviews}
-                backendUrl={backendUrl}
-                token={token}
-                user={user}
-                canReview={canReview}
-                onReviewAdded={loadProduct}
-              />
-            )}
-          </div>
-          <div className="mt-6 sm:mt-8">
-            <RelatedProducts
-              category={productData.category}
-              currentProductId={productData._id}
-            />
-          </div>
-          {styleRecommendations.length > 0 && (
-            <div className="mt-6 sm:mt-8 bg-white border border-black/10 rounded-[18px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-3.5 sm:p-5 md:p-6">
-              <div className="text-center mb-5 sm:mb-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
-                  Saint Styling
-                </p>
-                <h2 className="mt-2 text-lg sm:text-xl md:text-2xl font-black uppercase text-[#0A0D17]">
-                  Complete the Look
-                </h2>
-                <p className="mt-2 text-xs sm:text-sm text-gray-500">
-                  Pieces that match this product best
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
-                {styleRecommendations.map((item) => (
-                  <ProductItem
-                    key={item._id}
-                    id={item._id}
-                    name={item.name}
-                    images={item.images}
-                    price={item.price}
-                    bestseller={item.bestseller}
-                    newArrival={item.newArrival}
-                    groupCode={item.groupCode}
-                    color={item.color}
-                    colorHex={item.colorHex}
-                    onSale={item.onSale}
-                    salePercent={item.salePercent}
-                    stock={item.stock}
-                    branch={item.branch}
-                    badgeMode="none"
-                    previewVideo={item.previewVideo}
-                    autoPlayPreview={true}
-                  />
-                ))}
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500 font-semibold">
+                    No branch data available.
+                  </div>
+                )}
               </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {showSizeChart && productData?.sizeChartImage && (
+          {activeTab === "reviews" && (
+            <ReviewSection
+              productId={productData._id}
+              reviews={reviews}
+              backendUrl={backendUrl}
+              token={token}
+              user={user}
+              canReview={canReview}
+              onReviewAdded={loadProduct}
+            />
+          )}
+        </div>
+        <div className="mt-6 sm:mt-8">
+          <RelatedProducts
+            category={productData.category}
+            currentProductId={productData._id}
+          />
+        </div>
+        {styleRecommendations.length > 0 && (
+          <div className="mt-6 sm:mt-8 bg-white border border-black/10 rounded-[18px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-3.5 sm:p-5 md:p-6">
+            <div className="text-center mb-5 sm:mb-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+                Saint Styling
+              </p>
+              <h2 className="mt-2 text-lg sm:text-xl md:text-2xl font-black uppercase text-[#0A0D17]">
+                Complete the Look
+              </h2>
+              <p className="mt-2 text-xs sm:text-sm text-gray-500">
+                Pieces that match this product best
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
+              {styleRecommendations.map((item) => (
+                <ProductItem
+                  key={item._id}
+                  id={item._id}
+                  name={item.name}
+                  images={item.images}
+                  price={item.price}
+                  bestseller={item.bestseller}
+                  newArrival={item.newArrival}
+                  groupCode={item.groupCode}
+                  color={item.color}
+                  colorHex={item.colorHex}
+                  onSale={item.onSale}
+                  salePercent={item.salePercent}
+                  stock={item.stock}
+                  branch={item.branch}
+                  badgeMode="none"
+                  previewVideo={item.previewVideo}
+                  autoPlayPreview={true}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div >
+
+      { showSizeChart && productData?.sizeChartImage && (
         <div className="fixed inset-0 z-[85]">
           <button
             type="button"
@@ -1383,290 +1384,295 @@ const Product = () => {
             </div>
           </div>
         </div>
-      )}
+      )
+}
 
-      {tryOnModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-          <div className="w-full max-w-3xl bg-[#0D0D0D] text-white rounded-[20px] shadow-[0_35px_120px_rgba(0,0,0,0.55)] overflow-hidden border border-white/10">
-            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#111111] to-[#1A1A1A]">
+{
+  tryOnModalOpen && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+      <div className="w-full max-w-3xl bg-[#0D0D0D] text-white rounded-[20px] shadow-[0_35px_120px_rgba(0,0,0,0.55)] overflow-hidden border border-white/10">
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#111111] to-[#1A1A1A]">
+          <div>
+            <p className="text-base font-black uppercase tracking-[0.12em]">
+              Try It On
+            </p>
+            <p className="text-[10px] text-white/50 font-bold uppercase tracking-[0.26em] mt-1">
+              Mobile app required
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setTryOnModalOpen(false)}
+            className="w-8 h-8 rounded-full border border-white/10 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-4 items-stretch">
+            <div className="rounded-[16px] border border-white/10 bg-white/[0.03] p-4 flex flex-col justify-between">
               <div>
-                <p className="text-base font-black uppercase tracking-[0.12em]">
-                  Try It On
+                <p className="text-base font-black uppercase tracking-[0.08em] text-white">
+                  Download the app first
                 </p>
-                <p className="text-[10px] text-white/50 font-bold uppercase tracking-[0.26em] mt-1">
-                  Mobile app required
+                <p className="text-sm text-white/60 leading-6 mt-2">
+                  Scan the QR code or open the link on your phone to continue
+                  using Try It On.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setTryOnModalOpen(false)}
-                className="w-8 h-8 rounded-full border border-white/10 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition"
-              >
-                ✕
-              </button>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <a
+                  href="https://your-app-download-link.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-black text-sm font-black uppercase tracking-[0.1em]"
+                >
+                  Download App
+                </a>
+
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm font-black uppercase tracking-[0.1em]"
+                >
+                  App Link
+                </button>
+              </div>
             </div>
 
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-4 items-stretch">
-                <div className="rounded-[16px] border border-white/10 bg-white/[0.03] p-4 flex flex-col justify-between">
+            <div className="rounded-[16px] border border-white/10 bg-[#111111] p-3">
+              <div className="w-full h-[180px] rounded-[12px] bg-[#181818] border border-white/10 overflow-hidden flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <div className="text-center">
+                    <p className="text-sm font-black uppercase tracking-[0.2em] text-white/70">
+                      QR Placeholder
+                    </p>
+                    <p className="text-xs text-white/35 mt-2">
+                      Put your QR here
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+{
+  show3DModalOpen && (
+    <div className="fixed inset-0 z-[80] bg-black">
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-[#090909] to-[#111111]" />
+
+      <div className="relative z-10 h-full w-full flex flex-col">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/10 bg-black/30 backdrop-blur-md">
+          <div>
+            <p className="text-white text-lg md:text-xl font-black uppercase tracking-[0.14em]">
+              3D Product View
+            </p>
+            <p className="text-white/45 text-[10px] md:text-xs font-bold uppercase tracking-[0.28em] mt-1">
+              Drag to rotate • Scroll to zoom
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShow3DModalOpen(false)}
+            className="w-10 h-10 rounded-full border border-white/15 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_300px] overflow-hidden">
+          <div className="relative flex items-center justify-center p-3 sm:p-4 md:p-8">
+            <div className="absolute top-3 left-3 md:top-6 md:left-6 flex flex-wrap gap-2 z-20 max-w-[calc(100%-24px)] md:max-w-none">
+              <button
+                type="button"
+                onClick={zoomInModel}
+                className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+              >
+                Zoom In
+              </button>
+
+              <button
+                type="button"
+                onClick={zoomOutModel}
+                className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+              >
+                Zoom Out
+              </button>
+
+              <button
+                type="button"
+                onClick={resetModelView}
+                className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+              >
+                Reset
+              </button>
+
+              {isModelViewerFile && (
+                <button
+                  type="button"
+                  onClick={toggleAutoRotate}
+                  className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+                >
+                  {isAutoRotating ? "Stop Rotate" : "Auto Rotate"}
+                </button>
+              )}
+            </div>
+
+            <div className="w-full h-[48vh] sm:h-[58vh] lg:h-[70vh] max-h-[680px] rounded-[22px] sm:rounded-[28px] border border-white/10 bg-[#111111] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+              {has3DModel ? (
+                isVideoFile ? (
+                  <video
+                    src={previewFileUrl}
+                    controls
+                    autoPlay
+                    loop
+                    playsInline
+                    className="w-full h-full object-contain bg-black"
+                  />
+                ) : isModelViewerFile ? (
+                  <model-viewer
+                    ref={modelViewerRef}
+                    src={previewFileUrl}
+                    alt={productData.name}
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="1"
+                    exposure="1"
+                    interaction-prompt="auto"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      background: "#0b0b0b",
+                    }}
+                  />
+                ) : productData.images?.[0] ? (
+                  <img
+                    src={getMediaUrl(productData.images[0], backendUrl)}
+                    alt={productData.name}
+                    className="w-full h-full object-contain bg-black"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-center p-6">
+                    <div>
+                      <p className="text-white text-lg font-black uppercase tracking-[0.12em]">
+                        Preview Not Supported
+                      </p>
+                      <p className="text-white/45 text-sm mt-2">
+                        This file type cannot be previewed in the 3D viewer yet.
+                      </p>
+                    </div>
+                  </div>
+                )
+              ) : productData.images?.[0] ? (
+                <img
+                  src={getMediaUrl(productData.images[0], backendUrl)}
+                  alt={productData.name}
+                  className="w-full h-full object-contain bg-black"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-center p-6">
                   <div>
-                    <p className="text-base font-black uppercase tracking-[0.08em] text-white">
-                      Download the app first
+                    <p className="text-white text-lg font-black uppercase tracking-[0.12em]">
+                      3D Preview Area
                     </p>
-                    <p className="text-sm text-white/60 leading-6 mt-2">
-                      Scan the QR code or open the link on your phone to continue
-                      using Try It On.
+                    <p className="text-white/45 text-sm mt-2">
+                      Put your GLB, GLTF, video, or other supported preview file here.
                     </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <a
-                      href="https://your-app-download-link.com"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-black text-sm font-black uppercase tracking-[0.1em]"
-                    >
-                      Download App
-                    </a>
-
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm font-black uppercase tracking-[0.1em]"
-                    >
-                      App Link
-                    </button>
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
 
-                <div className="rounded-[16px] border border-white/10 bg-[#111111] p-3">
-                  <div className="w-full h-[180px] rounded-[12px] bg-[#181818] border border-white/10 overflow-hidden flex items-center justify-center">
-                    <div className="w-full h-full flex items-center justify-center p-4">
-                      <div className="text-center">
-                        <p className="text-sm font-black uppercase tracking-[0.2em] text-white/70">
-                          QR Placeholder
-                        </p>
-                        <p className="text-xs text-white/35 mt-2">
-                          Put your QR here
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+          <div className="border-t lg:border-t-0 lg:border-l border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-6 overflow-y-auto">
+            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.28em]">
+              Saint Clothing
+            </p>
+
+            <h3 className="mt-2 text-white text-2xl font-black uppercase leading-tight">
+              {productData.name}
+            </h3>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="px-3 py-1.5 rounded-full bg-white text-black text-[10px] font-black uppercase tracking-[0.16em]">
+                {productData.category || "Product"}
+              </span>
+
+              <span className="px-3 py-1.5 rounded-full border border-white/10 text-white/70 text-[10px] font-black uppercase tracking-[0.16em]">
+                Color: {displayColor}
+              </span>
+
+              {has3DModel && (
+                <span className="px-3 py-1.5 rounded-full border border-white/10 text-white/70 text-[10px] font-black uppercase tracking-[0.16em]">
+                  3D Ready
+                </span>
+              )}
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
+                  Controls
+                </p>
+                <p className="text-white/60 text-sm mt-2 leading-6">
+                  Drag to rotate the model. Use your mouse wheel or touchpad
+                  to zoom in and out. Use the buttons on the left for faster control.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
+                  File Type
+                </p>
+                <p className="text-white/60 text-sm mt-2 leading-6">
+                  {isModelViewerFile
+                    ? "Interactive 3D model"
+                    : isVideoFile
+                      ? "Video preview"
+                      : "Image fallback preview"}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
+                  Quick Actions
+                </p>
+
+                <div className="mt-3 grid gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="h-11 rounded-xl bg-white text-black font-black uppercase tracking-[0.12em] hover:opacity-90 transition"
+                  >
+                    Add to Cart
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShow3DModalOpen(false)}
+                    className="h-11 rounded-xl border border-white/15 text-white font-black uppercase tracking-[0.12em] hover:bg-white/5 transition"
+                  >
+                    Back to Product
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      )}
-
-      {show3DModalOpen && (
-        <div className="fixed inset-0 z-[80] bg-black">
-          <div className="absolute inset-0 bg-gradient-to-br from-black via-[#090909] to-[#111111]" />
-
-          <div className="relative z-10 h-full w-full flex flex-col">
-            <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/10 bg-black/30 backdrop-blur-md">
-              <div>
-                <p className="text-white text-lg md:text-xl font-black uppercase tracking-[0.14em]">
-                  3D Product View
-                </p>
-                <p className="text-white/45 text-[10px] md:text-xs font-bold uppercase tracking-[0.28em] mt-1">
-                  Drag to rotate • Scroll to zoom
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShow3DModalOpen(false)}
-                className="w-10 h-10 rounded-full border border-white/15 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_300px] overflow-hidden">
-              <div className="relative flex items-center justify-center p-3 sm:p-4 md:p-8">
-                <div className="absolute top-3 left-3 md:top-6 md:left-6 flex flex-wrap gap-2 z-20 max-w-[calc(100%-24px)] md:max-w-none">
-                  <button
-                    type="button"
-                    onClick={zoomInModel}
-                    className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
-                  >
-                    Zoom In
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={zoomOutModel}
-                    className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
-                  >
-                    Zoom Out
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={resetModelView}
-                    className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
-                  >
-                    Reset
-                  </button>
-
-                  {isModelViewerFile && (
-                    <button
-                      type="button"
-                      onClick={toggleAutoRotate}
-                      className="px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
-                    >
-                      {isAutoRotating ? "Stop Rotate" : "Auto Rotate"}
-                    </button>
-                  )}
-                </div>
-
-                <div className="w-full h-[48vh] sm:h-[58vh] lg:h-[70vh] max-h-[680px] rounded-[22px] sm:rounded-[28px] border border-white/10 bg-[#111111] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
-                  {has3DModel ? (
-                    isVideoFile ? (
-                      <video
-                        src={previewFileUrl}
-                        controls
-                        autoPlay
-                        loop
-                        playsInline
-                        className="w-full h-full object-contain bg-black"
-                      />
-                    ) : isModelViewerFile ? (
-                      <model-viewer
-                        ref={modelViewerRef}
-                        src={previewFileUrl}
-                        alt={productData.name}
-                        camera-controls
-                        auto-rotate
-                        shadow-intensity="1"
-                        exposure="1"
-                        interaction-prompt="auto"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          background: "#0b0b0b",
-                        }}
-                      />
-                    ) : productData.images?.[0] ? (
-                      <img
-                        src={getMediaUrl(productData.images[0], backendUrl)}
-                        alt={productData.name}
-                        className="w-full h-full object-contain bg-black"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-center p-6">
-                        <div>
-                          <p className="text-white text-lg font-black uppercase tracking-[0.12em]">
-                            Preview Not Supported
-                          </p>
-                          <p className="text-white/45 text-sm mt-2">
-                            This file type cannot be previewed in the 3D viewer yet.
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  ) : productData.images?.[0] ? (
-                    <img
-                      src={getMediaUrl(productData.images[0], backendUrl)}
-                      alt={productData.name}
-                      className="w-full h-full object-contain bg-black"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-center p-6">
-                      <div>
-                        <p className="text-white text-lg font-black uppercase tracking-[0.12em]">
-                          3D Preview Area
-                        </p>
-                        <p className="text-white/45 text-sm mt-2">
-                          Put your GLB, GLTF, video, or other supported preview file here.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="border-t lg:border-t-0 lg:border-l border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-6 overflow-y-auto">
-                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.28em]">
-                  Saint Clothing
-                </p>
-
-                <h3 className="mt-2 text-white text-2xl font-black uppercase leading-tight">
-                  {productData.name}
-                </h3>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 rounded-full bg-white text-black text-[10px] font-black uppercase tracking-[0.16em]">
-                    {productData.category || "Product"}
-                  </span>
-
-                  <span className="px-3 py-1.5 rounded-full border border-white/10 text-white/70 text-[10px] font-black uppercase tracking-[0.16em]">
-                    Color: {displayColor}
-                  </span>
-
-                  {has3DModel && (
-                    <span className="px-3 py-1.5 rounded-full border border-white/10 text-white/70 text-[10px] font-black uppercase tracking-[0.16em]">
-                      3D Ready
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
-                      Controls
-                    </p>
-                    <p className="text-white/60 text-sm mt-2 leading-6">
-                      Drag to rotate the model. Use your mouse wheel or touchpad
-                      to zoom in and out. Use the buttons on the left for faster control.
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
-                      File Type
-                    </p>
-                    <p className="text-white/60 text-sm mt-2 leading-6">
-                      {isModelViewerFile
-                        ? "Interactive 3D model"
-                        : isVideoFile
-                          ? "Video preview"
-                          : "Image fallback preview"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
-                      Quick Actions
-                    </p>
-
-                    <div className="mt-3 grid gap-2">
-                      <button
-                        type="button"
-                        onClick={handleAddToCart}
-                        className="h-11 rounded-xl bg-white text-black font-black uppercase tracking-[0.12em] hover:opacity-90 transition"
-                      >
-                        Add to Cart
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShow3DModalOpen(false)}
-                        className="h-11 rounded-xl border border-white/15 text-white font-black uppercase tracking-[0.12em] hover:bg-white/5 transition"
-                      >
-                        Back to Product
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+      </div>
+    </div>
+  )
+}
+      </>
+      );
 };
 
 export default Product;
