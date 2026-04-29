@@ -178,7 +178,7 @@ const Hero = () => {
 
   return (
     <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden bg-black">
-      
+
       {/* ================= TICKER ================= */}
       {isLoggedInUser && tickerMessage && (
         <div className="ticker-wrap">
@@ -245,26 +245,53 @@ const Hero = () => {
       </Carousel>
 
       <style jsx="true">{`
-        .ticker-wrap {
-          position: absolute;
-          top: 0;
-          width: 100%;
-          overflow: hidden;
-          background: rgba(0, 0, 0, 0.5);
-          z-index: 40;
-        }
+      .ticker-wrap {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        overflow: hidden;
+        z-index: 40;
 
-        .ticker-track {
-          display: flex;
-          width: max-content;
-          animation: tickerLoop 25s linear infinite;
-        }
+        /* 🔥 LIGHT GLASS BACKGROUND */
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      }
 
-        @keyframes tickerLoop {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
+      .ticker-track {
+        display: flex;
+        width: max-content;
+        animation: tickerLoop 25s linear infinite;
+      }
+
+      .ticker-text {
+        display: flex;
+        white-space: nowrap;
+        padding: 10px 0;
+      }
+
+      .ticker-item {
+        padding-right: 28px;
+
+        /* 🔥 DARK TEXT NOW */
+        color: #0A0D17;
+
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      .ticker-separator {
+        margin: 0 16px;
+        opacity: 0.4;
+        color: #0A0D17;
+      }
+
+      @keyframes tickerLoop {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+    `}</style>
     </div>
   );
 };
