@@ -18,13 +18,12 @@ const resolveImage = (img) => {
 
 const Hero = () => {
   const navigate = useNavigate();
-  const shopContext = useContext(ShopContext) || {};
-  const contextUser = shopContext.user || null;
+  const { user, token } = useContext(ShopContext);
 
+  const [greetingPrefix, setGreetingPrefix] = useState("");
   const [heroData, setHeroData] = useState({
     tickerEnabled: true,
-    tickerText:
-      "Welcome back, {name}! Ready to explore the latest from Saint Clothing?",
+    tickerText: "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
     slides: [],
   });
 
@@ -51,7 +50,7 @@ const Hero = () => {
               : true,
           tickerText:
             data.hero.tickerText ||
-            "Welcome back, {name}! Ready to explore the latest from Saint Clothing?",
+            "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
           slides,
         });
       }
@@ -71,57 +70,40 @@ const Hero = () => {
     };
   }, [fetchHero]);
 
+  const isLoggedInUser = Boolean(token && (user?._id || user?.id || user?.email));
+
   const resolvedUserName = useMemo(() => {
-    if (contextUser?.firstName?.trim()) return contextUser.firstName.trim();
-    if (contextUser?.name?.trim()) return contextUser.name.trim().split(" ")[0];
-
-    try {
-      const rawUser =
-        localStorage.getItem("userInfo") ||
-        localStorage.getItem("user") ||
-        localStorage.getItem("saint_user");
-
-      if (!rawUser) return "";
-
-      const parsed = JSON.parse(rawUser);
-
-      if (parsed?.firstName?.trim()) return parsed.firstName.trim();
-      if (parsed?.name?.trim()) return parsed.name.trim().split(" ")[0];
-    } catch {
-      return "";
-    }
-
+    if (!isLoggedInUser) return "";
+    if (user?.firstName?.trim()) return user.firstName.trim();
+    if (user?.name?.trim()) return user.name.trim().split(" ")[0];
+    if (user?.email) return user.email.split("@")[0];
     return "";
-  }, [contextUser]);
+  }, [isLoggedInUser, user]);
 
-  const isLoggedInUser = useMemo(() => {
-    if (contextUser?._id || contextUser?.id || contextUser?.email) return true;
-
-    try {
-      const rawUser =
-        localStorage.getItem("userInfo") ||
-        localStorage.getItem("user") ||
-        localStorage.getItem("saint_user");
-
-      if (!rawUser) return false;
-
-      const parsed = JSON.parse(rawUser);
-      return Boolean(
-        parsed?._id ||
-          parsed?.id ||
-          parsed?.email ||
-          parsed?.firstName?.trim() ||
-          parsed?.name?.trim()
-      );
-    } catch {
-      return false;
+  useEffect(() => {
+    if (!isLoggedInUser || !user?._id) {
+      setGreetingPrefix("");
+      return;
     }
-  }, [contextUser]);
+
+    const seenKey = `saint_seen_greeting_${user._id}`;
+    const alreadySeen = localStorage.getItem(seenKey) === "true";
+
+    setGreetingPrefix(alreadySeen ? "Welcome back" : "Welcome");
+
+    if (!alreadySeen) {
+      localStorage.setItem(seenKey, "true");
+    }
+  }, [isLoggedInUser, user?._id]);
 
   const tickerMessage = useMemo(() => {
     if (!isLoggedInUser || !resolvedUserName || !heroData.tickerEnabled) return "";
-    return (heroData.tickerText || "").replaceAll("{name}", resolvedUserName);
-  }, [isLoggedInUser, resolvedUserName, heroData]);
+
+    return (heroData.tickerText || "{greeting}, {name}!")
+      .replaceAll("{greeting}", greetingPrefix || "Welcome")
+      .replaceAll("{name}", resolvedUserName)
+      .replaceAll("Welcome back,", `${greetingPrefix || "Welcome"},`);
+  }, [isLoggedInUser, resolvedUserName, heroData, greetingPrefix]);
 
   const handleAction = (action) => {
     if (action === "collection") {
@@ -132,21 +114,15 @@ const Hero = () => {
 
     if (action === "bestseller") {
       const el = document.getElementById("best-seller-section");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else {
-        navigate("/collection");
-      }
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      else navigate("/collection");
       return;
     }
 
     if (action === "latest") {
       const el = document.getElementById("latest-collection-section");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else {
-        navigate("/collection");
-      }
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      else navigate("/collection");
     }
   };
 
@@ -187,11 +163,7 @@ const Hero = () => {
             key={index}
             className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[720px]"
           >
-            <img
-              className="w-full h-full object-cover"
-              src={slide.image}
-              alt={slide.title}
-            />
+            <img className="w-full h-full object-cover" src={slide.image} alt={slide.title} />
 
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/20" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -258,7 +230,7 @@ const Hero = () => {
             transform: translateX(0);
           }
           100% {
-            transform: translateX(-50%); 
+            transform: translateX(-50%);
           }
         }
       `}</style>
