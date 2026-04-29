@@ -1113,8 +1113,6 @@ const Product = () => {
                 </div>
               </div>
               <div className="mt-5 rounded-[20px] border border-black/10 bg-gradient-to-b from-[#FAFAF8] to-[#F3F3F0] p-4 sm:p-5 shadow-[0_8px_20px_rgba(0,0,0,0.04)]">
-
-                {/* HEADER */}
                 <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">
                     Availability
@@ -1133,16 +1131,12 @@ const Product = () => {
                   )}
                 </div>
 
-                {/* MESSAGE */}
                 {isProductOutOfStock && (
                   <p className="mb-3 text-xs font-semibold text-red-500">
                     This product is currently unavailable in all sizes.
                   </p>
                 )}
-                </div>
-                </div>
 
-                {/* BUTTONS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     ref={addToCartBtnRef}
@@ -1168,7 +1162,6 @@ const Product = () => {
                   </button>
                 </div>
 
-                {/* EXTRA ACTIONS */}
                 <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
@@ -1189,6 +1182,8 @@ const Product = () => {
                     Show 3D
                   </button>
                 </div>
+              </div>
+              </div>
               </div>
 
               <div
@@ -1694,4 +1689,4 @@ const Product = () => {
         );
 };
 
-export default Product;
+        export default Product;
