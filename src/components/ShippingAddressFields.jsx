@@ -3,14 +3,23 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const getItemCode = (item) =>
-  String(item?.psgc_id ?? item?.code ?? item?.id ?? "");
+  String(item?.code ?? item?.psgcCode ?? item?.psgc_id ?? item?.id ?? "");
 
-const getItemName = (item) => item?.name ?? item?.area_name ?? "";
+const getItemName = (item) =>
+  item?.name ??
+  item?.regionName ??
+  item?.provinceName ??
+  item?.cityName ??
+  item?.municipalityName ??
+  item?.cityMunicipalityName ??
+  item?.area_name ??
+  "";
 
 const getBarangayCode = (item) =>
-  String(item?.code ?? item?.psgc_id ?? item?.id ?? "");
+  String(item?.code ?? item?.psgcCode ?? item?.psgc_id ?? item?.id ?? "");
 
-const getBarangayName = (item) => item?.name ?? item?.area_name ?? "";
+const getBarangayName = (item) =>
+  item?.name ?? item?.barangayName ?? item?.brgyName ?? item?.area_name ?? "";
 
 const ShippingAddressFields = ({
   formData,
@@ -27,90 +36,18 @@ const ShippingAddressFields = ({
 
   const inputClass =
     "bg-white border border-black/10 py-3 px-4 w-full outline-none rounded-xl text-sm font-semibold text-[#0A0D17] placeholder:text-gray-300 focus:border-black";
+
   const selectClass =
     "bg-white border border-black/10 py-3 px-4 w-full outline-none rounded-xl text-sm font-semibold text-[#0A0D17] focus:border-black";
 
-  useEffect(() => {
-    fetchRegions();
-  }, []);
-
-  useEffect(() => {
-    const regionCode = formData?.psgcRegionCode || "";
-    const provinceCode = formData?.psgcProvinceCode || "";
-    const municipalityCode = formData?.psgcMunicipalityCode || "";
-    const barangayCode = formData?.psgcBarangayCode || "";
-
-    if (!regionCode) return;
-
-    const loadInitialData = async () => {
-      try {
-        const isNCR = regionCode === "1300000000";
-        setSkipProvince(isNCR);
-
-        if (isNCR) {
-          const cityRes = await axios.get(`${backendUrl}/api/address/municipalities`, {
-            params: { reg: regionCode, prv: "" },
-          });
-
-          const cityData = Array.isArray(cityRes.data.data) ? cityRes.data.data : [];
-          setCities(cityData);
-
-          if (municipalityCode) {
-            const brgyRes = await axios.get(`${backendUrl}/api/address/barangays`, {
-              params: { mun: municipalityCode },
-            });
-
-            const brgyData = Array.isArray(brgyRes.data.data) ? brgyRes.data.data : [];
-            setBarangays(brgyData);
-
-            if (barangayCode && !brgyData.find((b) => getBarangayCode(b) === barangayCode)) {
-              setFormData((prev) => ({ ...prev, psgcBarangayCode: "", barangay: "" }));
-            }
-          }
-        } else {
-          const provinceRes = await axios.get(`${backendUrl}/api/address/provinces`, {
-            params: { reg: regionCode },
-          });
-
-          const provinceData = Array.isArray(provinceRes.data.data) ? provinceRes.data.data : [];
-          setProvinces(provinceData);
-
-          if (provinceCode) {
-            const cityRes = await axios.get(`${backendUrl}/api/address/municipalities`, {
-              params: { reg: regionCode, prv: provinceCode },
-            });
-
-            const cityData = Array.isArray(cityRes.data.data) ? cityRes.data.data : [];
-            setCities(cityData);
-
-            if (municipalityCode) {
-              const brgyRes = await axios.get(`${backendUrl}/api/address/barangays`, {
-                params: { mun: municipalityCode },
-              });
-
-              const brgyData = Array.isArray(brgyRes.data.data) ? brgyRes.data.data : [];
-              setBarangays(brgyData);
-
-              if (barangayCode && !brgyData.find((b) => getBarangayCode(b) === barangayCode)) {
-                setFormData((prev) => ({ ...prev, psgcBarangayCode: "", barangay: "" }));
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.log("INITIAL ADDRESS LOAD ERROR:", error);
-      }
-    };
-
-    loadInitialData();
-  }, [backendUrl]);
+  const safeList = (res) => (Array.isArray(res.data?.data) ? res.data.data : []);
 
   const fetchRegions = async () => {
     try {
       const res = await axios.get(`${backendUrl}/api/address/regions`);
-      setRegions(Array.isArray(res.data.data) ? res.data.data : []);
+      setRegions(safeList(res));
     } catch (error) {
-      console.log("REGIONS ERROR:", error);
+      console.log("REGIONS ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load regions");
     }
   };
@@ -120,10 +57,9 @@ const ShippingAddressFields = ({
       const res = await axios.get(`${backendUrl}/api/address/provinces`, {
         params: { reg },
       });
-      const data = Array.isArray(res.data.data) ? res.data.data : [];
-      setProvinces(data);
+      setProvinces(safeList(res));
     } catch (error) {
-      console.log("PROVINCES ERROR:", error);
+      console.log("PROVINCES ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load provinces");
     }
   };
@@ -133,26 +69,62 @@ const ShippingAddressFields = ({
       const res = await axios.get(`${backendUrl}/api/address/municipalities`, {
         params: { reg, prv },
       });
-      const data = Array.isArray(res.data.data) ? res.data.data : [];
-      setCities(data);
+      setCities(safeList(res));
     } catch (error) {
-      console.log("CITIES ERROR:", error);
+      console.log("CITIES ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load cities");
     }
   };
 
-  const fetchBarangays = async (munCode) => {
+  const fetchBarangays = async (mun) => {
     try {
       const res = await axios.get(`${backendUrl}/api/address/barangays`, {
-        params: { mun: munCode },
+        params: { mun },
       });
-      const data = Array.isArray(res.data.data) ? res.data.data : [];
-      setBarangays(data);
+      setBarangays(safeList(res));
     } catch (error) {
-      console.log("BARANGAYS ERROR:", error);
+      console.log("BARANGAYS ERROR:", error?.response?.data || error.message);
       toast.error("Failed to load barangays");
     }
   };
+
+  useEffect(() => {
+    fetchRegions();
+  }, [backendUrl]);
+
+  useEffect(() => {
+    const regionCode = formData?.psgcRegionCode || "";
+    const provinceCode = formData?.psgcProvinceCode || "";
+    const municipalityCode = formData?.psgcMunicipalityCode || "";
+
+    if (!regionCode) return;
+
+    const loadSavedDropdowns = async () => {
+      const isNCR = String(regionCode) === "1300000000";
+      setSkipProvince(isNCR);
+
+      if (isNCR) {
+        await fetchCities(regionCode, "");
+      } else {
+        await fetchProvinces(regionCode);
+
+        if (provinceCode) {
+          await fetchCities(regionCode, provinceCode);
+        }
+      }
+
+      if (municipalityCode) {
+        await fetchBarangays(municipalityCode);
+      }
+    };
+
+    loadSavedDropdowns();
+  }, [
+    backendUrl,
+    formData?.psgcRegionCode,
+    formData?.psgcProvinceCode,
+    formData?.psgcMunicipalityCode,
+  ]);
 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${className}`}>
@@ -181,13 +153,15 @@ const ShippingAddressFields = ({
       <select
         value={formData.psgcRegionCode || ""}
         onChange={async (e) => {
-          const value = e.target.value;
-          const selected = regions.find((r) => getItemCode(r) === value);
+          const value = String(e.target.value);
+          const selected = regions.find(
+            (r) => String(getItemCode(r)) === String(value)
+          );
           const isNCR = value === "1300000000";
 
           setFormData((prev) => ({
             ...prev,
-            region: getItemName(selected) || "",
+            region: getItemName(selected),
             province: "",
             city: "",
             barangay: "",
@@ -200,38 +174,44 @@ const ShippingAddressFields = ({
           setProvinces([]);
           setCities([]);
           setBarangays([]);
+          setSkipProvince(isNCR);
+
+          if (!value) return;
 
           if (isNCR) {
-            setSkipProvince(true);
-            if (value) await fetchCities(value, "");
-            return;
+            await fetchCities(value, "");
+          } else {
+            await fetchProvinces(value);
           }
-
-          setSkipProvince(false);
-
-          if (value) await fetchProvinces(value);
         }}
         className={`${selectClass} ${readOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
         disabled={readOnly}
       >
         <option value="">Select Region</option>
-        {regions.map((r, index) => (
-          <option key={`${getItemCode(r)}-${index}`} value={getItemCode(r)}>
-            {getItemName(r)}
-          </option>
-        ))}
+        {regions.map((r, index) => {
+          const code = getItemCode(r);
+          const name = getItemName(r);
+
+          return (
+            <option key={`${code}-${index}`} value={code}>
+              {name}
+            </option>
+          );
+        })}
       </select>
 
       {!skipProvince && (
         <select
           value={formData.psgcProvinceCode || ""}
           onChange={async (e) => {
-            const value = e.target.value;
-            const selected = provinces.find((p) => getItemCode(p) === value);
+            const value = String(e.target.value);
+            const selected = provinces.find(
+              (p) => String(getItemCode(p)) === String(value)
+            );
 
             setFormData((prev) => ({
               ...prev,
-              province: getItemName(selected) || "",
+              province: getItemName(selected),
               city: "",
               barangay: "",
               psgcProvinceCode: value,
@@ -250,24 +230,30 @@ const ShippingAddressFields = ({
           disabled={readOnly || !provinces.length}
         >
           <option value="">Select Province</option>
-          {provinces.map((p, index) => (
-            <option key={`${getItemCode(p)}-${index}`} value={getItemCode(p)}>
-              {getItemName(p)}
-            </option>
-          ))}
+          {provinces.map((p, index) => {
+            const code = getItemCode(p);
+            const name = getItemName(p);
+
+            return (
+              <option key={`${code}-${index}`} value={code}>
+                {name}
+              </option>
+            );
+          })}
         </select>
       )}
 
       <select
         value={formData.psgcMunicipalityCode || ""}
         onChange={async (e) => {
-          const value = e.target.value;
-          const selected = cities.find((c) => getItemCode(c) === value);
-          const localityName = getItemName(selected);
+          const value = String(e.target.value);
+          const selected = cities.find(
+            (c) => String(getItemCode(c)) === String(value)
+          );
 
           setFormData((prev) => ({
             ...prev,
-            city: localityName || "",
+            city: getItemName(selected),
             barangay: "",
             psgcMunicipalityCode: value,
             psgcBarangayCode: "",
@@ -283,22 +269,29 @@ const ShippingAddressFields = ({
         disabled={readOnly || !cities.length}
       >
         <option value="">Select City / Municipality</option>
-        {cities.map((c, index) => (
-          <option key={`${getItemCode(c)}-${index}`} value={getItemCode(c)}>
-            {getItemName(c)}
-          </option>
-        ))}
+        {cities.map((c, index) => {
+          const code = getItemCode(c);
+          const name = getItemName(c);
+
+          return (
+            <option key={`${code}-${index}`} value={code}>
+              {name}
+            </option>
+          );
+        })}
       </select>
 
       <select
         value={formData.psgcBarangayCode || ""}
         onChange={(e) => {
-          const value = e.target.value;
-          const selected = barangays.find((b) => getBarangayCode(b) === value);
+          const value = String(e.target.value);
+          const selected = barangays.find(
+            (b) => String(getBarangayCode(b)) === String(value)
+          );
 
           setFormData((prev) => ({
             ...prev,
-            barangay: getBarangayName(selected) || "",
+            barangay: getBarangayName(selected),
             psgcBarangayCode: value,
           }));
         }}
@@ -306,14 +299,16 @@ const ShippingAddressFields = ({
         disabled={readOnly || !barangays.length}
       >
         <option value="">Select Barangay</option>
-        {barangays.map((b, index) => (
-          <option
-            key={`${getBarangayCode(b)}-${index}`}
-            value={getBarangayCode(b)}
-          >
-            {getBarangayName(b)}
-          </option>
-        ))}
+        {barangays.map((b, index) => {
+          const code = getBarangayCode(b);
+          const name = getBarangayName(b);
+
+          return (
+            <option key={`${code}-${index}`} value={code}>
+              {name}
+            </option>
+          );
+        })}
       </select>
 
       <input
@@ -321,10 +316,14 @@ const ShippingAddressFields = ({
         placeholder="ZIP Code"
         value={formData.zipcode || ""}
         onChange={(e) =>
-          setFormData((prev) => ({ ...prev, zipcode: e.target.value }))
+          setFormData((prev) => ({
+            ...prev,
+            zipcode: e.target.value.replace(/\D/g, ""),
+          }))
         }
         className={`${inputClass} ${readOnly ? "bg-gray-50 cursor-not-allowed" : ""}`}
         readOnly={readOnly}
+        maxLength={4}
       />
 
       <input
