@@ -1,3 +1,4 @@
+// MyAccount.jsx
 import React, { useState, useContext, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
@@ -76,49 +77,46 @@ export default function MyAccount() {
   }, [user]);
 
   const handlePhoneChange = (value) => {
-    const numbersOnly = value.replace(/\D/g, "");
-    setPhone(numbersOnly);
+    setPhone(value.replace(/\D/g, ""));
   };
 
   const handleSave = async () => {
-    if (!user?._id) {
+    if (!user?._id || !token) {
       toast.error("Authentication required");
       return;
     }
 
-    if (!firstName.trim()) {
-      toast.error("First name is required");
-      return;
-    }
+    if (!firstName.trim()) return toast.error("First name is required");
+    if (!lastName.trim()) return toast.error("Last name is required");
+    if (!email.trim()) return toast.error("Email is required");
+    if (!phone.trim()) return toast.error("Contact number is required");
+    if (!/^\d+$/.test(phone)) return toast.error("Contact number must contain numbers only");
 
-    if (!lastName.trim()) {
-      toast.error("Last name is required");
-      return;
-    }
-
-    if (!email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-
-    if (!phone.trim()) {
-      toast.error("Contact number is required");
-      return;
-    }
-
-    if (!/^\d+$/.test(phone)) {
-      toast.error("Contact number must contain numbers only");
-      return;
-    }
+    const cleanAddress = {
+      ...emptyAddress,
+      ...address,
+      houseUnit: String(address.houseUnit || "").trim(),
+      street: String(address.street || "").trim(),
+      barangay: String(address.barangay || "").trim(),
+      city: String(address.city || "").trim(),
+      province: String(address.province || "").trim(),
+      region: String(address.region || "").trim(),
+      zipcode: String(address.zipcode || "").trim(),
+      country: String(address.country || "Philippines").trim(),
+      psgcRegionCode: String(address.psgcRegionCode || "").trim(),
+      psgcProvinceCode: String(address.psgcProvinceCode || "").trim(),
+      psgcMunicipalityCode: String(address.psgcMunicipalityCode || "").trim(),
+      psgcBarangayCode: String(address.psgcBarangayCode || "").trim(),
+    };
 
     setLoading(true);
 
     const formData = new FormData();
-    formData.append("firstName", firstName);
-    formData.append("lastName", lastName);
-    formData.append("email", email);
-    formData.append("phone", phone);
-    formData.append("address", JSON.stringify(address));
+    formData.append("firstName", firstName.trim());
+    formData.append("lastName", lastName.trim());
+    formData.append("email", email.trim().toLowerCase());
+    formData.append("phone", phone.trim());
+    formData.append("address", JSON.stringify(cleanAddress));
 
     if (avatarFile) formData.append("avatar", avatarFile);
 
@@ -137,18 +135,21 @@ export default function MyAccount() {
       if (res.data.success) {
         const updatedUser = {
           ...res.data.user,
-          firstName: res.data.user?.firstName || firstName,
-          lastName: res.data.user?.lastName || lastName,
+          firstName: res.data.user?.firstName || firstName.trim(),
+          lastName: res.data.user?.lastName || lastName.trim(),
           name:
             res.data.user?.name ||
-            `${res.data.user?.firstName || firstName} ${
-              res.data.user?.lastName || lastName
-            }`.trim(),
-          phone: res.data.user?.phone || phone,
+            `${firstName.trim()} ${lastName.trim()}`.trim(),
+          phone: res.data.user?.phone || phone.trim(),
+          address: {
+            ...emptyAddress,
+            ...(res.data.user?.address || cleanAddress),
+          },
         };
 
         setUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
+        setAddress(updatedUser.address);
         setAvatarFile(null);
         setIsEditing(false);
         toast.success("Profile updated");
@@ -174,11 +175,7 @@ export default function MyAccount() {
     try {
       const res = await axios.post(
         `${backendUrl}/api/user/change-password`,
-        {
-          currentPassword,
-          newPassword,
-          confirmPassword,
-        },
+        { currentPassword, newPassword, confirmPassword },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -202,6 +199,19 @@ export default function MyAccount() {
     }
   };
 
+  const resetForm = () => {
+    setIsEditing(false);
+    setAvatarFile(null);
+    setFirstName(getFirstName(user));
+    setLastName(getLastName(user));
+    setEmail(user?.email || "");
+    setPhone(String(user?.phone || "").replace(/\D/g, ""));
+    setAddress({
+      ...emptyAddress,
+      ...(user?.address || {}),
+    });
+  };
+
   const formatAddressPreview = () => {
     const parts = [
       address.houseUnit,
@@ -218,9 +228,7 @@ export default function MyAccount() {
   };
 
   const displayName =
-    `${getFirstName(user)} ${getLastName(user)}`.trim() ||
-    user?.name ||
-    "Guest";
+    `${getFirstName(user)} ${getLastName(user)}`.trim() || user?.name || "Guest";
 
   const avatarSrc = avatarFile
     ? URL.createObjectURL(avatarFile)
@@ -246,11 +254,7 @@ export default function MyAccount() {
             <div className="flex flex-col items-center text-center">
               <div className="relative">
                 <div className="h-36 w-36 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
-                  <img
-                    src={avatarSrc}
-                    alt="Profile"
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={avatarSrc} alt="Profile" className="h-full w-full object-cover" />
                 </div>
 
                 {isEditing && (
@@ -305,34 +309,17 @@ export default function MyAccount() {
 
               <div className="space-y-7">
                 <div className="grid grid-cols-2 gap-3">
-                  <InfoField
-                    label="First Name"
-                    value={firstName}
-                    onChange={setFirstName}
-                    isEditing={isEditing}
-                  />
-                  <InfoField
-                    label="Last Name"
-                    value={lastName}
-                    onChange={setLastName}
-                    isEditing={isEditing}
-                  />
+                  <InfoField label="First Name" value={firstName} onChange={setFirstName} isEditing={isEditing} />
+                  <InfoField label="Last Name" value={lastName} onChange={setLastName} isEditing={isEditing} />
                 </div>
 
-                <InfoField
-                  label="Email Address"
-                  value={email}
-                  onChange={setEmail}
-                  isEditing={isEditing}
-                  type="email"
-                />
+                <InfoField label="Email Address" value={email} onChange={setEmail} isEditing={isEditing} type="email" />
 
                 <InfoField
                   label="Contact Number"
                   value={phone}
                   onChange={handlePhoneChange}
                   isEditing={isEditing}
-                  type="text"
                   inputMode="numeric"
                   maxLength={11}
                 />
@@ -367,18 +354,7 @@ export default function MyAccount() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setAvatarFile(null);
-                      setFirstName(getFirstName(user));
-                      setLastName(getLastName(user));
-                      setEmail(user?.email || "");
-                      setPhone(String(user?.phone || "").replace(/\D/g, ""));
-                      setAddress({
-                        ...emptyAddress,
-                        ...(user?.address || {}),
-                      });
-                    }}
+                    onClick={resetForm}
                     className="h-11 px-6 rounded-xl border border-black/10 bg-white text-[11px] font-black uppercase tracking-[0.18em] text-gray-600 transition hover:border-black hover:text-black"
                   >
                     Cancel
@@ -403,27 +379,9 @@ export default function MyAccount() {
               </div>
 
               <div className="space-y-7">
-                <InfoField
-                  label="Current Password"
-                  value={currentPassword}
-                  onChange={setCurrentPassword}
-                  isEditing={true}
-                  type="password"
-                />
-                <InfoField
-                  label="New Password"
-                  value={newPassword}
-                  onChange={setNewPassword}
-                  isEditing={true}
-                  type="password"
-                />
-                <InfoField
-                  label="Confirm New Password"
-                  value={confirmPassword}
-                  onChange={setConfirmPassword}
-                  isEditing={true}
-                  type="password"
-                />
+                <InfoField label="Current Password" value={currentPassword} onChange={setCurrentPassword} isEditing={true} type="password" />
+                <InfoField label="New Password" value={newPassword} onChange={setNewPassword} isEditing={true} type="password" />
+                <InfoField label="Confirm New Password" value={confirmPassword} onChange={setConfirmPassword} isEditing={true} type="password" />
               </div>
 
               <div className="mt-10">
@@ -435,12 +393,6 @@ export default function MyAccount() {
                   {passwordLoading ? "Updating..." : "Change Password"}
                 </button>
               </div>
-            </div>
-
-            <div className="border-t border-black/10 pt-4 flex justify-between items-center opacity-60">
-              <p className="text-[9px] font-black uppercase tracking-[0.32em] italic text-gray-500">
-                Saint Account Archive
-              </p>
             </div>
           </div>
         </div>
@@ -474,11 +426,7 @@ const InfoField = ({
         className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-gray-300 focus:border-black"
       />
     ) : (
-      <p
-        className={`py-1 text-sm font-bold ${
-          value ? "text-[#0A0D17]" : "italic text-gray-300"
-        }`}
-      >
+      <p className={`py-1 text-sm font-bold ${value ? "text-[#0A0D17]" : "italic text-gray-300"}`}>
         {value || "Not provided"}
       </p>
     )}

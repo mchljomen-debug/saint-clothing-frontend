@@ -1641,7 +1641,7 @@ const Product = () => {
                 </div>
               </div>
             </div>
-          </div> 
+          </div>  
         </div>
       )}
     </>

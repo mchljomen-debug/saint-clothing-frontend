@@ -170,6 +170,15 @@ const PlaceOrder = () => {
 
       setSavedAddress(mainAddress);
       setFormData(mainAddress);
+
+      const hasAddress =
+        mainAddress.street ||
+        mainAddress.barangay ||
+        mainAddress.city ||
+        mainAddress.province ||
+        mainAddress.region;
+
+      setAddressMode(hasAddress ? "saved" : "other");
     }
   }, [navigate, user]);
 
@@ -187,10 +196,10 @@ const PlaceOrder = () => {
 
   const hasSavedMainAddress = Boolean(
     savedAddress.street ||
-      savedAddress.barangay ||
-      savedAddress.city ||
-      savedAddress.province ||
-      savedAddress.region
+    savedAddress.barangay ||
+    savedAddress.city ||
+    savedAddress.province ||
+    savedAddress.region
   );
 
   const displayedAddress = addressMode === "saved" ? savedAddress : formData;
@@ -415,11 +424,10 @@ const PlaceOrder = () => {
 
             <div className="grid gap-3">
               <label
-                className={`rounded-2xl border p-4 cursor-pointer transition ${
-                  addressMode === "saved"
-                    ? "border-black bg-black text-white"
-                    : "border-black/10 bg-white hover:border-black"
-                } ${!hasSavedMainAddress ? "opacity-60" : ""}`}
+                className={`rounded-2xl border p-4 cursor-pointer transition ${addressMode === "saved"
+                  ? "border-black bg-black text-white"
+                  : "border-black/10 bg-white hover:border-black"
+                  } ${!hasSavedMainAddress ? "opacity-60" : ""}`}
               >
                 <div className="flex gap-3 items-start">
                   <input
@@ -432,16 +440,14 @@ const PlaceOrder = () => {
                   />
                   <div className="min-w-0">
                     <p
-                      className={`text-sm font-black uppercase tracking-[0.12em] ${
-                        addressMode === "saved" ? "text-white" : "text-[#0A0D17]"
-                      }`}
+                      className={`text-sm font-black uppercase tracking-[0.12em] ${addressMode === "saved" ? "text-white" : "text-[#0A0D17]"
+                        }`}
                     >
                       Use Main Address
                     </p>
                     <p
-                      className={`mt-2 text-xs leading-5 ${
-                        addressMode === "saved" ? "text-white/75" : "text-gray-500"
-                      }`}
+                      className={`mt-2 text-xs leading-5 ${addressMode === "saved" ? "text-white/75" : "text-gray-500"
+                        }`}
                     >
                       {formatSavedAddress()}
                     </p>
@@ -450,11 +456,10 @@ const PlaceOrder = () => {
               </label>
 
               <label
-                className={`rounded-2xl border p-4 cursor-pointer transition ${
-                  addressMode === "other"
-                    ? "border-black bg-black text-white"
-                    : "border-black/10 bg-white hover:border-black"
-                }`}
+                className={`rounded-2xl border p-4 cursor-pointer transition ${addressMode === "other"
+                  ? "border-black bg-black text-white"
+                  : "border-black/10 bg-white hover:border-black"
+                  }`}
               >
                 <div className="flex gap-3 items-start">
                   <input
@@ -466,16 +471,14 @@ const PlaceOrder = () => {
                   />
                   <div>
                     <p
-                      className={`text-sm font-black uppercase tracking-[0.12em] ${
-                        addressMode === "other" ? "text-white" : "text-[#0A0D17]"
-                      }`}
+                      className={`text-sm font-black uppercase tracking-[0.12em] ${addressMode === "other" ? "text-white" : "text-[#0A0D17]"
+                        }`}
                     >
                       Use Another Address
                     </p>
                     <p
-                      className={`mt-2 text-xs leading-5 ${
-                        addressMode === "other" ? "text-white/75" : "text-gray-500"
-                      }`}
+                      className={`mt-2 text-xs leading-5 ${addressMode === "other" ? "text-white/75" : "text-gray-500"
+                        }`}
                     >
                       Enter another delivery address just for this purchase
                     </p>
@@ -497,9 +500,8 @@ const PlaceOrder = () => {
                 value={displayedAddress.firstName}
                 onChange={addressMode === "other" ? onChangeHandler : undefined}
                 readOnly={addressMode === "saved"}
-                className={`${inputStyle} ${
-                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                }`}
+                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                  }`}
                 placeholder="First name"
               />
 
@@ -509,9 +511,8 @@ const PlaceOrder = () => {
                 value={displayedAddress.lastName}
                 onChange={addressMode === "other" ? onChangeHandler : undefined}
                 readOnly={addressMode === "saved"}
-                className={`${inputStyle} ${
-                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                }`}
+                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                  }`}
                 placeholder="Last name"
               />
             </div>
@@ -523,9 +524,8 @@ const PlaceOrder = () => {
                 value={displayedAddress.email}
                 onChange={addressMode === "other" ? onChangeHandler : undefined}
                 readOnly={addressMode === "saved"}
-                className={`${inputStyle} ${
-                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                }`}
+                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                  }`}
                 placeholder="Email"
               />
 
@@ -537,9 +537,8 @@ const PlaceOrder = () => {
                 readOnly={addressMode === "saved"}
                 inputMode="numeric"
                 maxLength={11}
-                className={`${inputStyle} ${
-                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                }`}
+                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                  }`}
                 placeholder="Phone"
               />
             </div>
@@ -622,9 +621,8 @@ const PlaceOrder = () => {
                     key={option.key}
                     type="button"
                     onClick={() => setMethod(option.key)}
-                    className={`group relative overflow-hidden rounded-[22px] border p-4 text-left transition-all duration-300 ${option.cardClass} ${
-                      isActive ? option.activeClass : "shadow-sm"
-                    }`}
+                    className={`group relative overflow-hidden rounded-[22px] border p-4 text-left transition-all duration-300 ${option.cardClass} ${isActive ? option.activeClass : "shadow-sm"
+                      }`}
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-black/5">
@@ -654,16 +652,14 @@ const PlaceOrder = () => {
 
                       <div className="pt-1">
                         <div
-                          className={`h-5 w-5 rounded-full border-2 transition ${
-                            isActive
-                              ? "border-black bg-black"
-                              : "border-black/20 bg-white"
-                          }`}
+                          className={`h-5 w-5 rounded-full border-2 transition ${isActive
+                            ? "border-black bg-black"
+                            : "border-black/20 bg-white"
+                            }`}
                         >
                           <div
-                            className={`m-auto mt-[3px] h-2 w-2 rounded-full bg-white transition ${
-                              isActive ? "opacity-100" : "opacity-0"
-                            }`}
+                            className={`m-auto mt-[3px] h-2 w-2 rounded-full bg-white transition ${isActive ? "opacity-100" : "opacity-0"
+                              }`}
                           />
                         </div>
                       </div>
@@ -692,8 +688,8 @@ const PlaceOrder = () => {
               {loading
                 ? "Processing..."
                 : method === "COD"
-                ? "Confirm Order"
-                : "Proceed to QR Payment"}
+                  ? "Confirm Order"
+                  : "Proceed to QR Payment"}
             </button>
 
             <button
