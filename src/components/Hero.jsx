@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 import { Carousel } from "antd";
 import { useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
@@ -21,9 +27,13 @@ const Hero = () => {
   const { user, token } = useContext(ShopContext);
 
   const [greetingPrefix, setGreetingPrefix] = useState("");
+
   const [heroData, setHeroData] = useState({
     tickerEnabled: true,
-    tickerText: "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
+    newUserGreeting: "Welcome",
+    returningUserGreeting: "Welcome back",
+    tickerText:
+      "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
     slides: [],
   });
 
@@ -48,6 +58,9 @@ const Hero = () => {
             typeof data.hero.tickerEnabled === "boolean"
               ? data.hero.tickerEnabled
               : true,
+          newUserGreeting: data.hero.newUserGreeting || "Welcome",
+          returningUserGreeting:
+            data.hero.returningUserGreeting || "Welcome back",
           tickerText:
             data.hero.tickerText ||
             "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
@@ -74,9 +87,11 @@ const Hero = () => {
 
   const resolvedUserName = useMemo(() => {
     if (!isLoggedInUser) return "";
+
     if (user?.firstName?.trim()) return user.firstName.trim();
     if (user?.name?.trim()) return user.name.trim().split(" ")[0];
     if (user?.email) return user.email.split("@")[0];
+
     return "";
   }, [isLoggedInUser, user]);
 
@@ -86,23 +101,39 @@ const Hero = () => {
       return;
     }
 
-    const seenKey = `saint_seen_greeting_${user._id}`;
-    const alreadySeen = localStorage.getItem(seenKey) === "true";
+    const loginCountKey = `saint_login_count_${user._id}`;
+    const sessionKey = `saint_login_session_counted_${user._id}`;
 
-    setGreetingPrefix(alreadySeen ? "Welcome back" : "Welcome");
+    const hasCountedThisSession = sessionStorage.getItem(sessionKey) === "true";
 
-    if (!alreadySeen) {
-      localStorage.setItem(seenKey, "true");
+    let count = Number(localStorage.getItem(loginCountKey) || 0);
+
+    if (!hasCountedThisSession) {
+      count += 1;
+      localStorage.setItem(loginCountKey, String(count));
+      sessionStorage.setItem(sessionKey, "true");
     }
-  }, [isLoggedInUser, user?._id]);
+
+    if (count <= 1) {
+      setGreetingPrefix(heroData.newUserGreeting || "Welcome");
+    } else {
+      setGreetingPrefix(heroData.returningUserGreeting || "Welcome back");
+    }
+  }, [
+    isLoggedInUser,
+    user?._id,
+    heroData.newUserGreeting,
+    heroData.returningUserGreeting,
+  ]);
 
   const tickerMessage = useMemo(() => {
-    if (!isLoggedInUser || !resolvedUserName || !heroData.tickerEnabled) return "";
+    if (!isLoggedInUser || !resolvedUserName || !heroData.tickerEnabled) {
+      return "";
+    }
 
     return (heroData.tickerText || "{greeting}, {name}!")
       .replaceAll("{greeting}", greetingPrefix || "Welcome")
-      .replaceAll("{name}", resolvedUserName)
-      .replaceAll("Welcome back,", `${greetingPrefix || "Welcome"},`);
+      .replaceAll("{name}", resolvedUserName);
   }, [isLoggedInUser, resolvedUserName, heroData, greetingPrefix]);
 
   const handleAction = (action) => {
@@ -114,15 +145,21 @@ const Hero = () => {
 
     if (action === "bestseller") {
       const el = document.getElementById("best-seller-section");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      else navigate("/collection");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        navigate("/collection");
+      }
       return;
     }
 
     if (action === "latest") {
       const el = document.getElementById("latest-collection-section");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      else navigate("/collection");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        navigate("/collection");
+      }
     }
   };
 
@@ -163,7 +200,11 @@ const Hero = () => {
             key={index}
             className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[720px]"
           >
-            <img className="w-full h-full object-cover" src={slide.image} alt={slide.title} />
+            <img
+              className="w-full h-full object-cover"
+              src={slide.image}
+              alt={slide.title}
+            />
 
             <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/20" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
