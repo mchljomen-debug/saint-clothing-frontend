@@ -4,7 +4,6 @@ import React, {
   useState,
   useCallback,
   useRef,
-  useMemo,
 } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -33,20 +32,13 @@ const ShopContextProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState({});
   const [cartCount, setCartCount] = useState(0);
   const [products, setProducts] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState(DEFAULT_CATEGORIES);
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
   const navigate = useNavigate();
   const pollingRef = useRef(null);
-
-  const categoryOptions = useMemo(() => {
-    const productCategories = (products || [])
-      .map((item) => item.category)
-      .filter(Boolean);
-
-    return Array.from(new Set([...DEFAULT_CATEGORIES, ...productCategories]));
-  }, [products]);
 
   const getAuthHeaders = useCallback((userToken) => {
     if (!userToken) return {};
@@ -64,6 +56,48 @@ const ShopContextProvider = ({ children }) => {
     setCartItems({});
     setCartCount(0);
   }, []);
+
+  const getCategoriesData = useCallback(
+    async (currentProducts = products) => {
+      try {
+        const response = await axios.get(`${backendUrl}/api/category/list`);
+
+        if (response.data.success) {
+          const backendCategories = (response.data.categories || [])
+            .map((item) => item.name)
+            .filter(Boolean);
+
+          const productCategories = (currentProducts || [])
+            .map((item) => item.category)
+            .filter(Boolean);
+
+          setCategoryOptions(
+            Array.from(
+              new Set([
+                ...DEFAULT_CATEGORIES,
+                ...backendCategories,
+                ...productCategories,
+              ])
+            )
+          );
+        }
+      } catch (error) {
+        console.log(
+          "Category fetch error:",
+          error.response?.data || error.message
+        );
+
+        const productCategories = (currentProducts || [])
+          .map((item) => item.category)
+          .filter(Boolean);
+
+        setCategoryOptions(
+          Array.from(new Set([...DEFAULT_CATEGORIES, ...productCategories]))
+        );
+      }
+    },
+    [backendUrl, products]
+  );
 
   const fetchCurrentUser = useCallback(
     async (userToken = token) => {
@@ -124,15 +158,20 @@ const ShopContextProvider = ({ children }) => {
           return { ...p, stock: normalizedStock };
         });
 
-        setProducts(productsData.reverse());
+        const reversedProducts = productsData.reverse();
+
+        setProducts(reversedProducts);
+        await getCategoriesData(reversedProducts);
       } else {
         setProducts([]);
+        await getCategoriesData([]);
       }
     } catch (error) {
       toast.error("Failed to fetch products: " + error.message);
       setProducts([]);
+      await getCategoriesData([]);
     }
-  }, [backendUrl]);
+  }, [backendUrl, getCategoriesData]);
 
   const calculateCartCount = useCallback((cart) => {
     return Object.values(cart || {}).reduce((acc, sizes) => {
@@ -416,9 +455,12 @@ const ShopContextProvider = ({ children }) => {
 
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "visible" && token && user?._id) {
-        fetchCurrentUser(token);
-        fetchCart(token, user._id, true);
+      if (document.visibilityState === "visible") {
+        if (token && user?._id) {
+          fetchCurrentUser(token);
+          fetchCart(token, user._id, true);
+        }
+
         getProductsData();
       }
     };
@@ -490,6 +532,7 @@ const ShopContextProvider = ({ children }) => {
     fetchCart,
     fetchCurrentUser,
     getProductsData,
+    getCategoriesData,
     clearAuthData,
     getAuthHeaders,
   };
@@ -497,4 +540,4 @@ const ShopContextProvider = ({ children }) => {
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 };
 
-export default ShopContextProvider;
+export default ShopContextProvider; 

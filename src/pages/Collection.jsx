@@ -184,17 +184,23 @@ const Collection = () => {
                   Category
                 </p>
 
-                {categories.map((cat) => (
-                  <label key={cat} className="flex items-center gap-2 mb-2">
-                    <input
-                      type="radio"
-                      checked={category === cat}
-                      onChange={() => setCategory(cat)}
-                      className="accent-black"
-                    />
-                    <span className="text-[10px] uppercase">{cat}</span>
-                  </label>
-                ))}
+                {categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <label key={cat} className="flex items-center gap-2 mb-2">
+                      <input
+                        type="radio"
+                        checked={category === cat}
+                        onChange={() => setCategory(cat)}
+                        className="accent-black"
+                      />
+                      <span className="text-[10px] uppercase">{cat}</span>
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-[10px] text-gray-400 uppercase">
+                    No categories found
+                  </p>
+                )}
               </div>
 
               <div>
