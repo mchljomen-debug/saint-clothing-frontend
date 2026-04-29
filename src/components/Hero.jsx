@@ -252,10 +252,12 @@ const Hero = () => {
         overflow: hidden;
         z-index: 40;
 
-        /* 🔥 LIGHT GLASS BACKGROUND */
-        background: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+
         border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
       }
 
       .ticker-track {
@@ -272,24 +274,26 @@ const Hero = () => {
 
       .ticker-item {
         padding-right: 28px;
-
-        /* 🔥 DARK TEXT NOW */
         color: #0A0D17;
-
         font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.08em;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
       }
 
       .ticker-separator {
         margin: 0 16px;
-        opacity: 0.4;
+        opacity: 0.35;
         color: #0A0D17;
       }
 
       @keyframes tickerLoop {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
       }
     `}</style>
     </div>
