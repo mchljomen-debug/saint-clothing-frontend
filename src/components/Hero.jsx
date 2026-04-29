@@ -84,7 +84,7 @@ const Hero = () => {
     };
   }, [fetchHero]);
 
-  /* ================= LOGIN STATE ================= */
+  /* ================= LOGIN ================= */
   const isLoggedInUser = Boolean(
     token && (user?._id || user?.id || user?.email)
   );
@@ -99,7 +99,7 @@ const Hero = () => {
     return "";
   }, [isLoggedInUser, user]);
 
-  /* ================= FIXED LOGIN COUNT ================= */
+  /* ================= LOGIN COUNT FIX ================= */
   useEffect(() => {
     if (!isLoggedInUser || !user?._id || !token) {
       setGreetingPrefix("");
@@ -112,14 +112,12 @@ const Hero = () => {
     const lastToken = localStorage.getItem(lastTokenKey);
     let count = Number(localStorage.getItem(loginCountKey) || 0);
 
-    // ✅ ONLY COUNT REAL LOGIN (token change)
     if (lastToken !== token) {
       count += 1;
       localStorage.setItem(loginCountKey, String(count));
       localStorage.setItem(lastTokenKey, token);
     }
 
-    // ✅ GREETING DECISION
     if (count <= 1) {
       setGreetingPrefix(heroData.newUserGreeting || "Welcome");
     } else {
@@ -146,7 +144,6 @@ const Hero = () => {
       .replaceAll("{name}", resolvedUserName);
   }, [isLoggedInUser, resolvedUserName, heroData, greetingPrefix]);
 
-  /* ================= ACTION ================= */
   const handleAction = (action) => {
     if (action === "collection") {
       navigate("/collection");
@@ -157,7 +154,7 @@ const Hero = () => {
     if (action === "bestseller") {
       const el = document.getElementById("best-seller-section");
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.scrollIntoView({ behavior: "smooth" });
       } else {
         navigate("/collection");
       }
@@ -167,7 +164,7 @@ const Hero = () => {
     if (action === "latest") {
       const el = document.getElementById("latest-collection-section");
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.scrollIntoView({ behavior: "smooth" });
       } else {
         navigate("/collection");
       }
@@ -177,9 +174,8 @@ const Hero = () => {
   if (!heroData.slides.length) return null;
 
   return (
-    <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden bg-black">
-
-      {/* ================= TICKER ================= */}
+    <>
+      {/* ================= FIXED TICKER ================= */}
       {isLoggedInUser && tickerMessage && (
         <div className="ticker-wrap">
           <div className="ticker-track">
@@ -197,106 +193,107 @@ const Hero = () => {
         </div>
       )}
 
-      {/* ================= HERO ================= */}
-      <Carousel
-        arrows
-        infinite
-        autoplay
-        autoplaySpeed={3000}
-        speed={700}
-        effect="fade"
-        dots
-        pauseOnHover={false}
-      >
-        {heroData.slides.map((slide, index) => (
-          <div
-            key={index}
-            className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[720px]"
-          >
-            <img
-              className="w-full h-full object-cover"
-              src={slide.image}
-              alt={slide.title}
-            />
+      {/* Push hero down so it won't hide behind ticker */}
+      <div className="pt-[44px]">
+        <Carousel
+          arrows
+          infinite
+          autoplay
+          autoplaySpeed={3000}
+          speed={700}
+          effect="fade"
+          dots
+          pauseOnHover={false}
+        >
+          {heroData.slides.map((slide, index) => (
+            <div
+              key={index}
+              className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[720px]"
+            >
+              <img
+                className="w-full h-full object-cover"
+                src={slide.image}
+                alt={slide.title}
+              />
 
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/20" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-            <div className="absolute inset-0 flex items-center px-5 sm:px-6 md:px-14 lg:px-24 z-10 pt-12 sm:pt-14">
-              <div className="max-w-3xl">
-                <h1 className="text-white uppercase font-black text-3xl sm:text-5xl md:text-7xl leading-[0.95]">
-                  {slide.title}
-                </h1>
+              <div className="absolute inset-0 flex items-center px-6 md:px-16 lg:px-24 z-10">
+                <div className="max-w-3xl">
+                  <h1 className="text-white uppercase font-black text-4xl md:text-7xl leading-[0.95]">
+                    {slide.title}
+                  </h1>
 
-                <p className="mt-4 text-sm md:text-base text-white/70 max-w-lg">
-                  {slide.description}
-                </p>
+                  <p className="mt-4 text-white/70 max-w-lg">
+                    {slide.description}
+                  </p>
 
-                <button
-                  onClick={() => handleAction(slide.action)}
-                  className="mt-6 bg-white text-black px-8 py-3 uppercase tracking-[0.22em] text-xs font-bold border border-white hover:bg-transparent hover:text-white transition"
-                >
-                  {slide.cta}
-                </button>
+                  <button
+                    onClick={() => handleAction(slide.action)}
+                    className="mt-6 bg-white text-black px-8 py-3 uppercase text-xs font-bold border border-white hover:bg-transparent hover:text-white transition"
+                  >
+                    {slide.cta}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </Carousel>
+          ))}
+        </Carousel>
+      </div>
 
+      {/* ================= STYLE ================= */}
       <style jsx="true">{`
-      .ticker-wrap {
-        position: absolute;
-        top: 0;
-        width: 100%;
-        overflow: hidden;
-        z-index: 40;
+        .ticker-wrap {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          z-index: 999;
 
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
 
-        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-      }
-
-      .ticker-track {
-        display: flex;
-        width: max-content;
-        animation: tickerLoop 25s linear infinite;
-      }
-
-      .ticker-text {
-        display: flex;
-        white-space: nowrap;
-        padding: 10px 0;
-      }
-
-      .ticker-item {
-        padding-right: 28px;
-        color: #0A0D17;
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-      }
-
-      .ticker-separator {
-        margin: 0 16px;
-        opacity: 0.35;
-        color: #0A0D17;
-      }
-
-      @keyframes tickerLoop {
-        0% {
-          transform: translateX(0);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
         }
-        100% {
-          transform: translateX(-50%);
+
+        .ticker-track {
+          display: flex;
+          width: max-content;
+          animation: tickerLoop 25s linear infinite;
         }
-      }
-    `}</style>
-    </div>
+
+        .ticker-text {
+          display: flex;
+          white-space: nowrap;
+          padding: 10px 0;
+        }
+
+        .ticker-item {
+          padding-right: 28px;
+          color: #0a0d17;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.1em;
+        }
+
+        .ticker-separator {
+          margin: 0 16px;
+          opacity: 0.35;
+        }
+
+        @keyframes tickerLoop {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
+    </>
   );
 };
 
