@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const OTP_SECONDS = 60;
+const FORGOT_OTP_SECONDS = 300;
 
 const Login = () => {
   const {
@@ -37,6 +38,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [confirmTouched, setConfirmTouched] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
+
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
@@ -58,6 +60,7 @@ const Login = () => {
     const fetchTerms = async () => {
       try {
         const res = await axios.get(`${backendUrl}/api/policy/terms`);
+
         if (res.data.success) {
           setTermsVersion(res.data.version || "");
           setTermsTitle(res.data.title || "Terms & Conditions");
@@ -70,6 +73,34 @@ const Login = () => {
 
     fetchTerms();
   }, [backendUrl]);
+
+  useEffect(() => {
+    let timer;
+
+    if (otpTimer > 0) {
+      timer = setTimeout(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [otpTimer]);
+
+  useEffect(() => {
+    let timer;
+
+    if (forgotTimer > 0) {
+      timer = setTimeout(() => {
+        setForgotTimer((prev) => prev - 1);
+      }, 1000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [forgotTimer]);
+
+  useEffect(() => {
+    if (token) navigate("/");
+  }, [token, navigate]);
 
   const checkPasswordStrength = (password) => {
     if (!password) return "";
@@ -137,6 +168,7 @@ const Login = () => {
           const res = await axios.post(`${backendUrl}/api/user/check-email`, {
             email: value,
           });
+
           setEmailExists(res.data.exists);
         } catch (error) {
           console.log("Email check error:", error);
@@ -148,8 +180,11 @@ const Login = () => {
       const strength = checkPasswordStrength(value);
       setPasswordStrength(strength);
 
-      if (strength !== "strong") newErrors.password = "Security level too low";
-      else delete newErrors.password;
+      if (strength !== "strong") {
+        newErrors.password = "Security level too low";
+      } else {
+        delete newErrors.password;
+      }
 
       if (updatedFormData.confirmPassword.length > 0) {
         setConfirmTouched(true);
@@ -173,13 +208,19 @@ const Login = () => {
     }
 
     if (name === "firstName" && currentState === "Sign Up") {
-      if (value.trim().length < 2) newErrors.firstName = "Min 2 characters required";
-      else delete newErrors.firstName;
+      if (value.trim().length < 2) {
+        newErrors.firstName = "Min 2 characters required";
+      } else {
+        delete newErrors.firstName;
+      }
     }
 
     if (name === "lastName" && currentState === "Sign Up") {
-      if (value.trim().length < 2) newErrors.lastName = "Min 2 characters required";
-      else delete newErrors.lastName;
+      if (value.trim().length < 2) {
+        newErrors.lastName = "Min 2 characters required";
+      } else {
+        delete newErrors.lastName;
+      }
     }
 
     setErrors(newErrors);
@@ -190,7 +231,9 @@ const Login = () => {
       return toast.error("Please read and accept the Terms & Conditions first");
     }
 
-    if (otpTimer > 0) return;
+    if (otpTimer > 0) {
+      return toast.error(`Please wait ${otpTimer}s before resending OTP`);
+    }
 
     if (!formData.email || errors.email) {
       return toast.error("Please enter a valid email first");
@@ -223,16 +266,24 @@ const Login = () => {
       } else {
         toast.error(response.data.message);
       }
-    } catch {
-      toast.error("Failed to send verification code");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to send verification code");
     }
   };
 
   const verifyOtp = async () => {
-    if (otpVerified || !otp) return;
+    if (otpVerified) return;
+
+    if (!otp) {
+      return toast.error("Enter the OTP first");
+    }
+
+    if (otp.length < 6) {
+      return toast.error("OTP must be 6 digits");
+    }
 
     if (otpTimer <= 0) {
-      return toast.error("OTP expired. Please send again.");
+      return toast.error("OTP expired. Please resend OTP.");
     }
 
     try {
@@ -246,6 +297,9 @@ const Login = () => {
         setEmailVerified(true);
         setOtpVerified(true);
         setOtp("");
+        setOtpTimer(0);
+      } else {
+        toast.error(response.data.message || "Verification failed");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Verification failed");
@@ -257,7 +311,9 @@ const Login = () => {
       return toast.error("Enter your email first");
     }
 
-    if (forgotTimer > 0) return;
+    if (forgotTimer > 0) {
+      return toast.error(`Please wait ${forgotTimer}s before resending code`);
+    }
 
     try {
       const response = await axios.post(`${backendUrl}/api/user/forgot-password`, {
@@ -267,7 +323,8 @@ const Login = () => {
       if (response.data.success) {
         toast.success("Reset code sent");
         setForgotOtpSent(true);
-        setForgotTimer(300);
+        setForgotTimer(FORGOT_OTP_SECONDS);
+        setForgotOtp("");
       } else {
         toast.error(response.data.message);
       }
@@ -278,6 +335,18 @@ const Login = () => {
 
   const submitForgotPassword = async (e) => {
     e.preventDefault();
+
+    if (forgotTimer <= 0) {
+      return toast.error("Reset code expired. Please resend code.");
+    }
+
+    if (!forgotOtp || forgotOtp.length < 6) {
+      return toast.error("Enter the 6-digit reset code");
+    }
+
+    if (forgotPasswordData.newPassword !== forgotPasswordData.confirmPassword) {
+      return toast.error("Passwords do not match");
+    }
 
     try {
       const response = await axios.post(`${backendUrl}/api/user/reset-password`, {
@@ -306,26 +375,6 @@ const Login = () => {
     }
   };
 
-  useEffect(() => {
-    let timer;
-
-    if (otpTimer > 0) {
-      timer = setTimeout(() => setOtpTimer((prev) => prev - 1), 1000);
-    }
-
-    return () => clearTimeout(timer);
-  }, [otpTimer]);
-
-  useEffect(() => {
-    let timer;
-
-    if (forgotTimer > 0) {
-      timer = setTimeout(() => setForgotTimer((prev) => prev - 1), 1000);
-    }
-
-    return () => clearTimeout(timer);
-  }, [forgotTimer]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -342,6 +391,10 @@ const Login = () => {
         if (errors.confirmPassword || formData.password !== formData.confirmPassword) {
           setConfirmTouched(true);
           return toast.error("Passwords do not match");
+        }
+
+        if (passwordStrength !== "strong") {
+          return toast.error("Password must be strong");
         }
 
         const response = await axios.post(`${backendUrl}/api/user/register`, {
@@ -378,6 +431,7 @@ const Login = () => {
 
           if (fetchUserCart) {
             const cart = await fetchUserCart(response.data.token);
+
             if (cart && setCartTotal) {
               setCartTotal(cart.reduce((acc, item) => acc + item.quantity, 0));
             }
@@ -389,15 +443,9 @@ const Login = () => {
         }
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "An error occurred. Please try again."
-      );
+      toast.error(error.response?.data?.message || "An error occurred. Please try again.");
     }
   };
-
-  useEffect(() => {
-    if (token) navigate("/");
-  }, [token, navigate]);
 
   const getBorderColor = (field) => {
     if (field === "confirmPassword") {
@@ -477,9 +525,7 @@ const Login = () => {
                       {currentState === "Login" ? "Login" : "Create Account"}
                     </h2>
                     <p className="mt-2 text-[10px] font-black text-gray-500 tracking-[0.22em] uppercase">
-                      {currentState === "Login"
-                        ? "Member Access"
-                        : "Register New Account"}
+                      {currentState === "Login" ? "Member Access" : "Register New Account"}
                     </p>
                   </div>
 
@@ -640,55 +686,67 @@ const Login = () => {
 
                           {!acceptedTerms && (
                             <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
-                              Open the terms, scroll to the bottom, then accept
-                              before sending OTP.
+                              Open the terms, scroll to the bottom, then accept before sending OTP.
                             </p>
                           )}
                         </div>
 
                         <div className="mt-1">
                           {otpSent && !emailVerified ? (
-                            <div className="space-y-3">
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={otp}
-                                  onChange={(e) =>
-                                    setOtp(
-                                      e.target.value.replace(/\D/g, "").slice(0, 6)
-                                    )
-                                  }
-                                  placeholder="Verification Code"
-                                  className="flex-1 rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none"
-                                />
+                            <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
+                                  OTP Verification
+                                </p>
 
+                                <span
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                    otpTimer > 0
+                                      ? "bg-black text-white"
+                                      : "bg-rose-50 text-rose-600"
+                                  }`}
+                                >
+                                  {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
+                                </span>
+                              </div>
+
+                              <input
+                                type="text"
+                                value={otp}
+                                onChange={(e) =>
+                                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                                }
+                                placeholder="Enter OTP"
+                                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none transition focus:border-black"
+                              />
+
+                              <div className="grid grid-cols-2 gap-2">
                                 <button
                                   type="button"
                                   onClick={verifyOtp}
-                                  disabled={!otp || otpTimer <= 0}
-                                  className="rounded-xl bg-black px-5 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                                  disabled={!otp || otp.length < 6 || otpTimer <= 0 || otpVerified}
+                                  className="rounded-xl bg-black py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                   Verify
                                 </button>
-                              </div>
 
-                              {otpTimer > 0 ? (
-                                <button
-                                  type="button"
-                                  disabled
-                                  className="w-full rounded-xl border border-black/10 bg-gray-100 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500"
-                                >
-                                  Code expires in {otpTimer}s
-                                </button>
-                              ) : (
                                 <button
                                   type="button"
                                   onClick={sendOtp}
-                                  className="w-full rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
+                                  disabled={otpTimer > 0}
+                                  className="rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                  Send Again
+                                  Resend OTP
                                 </button>
-                              )}
+                              </div>
+
+                              <div className="rounded-xl bg-gray-100 px-4 py-3 text-center">
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
+                                  {otpTimer > 0
+                                    ? `OTP will expire in ${otpTimer} seconds`
+                                    : "OTP expired. Click resend OTP to get a new code."}
+                                </p>
+                              </div>
                             </div>
                           ) : !otpSent ? (
                             <button
@@ -709,12 +767,12 @@ const Login = () => {
                                 ? "Account Already Exists"
                                 : !acceptedTerms
                                 ? "Accept Terms First"
-                                : "Verify Email"}
+                                : "Send OTP"}
                             </button>
                           ) : (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
                               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-                                Verified
+                                Email Verified
                               </p>
                             </div>
                           )}
@@ -732,15 +790,11 @@ const Login = () => {
 
                   <div className="mt-8 border-t border-black/10 pt-6 text-center">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
-                      {currentState === "Login"
-                        ? "No account?"
-                        : "Already have an account?"}
+                      {currentState === "Login" ? "No account?" : "Already have an account?"}
                       <span
                         className="ml-2 cursor-pointer text-black transition hover:text-gray-600"
                         onClick={() => {
-                          setCurrentState(
-                            currentState === "Login" ? "Sign Up" : "Login"
-                          );
+                          setCurrentState(currentState === "Login" ? "Sign Up" : "Login");
                           resetAllStates();
                         }}
                       >
@@ -760,10 +814,7 @@ const Login = () => {
                     </p>
                   </div>
 
-                  <form
-                    onSubmit={submitForgotPassword}
-                    className="flex flex-col gap-4"
-                  >
+                  <form onSubmit={submitForgotPassword} className="flex flex-col gap-4">
                     <input
                       type="email"
                       value={forgotPasswordData.email}
@@ -792,32 +843,31 @@ const Login = () => {
                           type="text"
                           value={forgotOtp}
                           onChange={(e) =>
-                            setForgotOtp(
-                              e.target.value.replace(/\D/g, "").slice(0, 6)
-                            )
+                            setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
                           }
                           placeholder="Reset Code"
                           required
                           className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none text-center font-black tracking-[0.35em] text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
                         />
 
-                        {forgotTimer > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
                           <button
                             type="button"
                             disabled
-                            className="w-full rounded-xl border border-black/10 bg-gray-100 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500"
+                            className="rounded-xl border border-black/10 bg-gray-100 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500"
                           >
-                            Reset code expires in {forgotTimer}s
+                            {forgotTimer > 0 ? `${forgotTimer}s Left` : "Expired"}
                           </button>
-                        ) : (
+
                           <button
                             type="button"
                             onClick={sendForgotPasswordOtp}
-                            className="w-full rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
+                            disabled={forgotTimer > 0}
+                            className="rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            Send Again
+                            Resend Code
                           </button>
-                        )}
+                        </div>
 
                         <input
                           type="password"
@@ -885,9 +935,11 @@ const Login = () => {
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-500">
                 Saint Clothing
               </p>
+
               <h3 className="mt-2 text-2xl font-black italic uppercase tracking-tight text-[#0A0D17]">
                 {termsTitle}
               </h3>
+
               {termsVersion ? (
                 <p className="mt-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">
                   Version {termsVersion}
@@ -919,8 +971,7 @@ const Login = () => {
                 ) : (
                   <div className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4">
                     <p className="text-sm font-semibold leading-6 text-gray-600">
-                      Terms and Conditions are currently unavailable. Please try
-                      again later.
+                      Terms and Conditions are currently unavailable. Please try again later.
                     </p>
                   </div>
                 )}
