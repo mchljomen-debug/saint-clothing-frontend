@@ -7,15 +7,8 @@ const OTP_SECONDS = 60;
 const FORGOT_OTP_SECONDS = 300;
 
 const Login = () => {
-  const {
-    backendUrl,
-    token,
-    setToken,
-    setUser,
-    navigate,
-    fetchUserCart,
-    setCartTotal,
-  } = useContext(ShopContext);
+  const { backendUrl, token, setToken, setUser, navigate, fetchCart } =
+    useContext(ShopContext);
 
   const [currentState, setCurrentState] = useState("Login");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -416,7 +409,6 @@ const Login = () => {
           localStorage.setItem("user", JSON.stringify(response.data.user));
           toast.success("Welcome to Saint Clothing");
 
-          // NEW USER GOES TO PROFILE
           navigate("/profile");
         } else {
           toast.error(response.data.message);
@@ -434,15 +426,10 @@ const Login = () => {
           localStorage.setItem("user", JSON.stringify(response.data.user));
           toast.success("Login successful");
 
-          if (fetchUserCart) {
-            const cart = await fetchUserCart(response.data.token);
-
-            if (cart && setCartTotal) {
-              setCartTotal(cart.reduce((acc, item) => acc + item.quantity, 0));
-            }
+          if (fetchCart) {
+            await fetchCart(response.data.token);
           }
 
-          // EXISTING USER GOES HOME
           navigate("/");
         } else {
           toast.error(response.data.message || "Login failed");
@@ -452,8 +439,6 @@ const Login = () => {
       toast.error(error.response?.data?.message || "An error occurred. Please try again.");
     }
   };
-
-  const getReqColor = (met) => (met ? "text-emerald-600" : "text-gray-400");
 
   const getBorderColor = (field) => {
     if (field === "confirmPassword") {
@@ -591,17 +576,17 @@ const Login = () => {
                         )}`}
                       />
 
-                      {/* SIMPLE VALIDATION TEXT */}
                       {currentState === "Sign Up" && formData.password.length > 0 && (
                         <p
-                          className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
-                            ? "text-rose-500"
-                            : passwordStrength === "medium"
+                          className={`px-1 text-[11px] font-semibold leading-5 ${
+                            passwordStrength === "weak"
+                              ? "text-rose-500"
+                              : passwordStrength === "medium"
                               ? "text-amber-500"
                               : passwordStrength === "strong"
-                                ? "text-emerald-600"
-                                : "text-gray-400"
-                            }`}
+                              ? "text-emerald-600"
+                              : "text-gray-400"
+                          }`}
                         >
                           Your password must be at least 8 characters long and include an uppercase
                           letter, a number, and a symbol.
@@ -692,10 +677,11 @@ const Login = () => {
                                 </p>
 
                                 <span
-                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
-                                    ? "bg-black text-white"
-                                    : "bg-rose-50 text-rose-600"
-                                    }`}
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                    otpTimer > 0
+                                      ? "bg-black text-white"
+                                      : "bg-rose-50 text-rose-600"
+                                  }`}
                                 >
                                   {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
                                 </span>
@@ -730,14 +716,6 @@ const Login = () => {
                                   Resend OTP
                                 </button>
                               </div>
-
-                              <div className="rounded-xl bg-gray-100 px-4 py-3 text-center">
-                                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-500">
-                                  {otpTimer > 0
-                                    ? `OTP will expire in ${otpTimer} seconds`
-                                    : "OTP expired. Click resend OTP to get a new code."}
-                                </p>
-                              </div>
                             </div>
                           ) : !otpSent ? (
                             <button
@@ -757,8 +735,8 @@ const Login = () => {
                               {emailExists
                                 ? "Account Already Exists"
                                 : !acceptedTerms
-                                  ? "Accept Terms First"
-                                  : "Send OTP"}
+                                ? "Accept Terms First"
+                                : "Send OTP"}
                             </button>
                           ) : (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
@@ -800,10 +778,6 @@ const Login = () => {
                     <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
                       Forgot Password
                     </h2>
-
-                    <p className="mt-2 text-[10px] font-black text-gray-500 tracking-[0.22em] uppercase">
-                      Reset Account Access
-                    </p>
                   </div>
 
                   <form onSubmit={submitForgotPassword} className="flex flex-col gap-4">
@@ -842,53 +816,6 @@ const Login = () => {
                           className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none text-center font-black tracking-[0.35em] text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
                         />
 
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            disabled
-                            className="rounded-xl border border-black/10 bg-gray-100 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500"
-                          >
-                            {forgotTimer > 0 ? `${forgotTimer}s Left` : "Expired"}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={sendForgotPasswordOtp}
-                            disabled={forgotTimer > 0}
-                            className="rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            Resend Code
-                          </button>
-                        </div>
-
-                        <input
-                          type="password"
-                          value={forgotPasswordData.newPassword}
-                          onChange={(e) =>
-                            setForgotPasswordData((prev) => ({
-                              ...prev,
-                              newPassword: e.target.value,
-                            }))
-                          }
-                          placeholder="New Password"
-                          required
-                          className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
-                        />
-
-                        <input
-                          type="password"
-                          value={forgotPasswordData.confirmPassword}
-                          onChange={(e) =>
-                            setForgotPasswordData((prev) => ({
-                              ...prev,
-                              confirmPassword: e.target.value,
-                            }))
-                          }
-                          placeholder="Confirm New Password"
-                          required
-                          className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
-                        />
-
                         <button
                           type="submit"
                           className="h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
@@ -898,21 +825,6 @@ const Login = () => {
                       </>
                     )}
                   </form>
-
-                  <div className="mt-8 border-t border-black/10 pt-6 text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setForgotMode(false);
-                        setForgotOtpSent(false);
-                        setForgotOtp("");
-                        setForgotTimer(0);
-                      }}
-                      className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 transition hover:text-black"
-                    >
-                      Back to Login
-                    </button>
-                  </div>
                 </>
               )}
             </div>
@@ -931,12 +843,6 @@ const Login = () => {
               <h3 className="mt-2 text-2xl font-black italic uppercase tracking-tight text-[#0A0D17]">
                 {termsTitle}
               </h3>
-
-              {termsVersion ? (
-                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">
-                  Version {termsVersion}
-                </p>
-              ) : null}
             </div>
 
             <div
@@ -947,15 +853,20 @@ const Login = () => {
               <div className="space-y-4">
                 {termsContent.length > 0 ? (
                   termsContent.map((item, index) => {
+                    const safeItem =
+                      typeof item === "string"
+                        ? { title: `Section ${index + 1}`, text: item }
+                        : item || {};
+
                     const safeTitle =
-                      typeof item?.title === "object"
-                        ? item.title?.title || item.title?.text || "Untitled"
-                        : item?.title || "Untitled";
+                      typeof safeItem.title === "string"
+                        ? safeItem.title
+                        : JSON.stringify(safeItem.title || "Untitled");
 
                     const safeText =
-                      typeof item?.text === "object"
-                        ? item.text?.text || item.text?.title || JSON.stringify(item.text)
-                        : item?.text || "";
+                      typeof safeItem.text === "string"
+                        ? safeItem.text
+                        : JSON.stringify(safeItem.text || "");
 
                     return (
                       <div

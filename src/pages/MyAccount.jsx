@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -44,6 +44,8 @@ export default function MyAccount() {
   const { user, setUser, token, backendUrl } = useContext(ShopContext);
   const navigate = useNavigate();
 
+  const privacyScrollRef = useRef(null);
+
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -56,6 +58,14 @@ export default function MyAccount() {
     ...(user?.address || {}),
   });
   const [avatarFile, setAvatarFile] = useState(null);
+
+  const [privacyVersion, setPrivacyVersion] = useState("");
+  const [privacyTitle, setPrivacyTitle] = useState("Privacy Policy");
+  const [privacyContent, setPrivacyContent] = useState([]);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyScrolledToBottom, setPrivacyScrolledToBottom] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [pendingSaveAfterPrivacy, setPendingSaveAfterPrivacy] = useState(false);
 
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -75,6 +85,54 @@ export default function MyAccount() {
     });
   }, [user, isEditing]);
 
+  useEffect(() => {
+    const fetchPrivacyPolicy = async () => {
+      try {
+        const res = await axios.get(`${backendUrl}/api/policy/privacy`);
+
+        if (res.data.success) {
+          setPrivacyVersion(res.data.version || "");
+          setPrivacyTitle(res.data.title || "Privacy Policy");
+          setPrivacyContent(
+            Array.isArray(res.data.content) ? res.data.content : []
+          );
+        }
+      } catch (error) {
+        console.log("GET PRIVACY POLICY ERROR:", error);
+      }
+    };
+
+    fetchPrivacyPolicy();
+  }, [backendUrl]);
+
+  useEffect(() => {
+    if (acceptedPrivacy && pendingSaveAfterPrivacy) {
+      setPendingSaveAfterPrivacy(false);
+      handleSave();
+    }
+  }, [acceptedPrivacy, pendingSaveAfterPrivacy]);
+
+  const openPrivacyModal = () => {
+    setShowPrivacyModal(true);
+    setPrivacyScrolledToBottom(false);
+
+    setTimeout(() => {
+      if (privacyScrollRef.current) {
+        privacyScrollRef.current.scrollTop = 0;
+      }
+    }, 0);
+  };
+
+  const handlePrivacyScroll = (e) => {
+    const target = e.target;
+    const reachedBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight < 12;
+
+    if (reachedBottom) {
+      setPrivacyScrolledToBottom(true);
+    }
+  };
+
   const handlePhoneChange = (value) => {
     setPhone(value.replace(/\D/g, ""));
   };
@@ -85,11 +143,18 @@ export default function MyAccount() {
       return;
     }
 
+    if (!acceptedPrivacy) {
+      openPrivacyModal();
+      return;
+    }
+
     if (!firstName.trim()) return toast.error("First name is required");
     if (!lastName.trim()) return toast.error("Last name is required");
     if (!email.trim()) return toast.error("Email is required");
     if (!phone.trim()) return toast.error("Contact number is required");
-    if (!/^\d+$/.test(phone)) return toast.error("Contact number must contain numbers only");
+    if (!/^\d+$/.test(phone)) {
+      return toast.error("Contact number must contain numbers only");
+    }
 
     const cleanAddress = {
       ...emptyAddress,
@@ -116,6 +181,8 @@ export default function MyAccount() {
     formData.append("email", email.trim().toLowerCase());
     formData.append("phone", phone.trim());
     formData.append("address", JSON.stringify(cleanAddress));
+    formData.append("privacyAccepted", "true");
+    formData.append("privacyVersion", privacyVersion || "");
 
     if (avatarFile) formData.append("avatar", avatarFile);
 
@@ -151,6 +218,7 @@ export default function MyAccount() {
         setAddress(updatedUser.address);
         setAvatarFile(null);
         setIsEditing(false);
+        setAcceptedPrivacy(false);
         toast.success("Profile updated");
       } else {
         toast.error(res.data.message || "Update failed");
@@ -201,6 +269,9 @@ export default function MyAccount() {
   const resetForm = () => {
     setIsEditing(false);
     setAvatarFile(null);
+    setAcceptedPrivacy(false);
+    setPendingSaveAfterPrivacy(false);
+    setShowPrivacyModal(false);
     setFirstName(getFirstName(user));
     setLastName(getLastName(user));
     setEmail(user?.email || "");
@@ -253,7 +324,11 @@ export default function MyAccount() {
             <div className="flex flex-col items-center text-center">
               <div className="relative">
                 <div className="h-36 w-36 overflow-hidden rounded-full border border-black/10 bg-white shadow-sm">
-                  <img src={avatarSrc} alt="Profile" className="h-full w-full object-cover" />
+                  <img
+                    src={avatarSrc}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
 
                 {isEditing && (
@@ -274,9 +349,11 @@ export default function MyAccount() {
                   <MdOutlineFingerprint />
                   Verified Account
                 </p>
+
                 <h1 className="mt-3 text-2xl md:text-3xl font-black italic uppercase tracking-tight text-[#0A0D17] leading-none">
                   {displayName}
                 </h1>
+
                 <p className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-gray-400">
                   Ref: {user?._id?.slice(-8).toUpperCase()}
                 </p>
@@ -291,6 +368,7 @@ export default function MyAccount() {
                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#0A0D17]">
                     Identity Details
                   </h3>
+
                   <p className="mt-2 text-[11px] font-semibold text-gray-500">
                     Manage your profile information and saved main address
                   </p>
@@ -298,7 +376,10 @@ export default function MyAccount() {
 
                 {!isEditing && (
                   <button
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                      setAcceptedPrivacy(false);
+                      setIsEditing(true);
+                    }}
                     className="h-10 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
                   >
                     Edit Profile
@@ -308,11 +389,28 @@ export default function MyAccount() {
 
               <div className="space-y-7">
                 <div className="grid grid-cols-2 gap-3">
-                  <InfoField label="First Name" value={firstName} onChange={setFirstName} isEditing={isEditing} />
-                  <InfoField label="Last Name" value={lastName} onChange={setLastName} isEditing={isEditing} />
+                  <InfoField
+                    label="First Name"
+                    value={firstName}
+                    onChange={setFirstName}
+                    isEditing={isEditing}
+                  />
+
+                  <InfoField
+                    label="Last Name"
+                    value={lastName}
+                    onChange={setLastName}
+                    isEditing={isEditing}
+                  />
                 </div>
 
-                <InfoField label="Email Address" value={email} onChange={setEmail} isEditing={isEditing} type="email" />
+                <InfoField
+                  label="Email Address"
+                  value={email}
+                  onChange={setEmail}
+                  isEditing={isEditing}
+                  type="email"
+                />
 
                 <InfoField
                   label="Contact Number"
@@ -343,22 +441,36 @@ export default function MyAccount() {
               </div>
 
               {isEditing && (
-                <div className="mt-10 flex flex-col md:flex-row gap-3">
-                  <button
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="flex-1 h-11 rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:opacity-50"
-                  >
-                    {loading ? "Saving..." : "Save Changes"}
-                  </button>
+                <>
+                  <div className="mt-8 rounded-2xl border border-black/10 bg-white/60 px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0A0D17]">
+                      Privacy Confirmation Required
+                    </p>
 
-                  <button
-                    onClick={resetForm}
-                    className="h-11 px-6 rounded-xl border border-black/10 bg-white text-[11px] font-black uppercase tracking-[0.18em] text-gray-600 transition hover:border-black hover:text-black"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                    <p className="mt-2 text-[11px] font-semibold leading-5 text-gray-500">
+                      Before saving profile changes, you need to read and accept
+                      the current {privacyTitle}
+                      {privacyVersion ? ` version ${privacyVersion}` : ""}.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 flex flex-col md:flex-row gap-3">
+                    <button
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="flex-1 h-11 rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {loading ? "Saving..." : "Save Changes"}
+                    </button>
+
+                    <button
+                      onClick={resetForm}
+                      className="h-11 px-6 rounded-xl border border-black/10 bg-white text-[11px] font-black uppercase tracking-[0.18em] text-gray-600 transition hover:border-black hover:text-black"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
               )}
             </div>
 
@@ -367,10 +479,12 @@ export default function MyAccount() {
                 <div className="rounded-xl bg-black/5 p-3 text-[#0A0D17]">
                   <MdLockOutline className="text-xl" />
                 </div>
+
                 <div>
                   <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#0A0D17]">
                     Change Password
                   </h3>
+
                   <p className="mt-2 text-[11px] font-semibold text-gray-500">
                     Update your account security
                   </p>
@@ -378,9 +492,29 @@ export default function MyAccount() {
               </div>
 
               <div className="space-y-7">
-                <InfoField label="Current Password" value={currentPassword} onChange={setCurrentPassword} isEditing={true} type="password" />
-                <InfoField label="New Password" value={newPassword} onChange={setNewPassword} isEditing={true} type="password" />
-                <InfoField label="Confirm New Password" value={confirmPassword} onChange={setConfirmPassword} isEditing={true} type="password" />
+                <InfoField
+                  label="Current Password"
+                  value={currentPassword}
+                  onChange={setCurrentPassword}
+                  isEditing={true}
+                  type="password"
+                />
+
+                <InfoField
+                  label="New Password"
+                  value={newPassword}
+                  onChange={setNewPassword}
+                  isEditing={true}
+                  type="password"
+                />
+
+                <InfoField
+                  label="Confirm New Password"
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  isEditing={true}
+                  type="password"
+                />
               </div>
 
               <div className="mt-10">
@@ -396,6 +530,90 @@ export default function MyAccount() {
           </div>
         </div>
       </div>
+
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4">
+          <div className="w-full max-w-2xl rounded-[28px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+            <div className="border-b border-black/10 px-6 py-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-500">
+                Saint Clothing
+              </p>
+
+              <h3 className="mt-2 text-2xl font-black italic uppercase tracking-tight text-[#0A0D17]">
+                {privacyTitle}
+              </h3>
+
+              {privacyVersion ? (
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">
+                  Version {privacyVersion}
+                </p>
+              ) : null}
+            </div>
+
+            <div
+              ref={privacyScrollRef}
+              onScroll={handlePrivacyScroll}
+              className="max-h-[420px] overflow-y-auto px-6 py-5"
+            >
+              <div className="space-y-4">
+                {privacyContent.length > 0 ? (
+                  privacyContent.map((item, index) => (
+                    <div
+                      key={index}
+                      className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4"
+                    >
+                      <p className="text-sm font-black text-[#0A0D17]">
+                        {index + 1}. {item.title || "Untitled"}
+                      </p>
+
+                      <p className="mt-2 text-sm font-semibold leading-6 text-gray-600">
+                        {item.text || ""}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4">
+                    <p className="text-sm font-semibold leading-6 text-gray-600">
+                      Privacy Policy is currently unavailable. Please try again later.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-black/10 px-6 py-5 md:flex-row md:items-center md:justify-between">
+              <p className="text-[11px] font-semibold text-gray-500">
+                {privacyScrolledToBottom
+                  ? "You can now accept this Privacy Policy."
+                  : "Scroll to the bottom to enable acceptance."}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="rounded-xl border border-black/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A0D17]"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAcceptedPrivacy(true);
+                    setPendingSaveAfterPrivacy(true);
+                    setShowPrivacyModal(false);
+                  }}
+                  disabled={!privacyScrolledToBottom || privacyContent.length === 0}
+                  className="rounded-xl bg-black px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Accept Privacy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -425,9 +643,13 @@ const InfoField = ({
         className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-gray-300 focus:border-black"
       />
     ) : (
-      <p className={`py-1 text-sm font-bold ${value ? "text-[#0A0D17]" : "italic text-gray-300"}`}>
+      <p
+        className={`py-1 text-sm font-bold ${
+          value ? "text-[#0A0D17]" : "italic text-gray-300"
+        }`}
+      >
         {value || "Not provided"}
       </p>
     )}
   </div>
-);
+);    
