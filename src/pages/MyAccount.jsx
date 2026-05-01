@@ -65,7 +65,6 @@ export default function MyAccount() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyScrolledToBottom, setPrivacyScrolledToBottom] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
-  const [pendingSaveAfterPrivacy, setPendingSaveAfterPrivacy] = useState(false);
 
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -105,13 +104,6 @@ export default function MyAccount() {
     fetchPrivacyPolicy();
   }, [backendUrl]);
 
-  useEffect(() => {
-    if (acceptedPrivacy && pendingSaveAfterPrivacy) {
-      setPendingSaveAfterPrivacy(false);
-      handleSave();
-    }
-  }, [acceptedPrivacy, pendingSaveAfterPrivacy]);
-
   const openPrivacyModal = () => {
     setShowPrivacyModal(true);
     setPrivacyScrolledToBottom(false);
@@ -122,7 +114,6 @@ export default function MyAccount() {
       if (el) {
         el.scrollTop = 0;
 
-        // 🔥 FIX: if content is small, auto-enable accept
         const hasNoScroll = el.scrollHeight <= el.clientHeight + 12;
 
         if (hasNoScroll) {
@@ -142,6 +133,11 @@ export default function MyAccount() {
     }
   };
 
+  const acceptPrivacyFromModal = () => {
+    setAcceptedPrivacy(true);
+    setShowPrivacyModal(false);
+  };
+
   const handlePhoneChange = (value) => {
     setPhone(value.replace(/\D/g, ""));
   };
@@ -153,8 +149,7 @@ export default function MyAccount() {
     }
 
     if (!acceptedPrivacy) {
-      openPrivacyModal();
-      return;
+      return toast.error("Please read and accept the Data Privacy Consent first");
     }
 
     if (!firstName.trim()) return toast.error("First name is required");
@@ -279,7 +274,6 @@ export default function MyAccount() {
     setIsEditing(false);
     setAvatarFile(null);
     setAcceptedPrivacy(false);
-    setPendingSaveAfterPrivacy(false);
     setShowPrivacyModal(false);
     setFirstName(getFirstName(user));
     setLastName(getLastName(user));
@@ -312,10 +306,10 @@ export default function MyAccount() {
   const avatarSrc = avatarFile
     ? URL.createObjectURL(avatarFile)
     : user?.avatar
-      ? user.avatar.startsWith("http")
-        ? user.avatar
-        : `${backendUrl}${user.avatar.startsWith("/") ? user.avatar : `/${user.avatar}`}`
-      : "/profile_icon.png";
+    ? user.avatar.startsWith("http")
+      ? user.avatar
+      : `${backendUrl}${user.avatar.startsWith("/") ? user.avatar : `/${user.avatar}`}`
+    : "/profile_icon.png";
 
   return (
     <div className="min-h-screen bg-transparent font-['Outfit'] pt-[50px] pb-16">
@@ -451,25 +445,50 @@ export default function MyAccount() {
 
               {isEditing && (
                 <>
-                  <div className="mt-8 rounded-2xl border border-black/10 bg-white/60 px-4 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0A0D17]">
-                      Privacy Confirmation Required
-                    </p>
+                  <div className="mt-8 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={acceptedPrivacy}
+                        readOnly
+                        className="mt-1 h-4 w-4 accent-black"
+                      />
 
-                    <p className="mt-2 text-[11px] font-semibold leading-5 text-gray-500">
-                      Before saving profile changes, you need to read and accept
-                      the current {privacyTitle}
-                      {privacyVersion ? ` version ${privacyVersion}` : ""}.
-                    </p>
+                      <span className="text-[11px] font-semibold leading-5 text-gray-600">
+                        I have read and agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={openPrivacyModal}
+                          className="font-black text-[#0A0D17] underline"
+                        >
+                          Data Privacy Consent
+                        </button>
+                        {privacyVersion ? (
+                          <span className="ml-2 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400">
+                            Version {privacyVersion}
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
+
+                    {!acceptedPrivacy && (
+                      <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
+                        Open the privacy consent, read it, then accept before saving profile changes.
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-6 flex flex-col md:flex-row gap-3">
                     <button
                       onClick={handleSave}
-                      disabled={loading}
-                      className="flex-1 h-11 rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:opacity-50"
+                      disabled={loading || !acceptedPrivacy}
+                      className="flex-1 h-11 rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      {loading ? "Saving..." : "Save Changes"}
+                      {loading
+                        ? "Saving..."
+                        : !acceptedPrivacy
+                        ? "Accept Privacy First"
+                        : "Save Changes"}
                     </button>
 
                     <button
@@ -608,11 +627,7 @@ export default function MyAccount() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setAcceptedPrivacy(true);
-                    setPendingSaveAfterPrivacy(true);
-                    setShowPrivacyModal(false);
-                  }}
+                  onClick={acceptPrivacyFromModal}
                   disabled={!privacyScrolledToBottom || privacyContent.length === 0}
                   className="rounded-xl bg-black px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -653,11 +668,12 @@ const InfoField = ({
       />
     ) : (
       <p
-        className={`py-1 text-sm font-bold ${value ? "text-[#0A0D17]" : "italic text-gray-300"
-          }`}
+        className={`py-1 text-sm font-bold ${
+          value ? "text-[#0A0D17]" : "italic text-gray-300"
+        }`}
       >
         {value || "Not provided"}
       </p>
     )}
   </div>
-);    
+);
