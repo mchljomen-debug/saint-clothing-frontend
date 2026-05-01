@@ -3,6 +3,8 @@ import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const OTP_SECONDS = 60;
+
 const Login = () => {
   const {
     backendUrl,
@@ -33,6 +35,7 @@ const Login = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [confirmTouched, setConfirmTouched] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -70,11 +73,13 @@ const Login = () => {
 
   const checkPasswordStrength = (password) => {
     if (!password) return "";
+
     let strength = 0;
     if (password.length >= 8) strength++;
     if (/[A-Z]/.test(password)) strength++;
     if (/[0-9]/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
+
     if (strength <= 1) return "weak";
     if (strength <= 3) return "medium";
     if (strength === 4) return "strong";
@@ -83,6 +88,7 @@ const Login = () => {
 
   const resetAllStates = () => {
     setErrors({});
+    setConfirmTouched(false);
     setOtp("");
     setOtpSent(false);
     setEmailVerified(false);
@@ -96,6 +102,8 @@ const Login = () => {
     setAcceptedTerms(false);
     setShowTermsModal(false);
     setTermsScrolledToBottom(false);
+    setEmailExists(false);
+
     setFormData({
       firstName: "",
       lastName: "",
@@ -113,10 +121,18 @@ const Login = () => {
     let newErrors = { ...errors };
 
     if (name === "email") {
+      setEmailVerified(false);
+      setOtpVerified(false);
+      setOtpSent(false);
+      setOtp("");
+      setOtpTimer(0);
+
       if (!/\S+@\S+\.\S+/.test(value)) {
         newErrors.email = "Invalid email format";
+        setEmailExists(false);
       } else {
         delete newErrors.email;
+
         try {
           const res = await axios.post(`${backendUrl}/api/user/check-email`, {
             email: value,
@@ -131,13 +147,26 @@ const Login = () => {
     if (name === "password" && currentState === "Sign Up") {
       const strength = checkPasswordStrength(value);
       setPasswordStrength(strength);
+
       if (strength !== "strong") newErrors.password = "Security level too low";
       else delete newErrors.password;
+
+      if (updatedFormData.confirmPassword.length > 0) {
+        setConfirmTouched(true);
+
+        if (updatedFormData.confirmPassword !== value) {
+          newErrors.confirmPassword = "Passwords do not match";
+        } else {
+          delete newErrors.confirmPassword;
+        }
+      }
     }
 
     if (name === "confirmPassword") {
-      if (value !== updatedFormData.password) {
-        newErrors.confirmPassword = "Mismatch";
+      setConfirmTouched(true);
+
+      if (value.length > 0 && value !== updatedFormData.password) {
+        newErrors.confirmPassword = "Passwords do not match";
       } else {
         delete newErrors.confirmPassword;
       }
@@ -157,6 +186,12 @@ const Login = () => {
   };
 
   const sendOtp = async () => {
+    if (!acceptedTerms) {
+      return toast.error("Please read and accept the Terms & Conditions first");
+    }
+
+    if (otpTimer > 0) return;
+
     if (!formData.email || errors.email) {
       return toast.error("Please enter a valid email first");
     }
@@ -169,6 +204,10 @@ const Login = () => {
       return toast.error("Last name is required");
     }
 
+    if (emailExists) {
+      return toast.error("Account already exists");
+    }
+
     try {
       const response = await axios.post(`${backendUrl}/api/user/send-otp`, {
         email: formData.email,
@@ -177,9 +216,10 @@ const Login = () => {
       if (response.data.success) {
         toast.success("Verification code sent");
         setOtpSent(true);
-        setOtpTimer(24);
+        setOtpTimer(OTP_SECONDS);
         setEmailVerified(false);
         setOtpVerified(false);
+        setOtp("");
       } else {
         toast.error(response.data.message);
       }
@@ -190,6 +230,10 @@ const Login = () => {
 
   const verifyOtp = async () => {
     if (otpVerified || !otp) return;
+
+    if (otpTimer <= 0) {
+      return toast.error("OTP expired. Please send again.");
+    }
 
     try {
       const response = await axios.post(`${backendUrl}/api/user/verify-otp`, {
@@ -212,6 +256,8 @@ const Login = () => {
     if (!forgotPasswordData.email) {
       return toast.error("Enter your email first");
     }
+
+    if (forgotTimer > 0) return;
 
     try {
       const response = await axios.post(`${backendUrl}/api/user/forgot-password`, {
@@ -262,13 +308,21 @@ const Login = () => {
 
   useEffect(() => {
     let timer;
-    if (otpTimer > 0) timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
+
+    if (otpTimer > 0) {
+      timer = setTimeout(() => setOtpTimer((prev) => prev - 1), 1000);
+    }
+
     return () => clearTimeout(timer);
   }, [otpTimer]);
 
   useEffect(() => {
     let timer;
-    if (forgotTimer > 0) timer = setTimeout(() => setForgotTimer(forgotTimer - 1), 1000);
+
+    if (forgotTimer > 0) {
+      timer = setTimeout(() => setForgotTimer((prev) => prev - 1), 1000);
+    }
+
     return () => clearTimeout(timer);
   }, [forgotTimer]);
 
@@ -277,12 +331,17 @@ const Login = () => {
 
     try {
       if (currentState === "Sign Up") {
+        if (!acceptedTerms) {
+          return toast.error("You must agree to the Terms & Conditions");
+        }
+
         if (!emailVerified) {
           return toast.error("Please verify your email first");
         }
 
-        if (!acceptedTerms) {
-          return toast.error("You must agree to the Terms & Conditions");
+        if (errors.confirmPassword || formData.password !== formData.confirmPassword) {
+          setConfirmTouched(true);
+          return toast.error("Passwords do not match");
         }
 
         const response = await axios.post(`${backendUrl}/api/user/register`, {
@@ -341,13 +400,21 @@ const Login = () => {
   }, [token, navigate]);
 
   const getBorderColor = (field) => {
+    if (field === "confirmPassword") {
+      if (formData.confirmPassword === "") return "border-black/10";
+      if (confirmTouched && errors.confirmPassword) return "border-rose-500";
+      return "border-black";
+    }
+
     if (formData[field] === "") return "border-black/10";
     if (errors[field]) return "border-rose-500";
+
     if (field === "password" && currentState === "Sign Up") {
       if (passwordStrength === "weak") return "border-rose-500";
       if (passwordStrength === "medium") return "border-amber-500";
       if (passwordStrength === "strong") return "border-emerald-500";
     }
+
     return "border-black";
   };
 
@@ -356,6 +423,7 @@ const Login = () => {
   const openTermsModal = () => {
     setShowTermsModal(true);
     setTermsScrolledToBottom(false);
+
     setTimeout(() => {
       if (termsScrollRef.current) {
         termsScrollRef.current.scrollTop = 0;
@@ -429,6 +497,7 @@ const Login = () => {
                             "firstName"
                           )}`}
                         />
+
                         <input
                           type="text"
                           name="lastName"
@@ -520,64 +589,27 @@ const Login = () => {
 
                     {currentState === "Sign Up" && (
                       <>
-                        <input
-                          type="password"
-                          name="confirmPassword"
-                          value={formData.confirmPassword}
-                          onChange={handleChange}
-                          placeholder="Confirm Password"
-                          required
-                          className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                            "confirmPassword"
-                          )}`}
-                        />
+                        <div className="space-y-2">
+                          <input
+                            type="password"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            onBlur={() => setConfirmTouched(true)}
+                            placeholder="Confirm Password"
+                            required
+                            className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                              "confirmPassword"
+                            )}`}
+                          />
 
-                        <div className="mt-1">
-                          {otpSent && !emailVerified ? (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={otp}
-                                onChange={(e) =>
-                                  setOtp(
-                                    e.target.value.replace(/\D/g, "").slice(0, 6)
-                                  )
-                                }
-                                placeholder="Verification Code"
-                                className="flex-1 rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none"
-                              />
-                              <button
-                                type="button"
-                                onClick={verifyOtp}
-                                className="rounded-xl bg-black px-5 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
-                              >
-                                Verify
-                              </button>
-                            </div>
-                          ) : !otpSent ? (
-                            <button
-                              type="button"
-                              onClick={sendOtp}
-                              disabled={
-                                !!errors.email ||
-                                !formData.email ||
-                                emailExists ||
-                                !formData.firstName.trim() ||
-                                !formData.lastName.trim()
-                              }
-                              className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black disabled:opacity-40"
-                            >
-                              {emailExists
-                                ? "Account Already Exists"
-                                : "Verify Email"}
-                            </button>
-                          ) : (
-                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
-                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-                                Verified
+                          {confirmTouched &&
+                            formData.confirmPassword.length > 0 &&
+                            errors.confirmPassword && (
+                              <p className="px-1 text-[10px] font-black uppercase tracking-[0.14em] text-rose-500">
+                                {errors.confirmPassword}
                               </p>
-                            </div>
-                          )}
+                            )}
                         </div>
 
                         <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
@@ -608,8 +640,83 @@ const Login = () => {
 
                           {!acceptedTerms && (
                             <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
-                              Open the terms, scroll to the bottom, then accept.
+                              Open the terms, scroll to the bottom, then accept
+                              before sending OTP.
                             </p>
+                          )}
+                        </div>
+
+                        <div className="mt-1">
+                          {otpSent && !emailVerified ? (
+                            <div className="space-y-3">
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={otp}
+                                  onChange={(e) =>
+                                    setOtp(
+                                      e.target.value.replace(/\D/g, "").slice(0, 6)
+                                    )
+                                  }
+                                  placeholder="Verification Code"
+                                  className="flex-1 rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none"
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={verifyOtp}
+                                  disabled={!otp || otpTimer <= 0}
+                                  className="rounded-xl bg-black px-5 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  Verify
+                                </button>
+                              </div>
+
+                              {otpTimer > 0 ? (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="w-full rounded-xl border border-black/10 bg-gray-100 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500"
+                                >
+                                  Code expires in {otpTimer}s
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={sendOtp}
+                                  className="w-full rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
+                                >
+                                  Send Again
+                                </button>
+                              )}
+                            </div>
+                          ) : !otpSent ? (
+                            <button
+                              type="button"
+                              onClick={sendOtp}
+                              disabled={
+                                !!errors.email ||
+                                !formData.email ||
+                                emailExists ||
+                                !formData.firstName.trim() ||
+                                !formData.lastName.trim() ||
+                                !acceptedTerms ||
+                                otpTimer > 0
+                              }
+                              className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {emailExists
+                                ? "Account Already Exists"
+                                : !acceptedTerms
+                                ? "Accept Terms First"
+                                : "Verify Email"}
+                            </button>
+                          ) : (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
+                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                Verified
+                              </p>
+                            </div>
                           )}
                         </div>
                       </>
@@ -694,6 +801,24 @@ const Login = () => {
                           className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none text-center font-black tracking-[0.35em] text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
                         />
 
+                        {forgotTimer > 0 ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="w-full rounded-xl border border-black/10 bg-gray-100 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500"
+                          >
+                            Reset code expires in {forgotTimer}s
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={sendForgotPasswordOtp}
+                            className="w-full rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
+                          >
+                            Send Again
+                          </button>
+                        )}
+
                         <input
                           type="password"
                           value={forgotPasswordData.newPassword}
@@ -776,20 +901,29 @@ const Login = () => {
               className="max-h-[420px] overflow-y-auto px-6 py-5"
             >
               <div className="space-y-4">
-                {termsContent.map((item, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4"
-                  >
-                    <p className="text-sm font-black text-[#0A0D17]">
-                      {index + 1}. {item.title || "Untitled"}
-                    </p>
+                {termsContent.length > 0 ? (
+                  termsContent.map((item, index) => (
+                    <div
+                      key={index}
+                      className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4"
+                    >
+                      <p className="text-sm font-black text-[#0A0D17]">
+                        {index + 1}. {item.title || "Untitled"}
+                      </p>
 
-                    <p className="mt-2 text-sm font-semibold leading-6 text-gray-600">
-                      {item.text || ""}
+                      <p className="mt-2 text-sm font-semibold leading-6 text-gray-600">
+                        {item.text || ""}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4">
+                    <p className="text-sm font-semibold leading-6 text-gray-600">
+                      Terms and Conditions are currently unavailable. Please try
+                      again later.
                     </p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -812,7 +946,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={acceptTermsFromModal}
-                  disabled={!termsScrolledToBottom}
+                  disabled={!termsScrolledToBottom || termsContent.length === 0}
                   className="rounded-xl bg-black px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Accept Terms
