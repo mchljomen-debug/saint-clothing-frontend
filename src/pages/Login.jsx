@@ -500,6 +500,25 @@ const Login = () => {
     setErrors((prev) => ({ ...prev, terms: "" }));
     setShowTermsModal(false);
   };
+  const getBorderColor = (field) => {
+  if (field === "confirmPassword") {
+    if (formData.confirmPassword === "") return "border-black/10";
+    if (confirmTouched && errors.confirmPassword) return "border-rose-500";
+    return "border-emerald-500";
+  }
+
+  if (formData[field] === "") return "border-black/10";
+
+  if (field === "password" && currentState === "Sign Up") {
+    if (passwordStrength === "weak") return "border-rose-500";
+    if (passwordStrength === "medium") return "border-amber-500";
+    if (passwordStrength === "strong") return "border-emerald-500";
+  }
+
+  if (errors[field]) return "border-rose-500";
+
+  return "border-black";
+};
 
   return (
     <>
@@ -577,7 +596,7 @@ const Login = () => {
                       )}`}
                     />
 
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <input
                         type="password"
                         name="password"
@@ -585,61 +604,26 @@ const Login = () => {
                         onChange={handleChange}
                         placeholder="Password"
                         required
-                        className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                        className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
                           "password"
                         )}`}
                       />
 
+                      {/* SIMPLE VALIDATION TEXT */}
                       {currentState === "Sign Up" && formData.password.length > 0 && (
-                        <div className="rounded-xl border border-black/10 bg-white/60 p-3">
-                          <div className="grid grid-cols-2 gap-2">
-                            <p
-                              className={`text-[10px] font-black uppercase ${getReqColor(
-                                formData.password.length >= 8
-                              )}`}
-                            >
-                              8+ Characters
-                            </p>
-
-                            <p
-                              className={`text-[10px] font-black uppercase ${getReqColor(
-                                /[A-Z]/.test(formData.password)
-                              )}`}
-                            >
-                              Uppercase
-                            </p>
-
-                            <p
-                              className={`text-[10px] font-black uppercase ${getReqColor(
-                                /[0-9]/.test(formData.password)
-                              )}`}
-                            >
-                              Number
-                            </p>
-
-                            <p
-                              className={`text-[10px] font-black uppercase ${getReqColor(
-                                /[^A-Za-z0-9]/.test(formData.password)
-                              )}`}
-                            >
-                              Symbol
-                            </p>
-                          </div>
-
-                          <p
-                            className={`mt-3 rounded-lg py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] ${
-                              passwordStrength === "weak"
-                                ? "bg-rose-50 text-rose-600"
-                                : passwordStrength === "medium"
-                                ? "bg-amber-50 text-amber-600"
+                        <p
+                          className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
+                              ? "text-rose-500"
+                              : passwordStrength === "medium"
+                                ? "text-amber-500"
                                 : passwordStrength === "strong"
-                                ? "bg-emerald-50 text-emerald-600"
-                                : "bg-gray-100 text-gray-400"
+                                  ? "text-emerald-600"
+                                  : "text-gray-400"
                             }`}
-                          >
-                            Password Strength: {passwordStrength}
-                          </p>
-                        </div>
+                        >
+                          Your password must be at least 8 characters long and include an uppercase
+                          letter, a number, and a symbol.
+                        </p>
                       )}
                     </div>
 
@@ -726,11 +710,10 @@ const Login = () => {
                                 </p>
 
                                 <span
-                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
-                                    otpTimer > 0
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
                                       ? "bg-black text-white"
                                       : "bg-rose-50 text-rose-600"
-                                  }`}
+                                    }`}
                                 >
                                   {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
                                 </span>
@@ -792,8 +775,8 @@ const Login = () => {
                               {emailExists
                                 ? "Account Already Exists"
                                 : !acceptedTerms
-                                ? "Accept Terms First"
-                                : "Send OTP"}
+                                  ? "Accept Terms First"
+                                  : "Send OTP"}
                             </button>
                           ) : (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
