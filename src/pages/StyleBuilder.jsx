@@ -3,17 +3,43 @@ import { ShopContext } from "../context/ShopContext";
 import ProductItem from "../components/ProductItem";
 import useRecommendations from "../hooks/useRecommendations";
 
-const CATEGORIES = ["All", "Tshirt", "Long Sleeve", "Jorts", "Mesh Shorts", "Crop Jersey"];
+const CATEGORIES = [
+  "All",
+  "Tshirt",
+  "Long Sleeve",
+  "Jorts",
+  "Mesh Shorts",
+  "Crop Jersey",
+];
 
 const TOP_CATEGORIES = ["Tshirt", "Long Sleeve", "Crop Jersey"];
 const BOTTOM_CATEGORIES = ["Jorts", "Mesh Shorts"];
 
 const getProductImage = (item) => {
-  if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
-  if (Array.isArray(item?.image) && item.image.length > 0) return item.image[0];
+  if (item?.outfitImage) return item.outfitImage;
+
+  if (Array.isArray(item?.images) && item.images.length > 0)
+    return item.images[0];
+
+  if (Array.isArray(item?.image) && item.image.length > 0)
+    return item.image[0];
+
   if (typeof item?.images === "string") return item.images;
   if (typeof item?.image === "string") return item.image;
+
   return "/placeholder.png";
+};
+
+const getOutfitStyle = (item) => {
+  const position = item?.outfitPosition || {};
+
+  const x = Number(position.x || 0);
+  const y = Number(position.y || 0);
+  const scale = Number(position.scale || 1);
+
+  return {
+    transform: `translate(${x}px, ${y}px) scale(${scale})`,
+  };
 };
 
 const getProductType = (product) => {
@@ -30,7 +56,8 @@ const getProductType = (product) => {
 };
 
 const StyleBuilder = () => {
-  const { products, backendUrl, currency, token, user } = useContext(ShopContext);
+  const { products, backendUrl, currency, token, user } =
+    useContext(ShopContext);
 
   const [mode, setMode] = useState("automatic");
   const [category, setCategory] = useState("All");
@@ -129,9 +156,11 @@ const StyleBuilder = () => {
           <p className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">
             Saint Clothing
           </p>
+
           <h1 className="mt-2 text-3xl font-black uppercase tracking-tight text-black sm:text-5xl">
             Style Builder
           </h1>
+
           <p className="mt-3 max-w-xl text-sm font-medium text-gray-500">
             Choose one top and one bottom to build a clean 2D outfit preview.
           </p>
@@ -232,9 +261,11 @@ const StyleBuilder = () => {
                     <p className="line-clamp-1 text-xs font-black uppercase text-black">
                       {item.name}
                     </p>
+
                     <p className="mt-1 text-[11px] font-bold text-gray-400">
                       {item.category}
                     </p>
+
                     <p className="mt-2 text-xs font-black text-black">
                       {currency}
                       {item.price}
@@ -253,6 +284,7 @@ const StyleBuilder = () => {
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">
                   2D Outfit Preview
                 </p>
+
                 <h2 className="mt-1 text-2xl font-black uppercase text-black">
                   Build Your Fit
                 </h2>
@@ -278,7 +310,8 @@ const StyleBuilder = () => {
                       <img
                         src={getProductImage(selectedTop)}
                         alt={selectedTop.name}
-                        className="h-full w-full object-contain mix-blend-multiply bg-transparent"
+                        style={getOutfitStyle(selectedTop)}
+                        className="h-full w-full object-contain mix-blend-multiply bg-transparent transition-transform duration-300"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
@@ -294,7 +327,8 @@ const StyleBuilder = () => {
                       <img
                         src={getProductImage(selectedBottom)}
                         alt={selectedBottom.name}
-                        className="h-full w-full object-contain mix-blend-multiply bg-transparent"
+                        style={getOutfitStyle(selectedBottom)}
+                        className="h-full w-full object-contain mix-blend-multiply bg-transparent transition-transform duration-300"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
@@ -318,6 +352,7 @@ const StyleBuilder = () => {
                       <p className="text-lg font-black uppercase text-black">
                         No pieces selected
                       </p>
+
                       <p className="mt-2 text-sm font-medium text-gray-500">
                         Choose one top and one bottom from the left side.
                       </p>
@@ -340,12 +375,15 @@ const StyleBuilder = () => {
                           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
                             {getProductType(item)}
                           </p>
+
                           <p className="mt-1 line-clamp-1 text-sm font-black uppercase text-black">
                             {item.name}
                           </p>
+
                           <p className="text-xs font-bold text-gray-500">
                             {item.category}
                           </p>
+
                           <p className="mt-1 text-sm font-black text-black">
                             {currency}
                             {item.price}
@@ -381,6 +419,7 @@ const StyleBuilder = () => {
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">
                   {mode === "automatic" ? "Automatic Matches" : "Manual Picks"}
                 </p>
+
                 <h2 className="mt-1 text-2xl font-black uppercase text-black">
                   Complete The Fit
                 </h2>
@@ -408,7 +447,10 @@ const StyleBuilder = () => {
             ) : (
               <div className="flex gap-4 overflow-x-auto pb-3">
                 {finalSuggestions.map((item) => (
-                  <div key={item._id} className="w-[180px] shrink-0 sm:w-[220px]">
+                  <div
+                    key={item._id}
+                    className="w-[180px] shrink-0 sm:w-[220px]"
+                  >
                     <ProductItem
                       id={item._id}
                       image={item.images}
