@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
 import About from "./pages/About";
@@ -17,6 +18,9 @@ import Policies from "./pages/Policies";
 import Verify from "./pages/Verify";
 import ManualPayment from "./pages/ManualPayment";
 import PaymentSubmitted from "./pages/PaymentSubmitted";
+
+/* ✅ ADD THIS */
+import StyleBuilder from "./pages/StyleBuilder";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -38,8 +42,14 @@ const App = () => {
       <SearchBar />
 
       <Routes>
+        {/* MAIN */}
         <Route path="/" element={<Home />} />
         <Route path="/collection" element={<Collection />} />
+
+        {/* 🔥 NEW STYLE BUILDER ROUTE */}
+        <Route path="/style-builder" element={<StyleBuilder />} />
+
+        {/* OTHER PAGES */}
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/product/:productId" element={<Product />} />

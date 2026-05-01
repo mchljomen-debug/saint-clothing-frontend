@@ -49,6 +49,7 @@ const Navbar = () => {
   const navItems = [
     { label: "HOME", path: "/" },
     { label: "COLLECTION", path: "/collection" },
+    { label: "BUILD FIT", path: "/style-builder" },
     { label: "ABOUT", path: "/about" },
     { label: "CONTACT", path: "/contact" },
   ];
@@ -81,17 +82,15 @@ const Navbar = () => {
                 {({ isActive }) => (
                   <div className="flex flex-col items-center gap-1 group transition-all duration-300">
                     <p
-                      className={`text-[12px] lg:text-[13px] tracking-[0.28em] uppercase font-medium ${
-                        isActive ? "text-white" : "text-gray-400"
-                      }`}
+                      className={`text-[12px] lg:text-[13px] tracking-[0.28em] uppercase font-medium ${isActive ? "text-white" : "text-gray-400"
+                        }`}
                     >
                       {item.label}
                     </p>
 
                     <span
-                      className={`block h-[1px] bg-white transition-all duration-300 ${
-                        isActive ? "w-full" : "w-0 group-hover:w-full"
-                      }`}
+                      className={`block h-[1px] bg-white transition-all duration-300 ${isActive ? "w-full" : "w-0 group-hover:w-full"
+                        }`}
                     ></span>
                   </div>
                 )}
@@ -137,22 +136,20 @@ const Navbar = () => {
                   <div className="flex flex-col gap-2 w-44 py-3 px-5 bg-black border border-white/10 text-white">
                     <p
                       onClick={() => navigate("/profile")}
-                      className={`cursor-pointer hover:text-white/70 ${
-                        location.pathname === "/profile"
+                      className={`cursor-pointer hover:text-white/70 ${location.pathname === "/profile"
                           ? "text-white"
                           : "text-gray-400"
-                      }`}
+                        }`}
                     >
                       My Profile
                     </p>
 
                     <p
                       onClick={() => navigate("/orders")}
-                      className={`cursor-pointer hover:text-white/70 ${
-                        location.pathname === "/orders"
+                      className={`cursor-pointer hover:text-white/70 ${location.pathname === "/orders"
                           ? "text-white"
                           : "text-gray-400"
-                      }`}
+                        }`}
                     >
                       Orders
                     </p>
@@ -198,21 +195,18 @@ const Navbar = () => {
       </div>
 
       <div
-        className={`fixed inset-0 z-[120] md:hidden transition-all duration-300 ${
-          visible ? "pointer-events-auto" : "pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-[120] md:hidden transition-all duration-300 ${visible ? "pointer-events-auto" : "pointer-events-none"
+          }`}
       >
         <div
           onClick={() => setVisible(false)}
-          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
-            visible ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"
+            }`}
         />
 
         <div
-          className={`absolute top-0 right-0 h-full w-[84%] max-w-[340px] bg-[#0A0A0A] border-l border-white/10 shadow-[-10px_0_30px_rgba(0,0,0,0.35)] transition-transform duration-300 ${
-            visible ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`absolute top-0 right-0 h-full w-[84%] max-w-[340px] bg-[#0A0A0A] border-l border-white/10 shadow-[-10px_0_30px_rgba(0,0,0,0.35)] transition-transform duration-300 ${visible ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
             <div className="flex items-center gap-3 min-w-0">
@@ -251,11 +245,10 @@ const Navbar = () => {
                       navigate(item.path);
                       setVisible(false);
                     }}
-                    className={`w-full text-left py-3 text-sm font-semibold uppercase tracking-[0.16em] border-b border-white/5 ${
-                      location.pathname === item.path
+                    className={`w-full text-left py-3 text-sm font-semibold uppercase tracking-[0.16em] border-b border-white/5 ${location.pathname === item.path
                         ? "text-white"
                         : "text-gray-400"
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </button>
