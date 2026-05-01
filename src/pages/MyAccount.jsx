@@ -117,10 +117,19 @@ export default function MyAccount() {
     setPrivacyScrolledToBottom(false);
 
     setTimeout(() => {
-      if (privacyScrollRef.current) {
-        privacyScrollRef.current.scrollTop = 0;
+      const el = privacyScrollRef.current;
+
+      if (el) {
+        el.scrollTop = 0;
+
+        // 🔥 FIX: if content is small, auto-enable accept
+        const hasNoScroll = el.scrollHeight <= el.clientHeight + 12;
+
+        if (hasNoScroll) {
+          setPrivacyScrolledToBottom(true);
+        }
       }
-    }, 0);
+    }, 100);
   };
 
   const handlePrivacyScroll = (e) => {
@@ -644,9 +653,8 @@ const InfoField = ({
       />
     ) : (
       <p
-        className={`py-1 text-sm font-bold ${
-          value ? "text-[#0A0D17]" : "italic text-gray-300"
-        }`}
+        className={`py-1 text-sm font-bold ${value ? "text-[#0A0D17]" : "italic text-gray-300"
+          }`}
       >
         {value || "Not provided"}
       </p>
