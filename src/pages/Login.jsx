@@ -946,20 +946,32 @@ const Login = () => {
             >
               <div className="space-y-4">
                 {termsContent.length > 0 ? (
-                  termsContent.map((item, index) => (
-                    <div
-                      key={index}
-                      className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4"
-                    >
-                      <p className="text-sm font-black text-[#0A0D17]">
-                        {index + 1}. {item.title || "Untitled"}
-                      </p>
+                  termsContent.map((item, index) => {
+                    const safeTitle =
+                      typeof item?.title === "object"
+                        ? item.title?.title || item.title?.text || "Untitled"
+                        : item?.title || "Untitled";
 
-                      <p className="mt-2 text-sm font-semibold leading-6 text-gray-600">
-                        {item.text || ""}
-                      </p>
-                    </div>
-                  ))
+                    const safeText =
+                      typeof item?.text === "object"
+                        ? item.text?.text || item.text?.title || JSON.stringify(item.text)
+                        : item?.text || "";
+
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4"
+                      >
+                        <p className="text-sm font-black text-[#0A0D17]">
+                          {index + 1}. {safeTitle}
+                        </p>
+
+                        <p className="mt-2 text-sm font-semibold leading-6 text-gray-600">
+                          {safeText}
+                        </p>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4">
                     <p className="text-sm font-semibold leading-6 text-gray-600">
