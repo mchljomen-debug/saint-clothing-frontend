@@ -24,8 +24,15 @@ const getProductImage = (item) => {
 };
 
 const getProductType = (product) => {
+  const section = String(product?.recommendationSection || "").toLowerCase();
+
+  if (section === "top") return "top";
+  if (section === "bottom") return "bottom";
+  if (section === "both") return "both";
+
   if (TOP_CATEGORIES.includes(product?.category)) return "top";
   if (BOTTOM_CATEGORIES.includes(product?.category)) return "bottom";
+
   return "other";
 };
 
@@ -36,13 +43,15 @@ const StyleBuilder = () => {
   const [category, setCategory] = useState("All");
   const [selectedProducts, setSelectedProducts] = useState([]);
 
-  const selectedTop = selectedProducts.find(
-    (item) => getProductType(item) === "top"
-  );
+  const selectedTop = selectedProducts.find((item) => {
+    const type = getProductType(item);
+    return type === "top" || type === "both";
+  });
 
-  const selectedBottom = selectedProducts.find(
-    (item) => getProductType(item) === "bottom"
-  );
+  const selectedBottom = selectedProducts.find((item) => {
+    const type = getProductType(item);
+    return type === "bottom" || type === "both";
+  });
 
   const selectedIds = useMemo(
     () => selectedProducts.map((item) => item._id),
@@ -77,14 +86,30 @@ const StyleBuilder = () => {
 
       if (productType === "top") {
         return [
-          ...prev.filter((item) => getProductType(item) !== "top"),
+          ...prev.filter((item) => {
+            const type = getProductType(item);
+            return type !== "top" && type !== "both";
+          }),
           product,
         ];
       }
 
       if (productType === "bottom") {
         return [
-          ...prev.filter((item) => getProductType(item) !== "bottom"),
+          ...prev.filter((item) => {
+            const type = getProductType(item);
+            return type !== "bottom" && type !== "both";
+          }),
+          product,
+        ];
+      }
+
+      if (productType === "both") {
+        return [
+          ...prev.filter((item) => {
+            const type = getProductType(item);
+            return type !== "top" && type !== "bottom" && type !== "both";
+          }),
           product,
         ];
       }
@@ -192,11 +217,11 @@ const StyleBuilder = () => {
                       : "border-gray-200 hover:border-black"
                   }`}
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden bg-white">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-transparent">
                     <img
                       src={getProductImage(item)}
                       alt={item.name}
-                      className="h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
+                      className="h-full w-full bg-transparent object-contain p-2 transition duration-500 group-hover:scale-105"
                     />
 
                     <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase text-black shadow-sm">
@@ -247,7 +272,7 @@ const StyleBuilder = () => {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-              <div className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[28px] bg-white">
+              <div className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[28px] bg-transparent">
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <p className="text-[120px] font-black uppercase tracking-tight text-black/[0.025] sm:text-[150px]">
                     SAINT
@@ -255,17 +280,17 @@ const StyleBuilder = () => {
                 </div>
 
                 <div className="relative h-[520px] w-[280px]">
-                  <div className="absolute left-1/2 top-2 h-16 w-16 -translate-x-1/2 rounded-full border border-black/10 bg-white shadow-sm" />
+                  <div className="absolute left-1/2 top-2 h-16 w-16 -translate-x-1/2 rounded-full border border-black/10 bg-transparent shadow-sm" />
 
                   <div className="absolute left-1/2 top-[85px] h-[210px] w-[250px] -translate-x-1/2">
                     {selectedTop ? (
                       <img
                         src={getProductImage(selectedTop)}
                         alt={selectedTop.name}
-                        className="h-full w-full object-contain drop-shadow-[0_18px_25px_rgba(0,0,0,0.16)]"
+                        className="h-full w-full bg-transparent object-contain drop-shadow-[0_18px_25px_rgba(0,0,0,0.16)]"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300">
+                      <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
                         <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
                           Select Top
                         </span>
@@ -278,10 +303,10 @@ const StyleBuilder = () => {
                       <img
                         src={getProductImage(selectedBottom)}
                         alt={selectedBottom.name}
-                        className="h-full w-full object-contain drop-shadow-[0_18px_25px_rgba(0,0,0,0.16)]"
+                        className="h-full w-full bg-transparent object-contain drop-shadow-[0_18px_25px_rgba(0,0,0,0.16)]"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300">
+                      <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
                         <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
                           Select Bottom
                         </span>
@@ -317,7 +342,7 @@ const StyleBuilder = () => {
                         <img
                           src={getProductImage(item)}
                           alt={item.name}
-                          className="h-24 w-20 rounded-[16px] bg-white object-contain p-1"
+                          className="h-24 w-20 rounded-[16px] bg-transparent object-contain p-1"
                         />
 
                         <div className="min-w-0 flex-1">
