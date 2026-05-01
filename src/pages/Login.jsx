@@ -99,7 +99,9 @@ const Login = () => {
   }, [forgotTimer]);
 
   useEffect(() => {
-    if (token) navigate("/");
+    if (token && window.location.pathname === "/login") {
+      navigate("/");
+    }
   }, [token, navigate]);
 
   const checkPasswordStrength = (password) => {
