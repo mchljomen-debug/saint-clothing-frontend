@@ -5,6 +5,14 @@ import useRecommendations from "../hooks/useRecommendations";
 
 const CATEGORIES = ["All", "Tshirt", "Long Sleeve", "Jorts", "Mesh Shorts", "Crop Jersey"];
 
+const getProductImage = (item) => {
+  if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
+  if (Array.isArray(item?.image) && item.image.length > 0) return item.image[0];
+  if (typeof item?.images === "string") return item.images;
+  if (typeof item?.image === "string") return item.image;
+  return "/placeholder.png";
+};
+
 const StyleBuilder = () => {
   const { products, backendUrl, currency, token, user } = useContext(ShopContext);
 
@@ -53,12 +61,10 @@ const StyleBuilder = () => {
     setSelectedProducts([]);
   };
 
-  const finalSuggestions =
-    mode === "automatic" ? recommendations : selectedProducts;
+  const finalSuggestions = mode === "automatic" ? recommendations : selectedProducts;
 
   return (
     <div className="min-h-screen bg-white px-4 pt-6 pb-16 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
-      {/* HEADER */}
       <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">
@@ -99,7 +105,6 @@ const StyleBuilder = () => {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
-        {/* LEFT COLLECTION */}
         <aside className="rounded-[28px] border border-gray-200 bg-gray-50 p-4 sm:p-5 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)]">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-black">
@@ -148,7 +153,7 @@ const StyleBuilder = () => {
                 >
                   <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
                     <img
-                      src={item.image?.[0] || item.images?.[0]}
+                      src={getProductImage(item)}
                       alt={item.name}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
@@ -178,7 +183,6 @@ const StyleBuilder = () => {
           </div>
         </aside>
 
-        {/* RIGHT STYLE PREVIEW */}
         <main className="space-y-7">
           <section className="rounded-[32px] border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -197,7 +201,6 @@ const StyleBuilder = () => {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-              {/* HUMAN PREVIEW AREA */}
               <div className="relative flex min-h-[520px] items-center justify-center overflow-hidden rounded-[28px] bg-gradient-to-b from-gray-100 to-white">
                 <div className="absolute text-[120px] font-black uppercase text-black/[0.03] sm:text-[150px]">
                   SAINT
@@ -209,10 +212,7 @@ const StyleBuilder = () => {
                   <div className="mt-3 flex h-36 w-36 items-center justify-center overflow-hidden rounded-[28px] border border-gray-300 bg-white shadow-sm">
                     {selectedProducts[0] ? (
                       <img
-                        src={
-                          selectedProducts[0].image?.[0] ||
-                          selectedProducts[0].images?.[0]
-                        }
+                        src={getProductImage(selectedProducts[0])}
                         alt={selectedProducts[0].name}
                         className="h-full w-full object-cover"
                       />
@@ -226,10 +226,7 @@ const StyleBuilder = () => {
                   <div className="mt-3 flex h-40 w-32 items-center justify-center overflow-hidden rounded-[24px] border border-gray-300 bg-white shadow-sm">
                     {selectedProducts[1] ? (
                       <img
-                        src={
-                          selectedProducts[1].image?.[0] ||
-                          selectedProducts[1].images?.[0]
-                        }
+                        src={getProductImage(selectedProducts[1])}
                         alt={selectedProducts[1].name}
                         className="h-full w-full object-cover"
                       />
@@ -247,7 +244,6 @@ const StyleBuilder = () => {
                 </div>
               </div>
 
-              {/* SELECTED PRODUCTS */}
               <div>
                 <h3 className="mb-4 text-sm font-black uppercase tracking-[0.2em] text-black">
                   Selected Pieces
@@ -272,7 +268,7 @@ const StyleBuilder = () => {
                         className="flex gap-3 rounded-[22px] border border-gray-200 bg-gray-50 p-3"
                       >
                         <img
-                          src={item.image?.[0] || item.images?.[0]}
+                          src={getProductImage(item)}
                           alt={item.name}
                           className="h-24 w-20 rounded-[16px] object-cover"
                         />
@@ -316,7 +312,6 @@ const StyleBuilder = () => {
             </div>
           </section>
 
-          {/* RECOMMENDATIONS */}
           <section className="rounded-[32px] border border-gray-200 bg-gray-50 p-5 sm:p-7">
             <div className="mb-5 flex items-center justify-between">
               <div>
@@ -350,13 +345,10 @@ const StyleBuilder = () => {
             ) : (
               <div className="flex gap-4 overflow-x-auto pb-3">
                 {finalSuggestions.map((item) => (
-                  <div
-                    key={item._id}
-                    className="w-[180px] shrink-0 sm:w-[220px]"
-                  >
+                  <div key={item._id} className="w-[180px] shrink-0 sm:w-[220px]">
                     <ProductItem
                       id={item._id}
-                      image={item.image || item.images}
+                      image={item.images}
                       name={item.name}
                       price={item.price}
                       onSale={item.onSale}
