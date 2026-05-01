@@ -114,6 +114,7 @@ const Login = () => {
     if (strength <= 1) return "weak";
     if (strength <= 3) return "medium";
     if (strength === 4) return "strong";
+
     return "";
   };
 
@@ -180,7 +181,7 @@ const Login = () => {
       const strength = checkPasswordStrength(value);
       setPasswordStrength(strength);
 
-      if (strength !== "strong") {
+      if (value.length > 0 && strength !== "strong") {
         newErrors.password = "Security level too low";
       } else {
         delete newErrors.password;
@@ -450,18 +451,23 @@ const Login = () => {
   const getBorderColor = (field) => {
     if (field === "confirmPassword") {
       if (formData.confirmPassword === "") return "border-black/10";
-      if (confirmTouched && errors.confirmPassword) return "border-rose-500";
-      return "border-black";
+
+      if (confirmTouched && errors.confirmPassword) {
+        return "border-rose-500";
+      }
+
+      return "border-emerald-500";
     }
 
     if (formData[field] === "") return "border-black/10";
-    if (errors[field]) return "border-rose-500";
 
     if (field === "password" && currentState === "Sign Up") {
       if (passwordStrength === "weak") return "border-rose-500";
       if (passwordStrength === "medium") return "border-amber-500";
       if (passwordStrength === "strong") return "border-emerald-500";
     }
+
+    if (errors[field]) return "border-rose-500";
 
     return "border-black";
   };
@@ -524,6 +530,7 @@ const Login = () => {
                     <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
                       {currentState === "Login" ? "Login" : "Create Account"}
                     </h2>
+
                     <p className="mt-2 text-[10px] font-black text-gray-500 tracking-[0.22em] uppercase">
                       {currentState === "Login" ? "Member Access" : "Register New Account"}
                     </p>
@@ -578,40 +585,59 @@ const Login = () => {
                         onChange={handleChange}
                         placeholder="Password"
                         required
-                        className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                        className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
                           "password"
                         )}`}
                       />
 
-                      {currentState === "Sign Up" && (
-                        <div className="grid grid-cols-2 gap-2 px-1">
+                      {currentState === "Sign Up" && formData.password.length > 0 && (
+                        <div className="rounded-xl border border-black/10 bg-white/60 p-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <p
+                              className={`text-[10px] font-black uppercase ${getReqColor(
+                                formData.password.length >= 8
+                              )}`}
+                            >
+                              8+ Characters
+                            </p>
+
+                            <p
+                              className={`text-[10px] font-black uppercase ${getReqColor(
+                                /[A-Z]/.test(formData.password)
+                              )}`}
+                            >
+                              Uppercase
+                            </p>
+
+                            <p
+                              className={`text-[10px] font-black uppercase ${getReqColor(
+                                /[0-9]/.test(formData.password)
+                              )}`}
+                            >
+                              Number
+                            </p>
+
+                            <p
+                              className={`text-[10px] font-black uppercase ${getReqColor(
+                                /[^A-Za-z0-9]/.test(formData.password)
+                              )}`}
+                            >
+                              Symbol
+                            </p>
+                          </div>
+
                           <p
-                            className={`text-[10px] font-black uppercase ${getReqColor(
-                              formData.password.length >= 8
-                            )}`}
+                            className={`mt-3 rounded-lg py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] ${
+                              passwordStrength === "weak"
+                                ? "bg-rose-50 text-rose-600"
+                                : passwordStrength === "medium"
+                                ? "bg-amber-50 text-amber-600"
+                                : passwordStrength === "strong"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : "bg-gray-100 text-gray-400"
+                            }`}
                           >
-                            8+ Characters
-                          </p>
-                          <p
-                            className={`text-[10px] font-black uppercase ${getReqColor(
-                              /[A-Z]/.test(formData.password)
-                            )}`}
-                          >
-                            Uppercase
-                          </p>
-                          <p
-                            className={`text-[10px] font-black uppercase ${getReqColor(
-                              /[0-9]/.test(formData.password)
-                            )}`}
-                          >
-                            Number
-                          </p>
-                          <p
-                            className={`text-[10px] font-black uppercase ${getReqColor(
-                              /[^A-Za-z0-9]/.test(formData.password)
-                            )}`}
-                          >
-                            Symbol
+                            Password Strength: {passwordStrength}
                           </p>
                         </div>
                       )}
@@ -644,7 +670,7 @@ const Login = () => {
                             onBlur={() => setConfirmTouched(true)}
                             placeholder="Confirm Password"
                             required
-                            className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                            className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
                               "confirmPassword"
                             )}`}
                           />
@@ -809,6 +835,7 @@ const Login = () => {
                     <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
                       Forgot Password
                     </h2>
+
                     <p className="mt-2 text-[10px] font-black text-gray-500 tracking-[0.22em] uppercase">
                       Reset Account Access
                     </p>
