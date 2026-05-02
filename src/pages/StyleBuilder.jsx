@@ -2,36 +2,16 @@ import React, { useContext, useMemo, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 
 const TOP_KEYWORDS = [
-  "tshirt",
-  "t-shirt",
-  "shirt",
-  "long sleeve",
-  "longsleeve",
-  "crop",
-  "jersey",
-  "hoodie",
-  "jacket",
-  "polo",
+  "tshirt", "t-shirt", "shirt", "long sleeve", "longsleeve",
+  "crop", "jersey", "hoodie", "jacket", "polo",
 ];
 
 const BOTTOM_KEYWORDS = [
-  "jorts",
-  "short",
-  "shorts",
-  "pants",
-  "jeans",
-  "trouser",
-  "bottom",
+  "jorts", "short", "shorts", "pants", "jeans", "trouser", "bottom",
 ];
 
 const SHOES_KEYWORDS = [
-  "shoe",
-  "shoes",
-  "sneaker",
-  "sneakers",
-  "footwear",
-  "slides",
-  "sandals",
+  "shoe", "shoes", "sneaker", "sneakers", "footwear", "slides", "sandals",
 ];
 
 const PREVIEW_BACKGROUNDS = [
@@ -51,37 +31,23 @@ const getProductImage = (item) => {
 };
 
 const getProductText = (product) =>
-  `${product?.category || ""} ${product?.name || ""} ${
-    product?.subCategory || ""
-  }`.toLowerCase();
+  `${product?.category || ""} ${product?.name || ""} ${product?.subCategory || ""}`.toLowerCase();
 
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
-
   if (["top", "bottom", "both", "shoes"].includes(section)) return section;
 
   const text = getProductText(product);
-
   if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
   if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
   if (SHOES_KEYWORDS.some((word) => text.includes(word))) return "shoes";
-
   return "other";
 };
 
 const getBottomKind = (product) => {
   const text = getProductText(product);
-
   if (text.includes("jorts") || text.includes("short")) return "shorts";
-
-  if (
-    text.includes("pants") ||
-    text.includes("jeans") ||
-    text.includes("trouser")
-  ) {
-    return "pants";
-  }
-
+  if (text.includes("pants") || text.includes("jeans") || text.includes("trouser")) return "pants";
   return "bottom";
 };
 
@@ -90,26 +56,26 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
 
   return {
     top: {
-      top: 30,
-      height: 285,
-      width: 330,
-      scale: 0.88,
+      top: 25,
+      height: 300,
+      width: 350,
+      scale: 0.92,
       snapX: 0,
       snapY: 0,
     },
     bottom: {
-      top: bottomKind === "pants" ? 195 : 210,
-      height: bottomKind === "pants" ? 305 : 270,
-      width: bottomKind === "pants" ? 320 : 310,
-      scale: 0.88,
+      top: bottomKind === "pants" ? 205 : 220,
+      height: bottomKind === "pants" ? 320 : 285,
+      width: bottomKind === "pants" ? 345 : 335,
+      scale: bottomKind === "pants" ? 0.92 : 0.9,
       snapX: 0,
       snapY: -8,
     },
     shoes: {
-      top: bottomKind === "pants" ? 470 : 440,
-      height: selectedShoes ? 78 : 70,
+      top: bottomKind === "pants" ? 490 : 455,
+      height: 78,
       width: 245,
-      scale: 0.86,
+      scale: selectedShoes ? 0.9 : 1,
       snapX: 0,
       snapY: 0,
     },
@@ -145,17 +111,13 @@ const scorePair = (top, bottom) => {
   if (top.category && bottom.matchWith?.includes(top.category)) score += 8;
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 8;
   if (top.color && bottom.color && top.color === bottom.color) score += 3;
-  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
-    score += 4;
-  }
+  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) score += 4;
 
   const topTags = Array.isArray(top.styleTags) ? top.styleTags : [];
   const bottomTags = Array.isArray(bottom.styleTags) ? bottom.styleTags : [];
 
   const sharedTags = bottomTags.filter((tag) =>
-    topTags
-      .map((t) => String(t).toLowerCase())
-      .includes(String(tag).toLowerCase())
+    topTags.map((t) => String(t).toLowerCase()).includes(String(tag).toLowerCase())
   );
 
   score += sharedTags.length * 2;
@@ -207,16 +169,10 @@ const StyleBuilder = () => {
     (item) => getProductType(item) === "shoes"
   );
 
-  const outfitLayout = getSmartLayout({
-    selectedBottom,
-    selectedShoes,
-  });
-
+  const outfitLayout = getSmartLayout({ selectedBottom, selectedShoes });
   const isDarkPreview = previewBg.toLowerCase() === "#050505";
 
-  const clearFit = () => {
-    setSelectedProducts([]);
-  };
+  const clearFit = () => setSelectedProducts([]);
 
   const addToFit = (product) => {
     if (!product?._id || mode !== "manual") return;
@@ -225,25 +181,18 @@ const StyleBuilder = () => {
 
     setSelectedProducts((prev) => {
       const exists = prev.some((item) => item._id === product._id);
-
-      if (exists) {
-        return prev.filter((item) => item._id !== product._id);
-      }
+      if (exists) return prev.filter((item) => item._id !== product._id);
 
       if (productType === "top") {
         return [
-          ...prev.filter(
-            (item) => !["top", "both"].includes(getProductType(item))
-          ),
+          ...prev.filter((item) => !["top", "both"].includes(getProductType(item))),
           product,
         ];
       }
 
       if (productType === "bottom") {
         return [
-          ...prev.filter(
-            (item) => !["bottom", "both"].includes(getProductType(item))
-          ),
+          ...prev.filter((item) => !["bottom", "both"].includes(getProductType(item))),
           product,
         ];
       }
@@ -255,9 +204,7 @@ const StyleBuilder = () => {
         ];
       }
 
-      if (productType === "both") {
-        return [product];
-      }
+      if (productType === "both") return [product];
 
       return [...prev, product].slice(0, 4);
     });
@@ -274,9 +221,7 @@ const StyleBuilder = () => {
       return type === "bottom" || type === "both";
     });
 
-    const shoes = cleanProducts.filter(
-      (item) => getProductType(item) === "shoes"
-    );
+    const shoes = cleanProducts.filter((item) => getProductType(item) === "shoes");
 
     if (tops.length === 0 && bottoms.length === 0 && shoes.length === 0) return;
 
@@ -289,11 +234,7 @@ const StyleBuilder = () => {
       tops.forEach((top) => {
         bottoms.forEach((bottom) => {
           if (top._id !== bottom._id) {
-            pairs.push({
-              top,
-              bottom,
-              score: scorePair(top, bottom),
-            });
+            pairs.push({ top, bottom, score: scorePair(top, bottom) });
           }
         });
       });
@@ -303,7 +244,6 @@ const StyleBuilder = () => {
         .slice(0, Math.min(8, pairs.length));
 
       const randomPair = bestPairs[Math.floor(Math.random() * bestPairs.length)];
-
       pickedTop = randomPair?.top || null;
       pickedBottom = randomPair?.bottom || null;
     } else if (tops.length > 0) {
@@ -320,10 +260,7 @@ const StyleBuilder = () => {
 
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
-
-    if (nextMode === "automatic") {
-      generateAutomaticFit();
-    }
+    if (nextMode === "automatic") generateAutomaticFit();
   };
 
   return (
@@ -332,7 +269,7 @@ const StyleBuilder = () => {
         {`
           @keyframes saintFloat {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
+            50% { transform: translateY(-3px); }
           }
 
           @keyframes saintFade {
@@ -340,31 +277,17 @@ const StyleBuilder = () => {
             to { opacity: 1; transform: translateY(0) scale(1); }
           }
 
-          .saint-float {
-            animation: saintFloat 5s ease-in-out infinite;
-          }
+          .saint-float { animation: saintFloat 5s ease-in-out infinite; }
+          .saint-fade { animation: saintFade 0.4s ease both; }
 
-          .saint-fade {
-            animation: saintFade 0.4s ease both;
-          }
-
-          .saint-scroll::-webkit-scrollbar {
-            width: 6px;
-          }
-
+          .saint-scroll::-webkit-scrollbar { width: 6px; }
           .saint-scroll::-webkit-scrollbar-thumb {
             background: #cfcfcf;
             border-radius: 999px;
           }
+          .saint-scroll::-webkit-scrollbar-track { background: transparent; }
 
-          .saint-scroll::-webkit-scrollbar-track {
-            background: transparent;
-          }
-
-          input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-          }
-
+          input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
           input[type="color"]::-webkit-color-swatch {
             border: none;
             border-radius: 999px;
@@ -385,8 +308,8 @@ const StyleBuilder = () => {
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-gray-500">
-                Build a fit manually or generate a smart outfit from your
-                product collection.
+                Build a fit manually or generate a smart outfit from your product
+                collection.
               </p>
             </div>
 
@@ -416,8 +339,8 @@ const StyleBuilder = () => {
           </div>
         </div>
 
-        <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_430px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
-          <section className="flex min-w-0 flex-col rounded-[28px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5 xl:h-[calc(100vh-138px)]">
+        <div className="grid items-stretch gap-4 xl:grid-cols-[1fr_430px] 2xl:grid-cols-[1fr_460px]">
+          <section className="flex min-w-0 flex-col rounded-[28px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5 xl:h-[calc(100vh-120px)]">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
@@ -473,9 +396,7 @@ const StyleBuilder = () => {
             <div className="saint-scroll min-h-0 flex-1 overflow-y-auto pr-2">
               <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                 {filteredProducts.map((item) => {
-                  const active = selectedProducts.some(
-                    (p) => p._id === item._id
-                  );
+                  const active = selectedProducts.some((p) => p._id === item._id);
                   const type = getProductType(item);
 
                   return (
@@ -492,7 +413,7 @@ const StyleBuilder = () => {
                       <div
                         className={`relative overflow-hidden rounded-[22px] bg-[#f5f5f3] transition duration-300 ${
                           active
-                            ? "ring-2 ring-black ring-offset-2"
+                            ? "ring-2 ring-black ring-offset-3"
                             : "hover:bg-gray-100"
                         }`}
                       >
@@ -536,231 +457,229 @@ const StyleBuilder = () => {
             </div>
           </section>
 
-          <aside className="flex rounded-[28px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] xl:h-[calc(100vh-138px)] xl:flex-col xl:sticky xl:top-4">
-            <div className="flex min-h-0 w-full flex-col">
-              <div className="mb-3 flex items-end justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-                    Live Preview
-                  </p>
+          <aside className="flex flex-col rounded-[28px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] xl:sticky xl:top-4 xl:h-[calc(100vh-120px)]">
+            <div className="mb-3 flex items-end justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
+                  Live Preview
+                </p>
 
-                  <h2 className="mt-1 text-xl font-black uppercase tracking-tight text-black">
-                    2D Fit
-                  </h2>
-                </div>
+                <h2 className="mt-1 text-xl font-black uppercase tracking-tight text-black">
+                  2D Fit
+                </h2>
+              </div>
 
-                <p className="rounded-full bg-gray-100 px-3.5 py-2 text-[9px] font-black uppercase tracking-widest text-gray-500">
-                  {mode}
+              <p className="rounded-full bg-gray-100 px-3.5 py-2 text-[9px] font-black uppercase tracking-widest text-gray-500">
+                {mode}
+              </p>
+            </div>
+
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-[20px] bg-gray-50 px-3 py-2.5">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
+                Background
+              </p>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={previewBg}
+                  onChange={(e) => setPreviewBg(e.target.value)}
+                  title="Pick custom background"
+                  className="h-7 w-7 cursor-pointer overflow-hidden rounded-full border border-gray-300 bg-white p-0"
+                />
+
+                {PREVIEW_BACKGROUNDS.map((bg) => (
+                  <button
+                    key={bg.name}
+                    onClick={() => setPreviewBg(bg.color)}
+                    title={bg.name}
+                    className={`h-7 w-7 rounded-full border transition ${
+                      previewBg.toLowerCase() === bg.color.toLowerCase()
+                        ? "border-black ring-2 ring-black ring-offset-2"
+                        : "border-gray-300"
+                    }`}
+                    style={{ backgroundColor: bg.color }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[28px] transition-colors duration-500"
+              style={{ backgroundColor: previewBg }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p
+                  className={`select-none text-[95px] font-black uppercase tracking-[-0.08em] ${
+                    isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
+                  }`}
+                >
+                  SAINT
                 </p>
               </div>
 
-              <div className="mb-3 flex items-center justify-between gap-3 rounded-[20px] bg-gray-50 px-3 py-2.5">
-                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
-                  Background
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={previewBg}
-                    onChange={(e) => setPreviewBg(e.target.value)}
-                    title="Pick custom background"
-                    className="h-7 w-7 cursor-pointer overflow-hidden rounded-full border border-gray-300 bg-white p-0"
-                  />
-
-                  {PREVIEW_BACKGROUNDS.map((bg) => (
-                    <button
-                      key={bg.name}
-                      onClick={() => setPreviewBg(bg.color)}
-                      title={bg.name}
-                      className={`h-7 w-7 rounded-full border transition ${
-                        previewBg.toLowerCase() === bg.color.toLowerCase()
-                          ? "border-black ring-2 ring-black ring-offset-2"
-                          : "border-gray-300"
-                      }`}
-                      style={{ backgroundColor: bg.color }}
+              <div className="saint-float relative h-[535px] w-[325px]">
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  style={{
+                    top: `${outfitLayout.top.top}px`,
+                    height: `${outfitLayout.top.height}px`,
+                    width: `${outfitLayout.top.width}px`,
+                  }}
+                >
+                  {selectedTop ? (
+                    <img
+                      key={selectedTop._id}
+                      src={getProductImage(selectedTop)}
+                      alt={selectedTop.name}
+                      style={getOutfitStyle(
+                        selectedTop,
+                        outfitLayout.top.scale,
+                        outfitLayout.top
+                      )}
+                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
                     />
-                  ))}
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
+                        Top
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  style={{
+                    top: `${outfitLayout.bottom.top}px`,
+                    height: `${outfitLayout.bottom.height}px`,
+                    width: `${outfitLayout.bottom.width}px`,
+                  }}
+                >
+                  {selectedBottom ? (
+                    <img
+                      key={selectedBottom._id}
+                      src={getProductImage(selectedBottom)}
+                      alt={selectedBottom.name}
+                      style={getOutfitStyle(
+                        selectedBottom,
+                        outfitLayout.bottom.scale,
+                        outfitLayout.bottom
+                      )}
+                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
+                        Bottom
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className={`absolute left-1/2 h-5 w-[115px] -translate-x-1/2 rounded-full blur-md ${
+                    isDarkPreview ? "bg-white/15" : "bg-black/10"
+                  }`}
+                  style={{ top: `${outfitLayout.shoes.top + 16}px` }}
+                />
+
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  style={{
+                    top: `${outfitLayout.shoes.top}px`,
+                    height: `${outfitLayout.shoes.height}px`,
+                    width: `${outfitLayout.shoes.width}px`,
+                  }}
+                >
+                  {selectedShoes ? (
+                    <img
+                      key={selectedShoes._id}
+                      src={getProductImage(selectedShoes)}
+                      alt={selectedShoes.name}
+                      style={getOutfitStyle(
+                        selectedShoes,
+                        outfitLayout.shoes.scale,
+                        outfitLayout.shoes
+                      )}
+                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-300">
+                        Shoes
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
 
-              <div
-                className="relative flex min-h-[460px] flex-1 items-center justify-center overflow-hidden rounded-[28px] transition-colors duration-500"
-                style={{ backgroundColor: previewBg }}
-              >
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <p
-                    className={`select-none text-[90px] font-black uppercase tracking-[-0.08em] ${
-                      isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
-                    }`}
-                  >
-                    SAINT
-                  </p>
-                </div>
+            <div className="mt-3 rounded-[22px] bg-gray-50 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
+                  Picked Items
+                </p>
 
-                <div className="saint-float relative h-[510px] w-[300px] scale-[0.88] sm:scale-[0.9] xl:scale-[0.86] 2xl:scale-[0.88]">
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
-                    style={{
-                      top: `${outfitLayout.top.top}px`,
-                      height: `${outfitLayout.top.height}px`,
-                      width: `${outfitLayout.top.width}px`,
-                    }}
-                  >
-                    {selectedTop ? (
-                      <img
-                        key={selectedTop._id}
-                        src={getProductImage(selectedTop)}
-                        alt={selectedTop.name}
-                        style={getOutfitStyle(
-                          selectedTop,
-                          outfitLayout.top.scale,
-                          outfitLayout.top
-                        )}
-                        className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
-                          Top
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
-                    style={{
-                      top: `${outfitLayout.bottom.top}px`,
-                      height: `${outfitLayout.bottom.height}px`,
-                      width: `${outfitLayout.bottom.width}px`,
-                    }}
-                  >
-                    {selectedBottom ? (
-                      <img
-                        key={selectedBottom._id}
-                        src={getProductImage(selectedBottom)}
-                        alt={selectedBottom.name}
-                        style={getOutfitStyle(
-                          selectedBottom,
-                          outfitLayout.bottom.scale,
-                          outfitLayout.bottom
-                        )}
-                        className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
-                          Bottom
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    className={`absolute left-1/2 h-5 w-[120px] -translate-x-1/2 rounded-full blur-md ${
-                      isDarkPreview ? "bg-white/15" : "bg-black/10"
-                    }`}
-                    style={{ top: `${outfitLayout.shoes.top + 18}px` }}
-                  />
-
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
-                    style={{
-                      top: `${outfitLayout.shoes.top}px`,
-                      height: `${outfitLayout.shoes.height}px`,
-                      width: `${outfitLayout.shoes.width}px`,
-                    }}
-                  >
-                    {selectedShoes ? (
-                      <img
-                        key={selectedShoes._id}
-                        src={getProductImage(selectedShoes)}
-                        alt={selectedShoes.name}
-                        style={getOutfitStyle(
-                          selectedShoes,
-                          outfitLayout.shoes.scale,
-                          outfitLayout.shoes
-                        )}
-                        className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-300">
-                          Shoes
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                  {selectedProducts.length}/3
+                </p>
               </div>
 
-              <div className="mt-3 rounded-[22px] bg-gray-50 p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
-                    Picked Items
-                  </p>
-
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                    {selectedProducts.length}/3
+              {selectedProducts.length === 0 ? (
+                <div className="rounded-[16px] bg-white px-4 py-4 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    No products picked
                   </p>
                 </div>
+              ) : (
+                <div className="max-h-[150px] space-y-2 overflow-y-auto pr-1">
+                  {selectedProducts.map((item) => {
+                    const type = getProductType(item);
 
-                {selectedProducts.length === 0 ? (
-                  <div className="rounded-[16px] bg-white px-4 py-4 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                      No products picked
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {selectedProducts.map((item) => {
-                      const type = getProductType(item);
+                    return (
+                      <div
+                        key={item._id}
+                        className="flex w-full items-center gap-3 rounded-[18px] bg-white p-2.5 text-left transition hover:bg-gray-100"
+                      >
+                        <img
+                          src={getProductImage(item)}
+                          alt={item.name}
+                          className="h-12 w-10 rounded-xl bg-gray-50 object-contain p-1 mix-blend-multiply"
+                        />
 
-                      return (
-                        <div
-                          key={item._id}
-                          className="flex w-full items-center gap-3 rounded-[18px] bg-white p-2.5 text-left transition hover:bg-gray-100"
-                        >
-                          <img
-                            src={getProductImage(item)}
-                            alt={item.name}
-                            className="h-12 w-10 rounded-xl bg-gray-50 object-contain p-1 mix-blend-multiply"
-                          />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400">
+                            {type}
+                          </p>
 
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400">
-                              {type}
-                            </p>
+                          <p className="line-clamp-1 text-[11px] font-black uppercase text-black">
+                            {item.name}
+                          </p>
 
-                            <p className="line-clamp-1 text-[11px] font-black uppercase text-black">
-                              {item.name}
-                            </p>
-
-                            <p className="text-[10px] font-black text-gray-500">
-                              {currency}
-                              {getFinalPrice(item).toLocaleString()}
-                            </p>
-                          </div>
-
-                          {mode === "manual" && (
-                            <button
-                              onClick={() =>
-                                setSelectedProducts((prev) =>
-                                  prev.filter((p) => p._id !== item._id)
-                                )
-                              }
-                              className="rounded-full bg-red-50 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-red-500"
-                            >
-                              Remove
-                            </button>
-                          )}
+                          <p className="text-[10px] font-black text-gray-500">
+                            {currency}
+                            {getFinalPrice(item).toLocaleString()}
+                          </p>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+
+                        {mode === "manual" && (
+                          <button
+                            onClick={() =>
+                              setSelectedProducts((prev) =>
+                                prev.filter((p) => p._id !== item._id)
+                              )
+                            }
+                            className="rounded-full bg-red-50 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-red-500"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </aside>
         </div>
