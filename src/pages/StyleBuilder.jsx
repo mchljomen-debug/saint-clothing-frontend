@@ -31,6 +31,11 @@ const PREVIEW_BACKGROUNDS = [
   { name: "Black", color: "#050505" },
 ];
 
+const DEFAULT_POSITIONS = {
+  top: { x: 0, y: 0, scale: 1 },
+  bottom: { x: 0, y: 0, scale: 1 },
+};
+
 const getProductImage = (item) => {
   if (item?.outfitImage) return item.outfitImage;
   if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
@@ -63,15 +68,6 @@ const getBottomKind = (product) => {
 
   if (text.includes("jorts") || text.includes("short")) return "shorts";
 
-  if (
-    text.includes("pants") ||
-    text.includes("jeans") ||
-    text.includes("trouser") ||
-    text.includes("bottom")
-  ) {
-    return "pants";
-  }
-
   return "pants";
 };
 
@@ -91,7 +87,7 @@ const getSmartLayout = ({ selectedBottom }) => {
     bottom: {
       top: isPants ? 255 : 205,
       height: isPants ? 315 : 305,
-      width: isPants ? 350 : 350,
+      width: 350,
       scale: 1,
       snapX: 0,
       snapY: 0,
@@ -99,11 +95,22 @@ const getSmartLayout = ({ selectedBottom }) => {
   };
 };
 
-const getOutfitStyle = (item, dynamicScale = 1, snap = {}) => {
+const getOutfitStyle = (item, dynamicScale = 1, snap = {}, drag = {}) => {
   const position = item?.outfitPosition || {};
-  const x = Number(position.x || 0) + Number(snap.snapX || 0);
-  const y = Number(position.y || 0) + Number(snap.snapY || 0);
-  const scale = Number(position.scale || 1) * dynamicScale;
+  const x =
+    Number(position.x || 0) +
+    Number(snap.snapX || 0) +
+    Number(drag.x || 0);
+
+  const y =
+    Number(position.y || 0) +
+    Number(snap.snapY || 0) +
+    Number(drag.y || 0);
+
+  const scale =
+    Number(position.scale || 1) *
+    Number(dynamicScale || 1) *
+    Number(drag.scale || 1);
 
   return {
     transform: `translate(${x}px, ${y}px) scale(${scale})`,
@@ -160,6 +167,7 @@ const StyleBuilder = () => {
   const [category, setCategory] = useState("All");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [previewBg, setPreviewBg] = useState("#ffffff");
+  const [positions, setPositions] = useState(DEFAULT_POSITIONS);
 
   const CATEGORIES = useMemo(() => {
     return ["All", ...Array.from(new Set(categoryOptions.filter(Boolean)))];
@@ -194,6 +202,64 @@ const StyleBuilder = () => {
 
   const clearFit = () => {
     setSelectedProducts([]);
+    setPositions(DEFAULT_POSITIONS);
+  };
+
+  const resetPositions = () => {
+    setPositions(DEFAULT_POSITIONS);
+  };
+
+  const updateScale = (slot, value) => {
+    setPositions((prev) => ({
+      ...prev,
+      [slot]: {
+        ...prev[slot],
+        scale: Number(value),
+      },
+    }));
+  };
+
+  const startDrag = (event, slot) => {
+    if (mode !== "manual") return;
+
+    event.preventDefault();
+
+    const pointer = event.touches?.[0] || event;
+    const startX = pointer.clientX;
+    const startY = pointer.clientY;
+
+    const startPosition = {
+      x: positions[slot]?.x || 0,
+      y: positions[slot]?.y || 0,
+    };
+
+    const move = (moveEvent) => {
+      const movePointer = moveEvent.touches?.[0] || moveEvent;
+
+      const deltaX = movePointer.clientX - startX;
+      const deltaY = movePointer.clientY - startY;
+
+      setPositions((prev) => ({
+        ...prev,
+        [slot]: {
+          ...prev[slot],
+          x: startPosition.x + deltaX,
+          y: startPosition.y + deltaY,
+        },
+      }));
+    };
+
+    const stop = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", stop);
+      window.removeEventListener("touchmove", move);
+      window.removeEventListener("touchend", stop);
+    };
+
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", stop);
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", stop);
   };
 
   const addToFit = (product) => {
@@ -280,6 +346,7 @@ const StyleBuilder = () => {
     }
 
     setSelectedProducts([pickedTop, pickedBottom].filter(Boolean));
+    setPositions(DEFAULT_POSITIONS);
   };
 
   const handleModeChange = (nextMode) => {
@@ -561,7 +628,9 @@ const StyleBuilder = () => {
 
               <div className="saint-float relative h-[580px] w-[340px]">
                 <div
-                  className="absolute left-1/2 z-30 -translate-x-1/2 transition duration-300 ease-out"
+                  onMouseDown={(event) => startDrag(event, "top")}
+                  onTouchStart={(event) => startDrag(event, "top")}
+                  className="absolute left-1/2 z-30 -translate-x-1/2 cursor-grab transition duration-300 ease-out active:cursor-grabbing"
                   style={{
                     top: `${outfitLayout.top.top}px`,
                     height: `${outfitLayout.top.height}px`,
@@ -573,12 +642,14 @@ const StyleBuilder = () => {
                       key={selectedTop._id}
                       src={getProductImage(selectedTop)}
                       alt={selectedTop.name}
+                      draggable={false}
                       style={getOutfitStyle(
                         selectedTop,
                         outfitLayout.top.scale,
-                        outfitLayout.top
+                        outfitLayout.top,
+                        positions.top
                       )}
-                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
+                      className="saint-fade pointer-events-none h-full w-full select-none object-contain mix-blend-multiply transition duration-300"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center">
@@ -590,7 +661,9 @@ const StyleBuilder = () => {
                 </div>
 
                 <div
-                  className="absolute left-1/2 z-20 -translate-x-1/2 transition duration-300 ease-out"
+                  onMouseDown={(event) => startDrag(event, "bottom")}
+                  onTouchStart={(event) => startDrag(event, "bottom")}
+                  className="absolute left-1/2 z-20 -translate-x-1/2 cursor-grab transition duration-300 ease-out active:cursor-grabbing"
                   style={{
                     top: `${outfitLayout.bottom.top}px`,
                     height: `${outfitLayout.bottom.height}px`,
@@ -602,12 +675,14 @@ const StyleBuilder = () => {
                       key={selectedBottom._id}
                       src={getProductImage(selectedBottom)}
                       alt={selectedBottom.name}
+                      draggable={false}
                       style={getOutfitStyle(
                         selectedBottom,
                         outfitLayout.bottom.scale,
-                        outfitLayout.bottom
+                        outfitLayout.bottom,
+                        positions.bottom
                       )}
-                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
+                      className="saint-fade pointer-events-none h-full w-full select-none object-contain mix-blend-multiply transition duration-300"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center">
@@ -626,10 +701,55 @@ const StyleBuilder = () => {
                   Picked Items
                 </p>
 
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                  {selectedProducts.length}/2
-                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={resetPositions}
+                    className="rounded-[5px] bg-white px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-gray-500"
+                  >
+                    Reset Fit
+                  </button>
+
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                    {selectedProducts.length}/2
+                  </p>
+                </div>
               </div>
+
+              {selectedProducts.length > 0 && (
+                <div className="mb-2 grid grid-cols-2 gap-2">
+                  <div className="rounded-[5px] bg-white p-2">
+                    <p className="mb-1 text-[8px] font-black uppercase tracking-widest text-gray-400">
+                      Top Scale
+                    </p>
+                    <input
+                      type="range"
+                      min="0.7"
+                      max="1.35"
+                      step="0.01"
+                      value={positions.top.scale}
+                      onChange={(event) => updateScale("top", event.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="rounded-[5px] bg-white p-2">
+                    <p className="mb-1 text-[8px] font-black uppercase tracking-widest text-gray-400">
+                      Bottom Scale
+                    </p>
+                    <input
+                      type="range"
+                      min="0.7"
+                      max="1.35"
+                      step="0.01"
+                      value={positions.bottom.scale}
+                      onChange={(event) =>
+                        updateScale("bottom", event.target.value)
+                      }
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
 
               {selectedProducts.length === 0 ? (
                 <div className="rounded-[5px] bg-white px-4 py-3 text-center">
