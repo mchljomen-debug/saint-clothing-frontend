@@ -89,25 +89,25 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
 
   return {
     top: {
-      top: 28,
-      height: 318,
-      width: 370,
-      scale: 1.02,
+      top: 24,
+      height: 305,
+      width: 355,
+      scale: 1,
       snapX: 0,
       snapY: 0,
     },
     bottom: {
-      top: bottomKind === "pants" ? 218 : 230,
-      height: bottomKind === "pants" ? 340 : 305,
-      width: bottomKind === "pants" ? 365 : 355,
+      top: bottomKind === "pants" ? 205 : 218,
+      height: bottomKind === "pants" ? 325 : 292,
+      width: bottomKind === "pants" ? 350 : 340,
       scale: 1,
       snapX: 0,
       snapY: -6,
     },
     shoes: {
-      top: bottomKind === "pants" ? 520 : 495,
-      height: 85,
-      width: 280,
+      top: bottomKind === "pants" ? 490 : 465,
+      height: 78,
+      width: 260,
       scale: selectedShoes ? 1 : 1,
       snapX: 0,
       snapY: 0,
@@ -326,7 +326,7 @@ const StyleBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#f8f7f4] px-2 py-2 sm:px-3 lg:px-4">
+    <div className="min-h-screen bg-[#f8f7f4] px-2 py-2 sm:px-3 lg:px-4">
       <style>
         {`
           @keyframes saintFloat {
@@ -371,395 +371,393 @@ const StyleBuilder = () => {
         `}
       </style>
 
-      <div className="origin-top scale-[0.9]">
-        <div className="mx-auto max-w-[1950px]">
-          <div className="mb-2 rounded-[5px] border border-black/10 bg-white px-5 py-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:px-6">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
-                  Saint Clothing
-                </p>
+      <div className="mx-auto max-w-[1950px]">
+        <div className="mb-2 rounded-[5px] border border-black/10 bg-white px-5 py-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:px-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
+                Saint Clothing
+              </p>
 
-                <h1 className="mt-0.5 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
-                  Style Builder
-                </h1>
+              <h1 className="mt-0.5 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
+                Style Builder
+              </h1>
 
-                <p className="mt-1 max-w-2xl text-sm font-medium leading-5 text-gray-500">
-                  Build a fit manually or generate a smart outfit from your product
-                  collection.
-                </p>
-              </div>
+              <p className="mt-1 max-w-2xl text-sm font-medium leading-5 text-gray-500">
+                Build a fit manually or generate a smart outfit from your product
+                collection.
+              </p>
+            </div>
 
-              <div className="flex w-full rounded-[5px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
-                <button
-                  onClick={() => handleModeChange("manual")}
-                  className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
-                    mode === "manual"
-                      ? "bg-white text-black"
-                      : "text-white hover:bg-white/10"
-                  }`}
-                >
-                  Manual
-                </button>
+            <div className="flex w-full rounded-[5px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
+              <button
+                onClick={() => handleModeChange("manual")}
+                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  mode === "manual"
+                    ? "bg-white text-black"
+                    : "text-white hover:bg-white/10"
+                }`}
+              >
+                Manual
+              </button>
 
-                <button
-                  onClick={() => handleModeChange("automatic")}
-                  className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
-                    mode === "automatic"
-                      ? "bg-white text-black"
-                      : "text-white hover:bg-white/10"
-                  }`}
-                >
-                  Automatic
-                </button>
-              </div>
+              <button
+                onClick={() => handleModeChange("automatic")}
+                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  mode === "automatic"
+                    ? "bg-white text-black"
+                    : "text-white hover:bg-white/10"
+                }`}
+              >
+                Automatic
+              </button>
             </div>
           </div>
+        </div>
 
-          <div className="grid items-stretch gap-2 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
-            <section className="flex h-[720px] min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
-              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-                    Collection
-                  </p>
+        <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
+          <section className="flex h-[640px] min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
+                  Collection
+                </p>
 
-                  <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
-                    Pick Your Pieces
-                  </h2>
+                <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
+                  Pick Your Pieces
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  {filteredProducts.length} items
+                </p>
+
+                {selectedProducts.length > 0 && (
+                  <button
+                    onClick={clearFit}
+                    className="rounded-[5px] bg-red-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 transition hover:bg-red-100"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="mb-3 flex gap-2 overflow-x-auto border-b border-gray-100 pb-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${
+                    category === cat
+                      ? "border-black bg-black text-white"
+                      : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {mode === "automatic" && (
+              <button
+                onClick={generateAutomaticFit}
+                className="mb-3 w-full rounded-[5px] bg-black px-5 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
+              >
+                Generate New Automatic Fit
+              </button>
+            )}
+
+            <div className="saint-scroll flex-1 overflow-y-auto pr-2">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                {filteredProducts.map((item) => {
+                  const active = selectedProducts.some((p) => p._id === item._id);
+                  const type = getProductType(item);
+
+                  return (
+                    <button
+                      key={item._id}
+                      onClick={() => addToFit(item)}
+                      disabled={mode === "automatic"}
+                      className={`group text-left transition ${
+                        mode === "automatic"
+                          ? "cursor-default opacity-90"
+                          : "cursor-pointer"
+                      }`}
+                    >
+                      <div
+                        className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${
+                          active
+                            ? "ring-2 ring-black ring-offset-2"
+                            : "hover:bg-gray-100"
+                        }`}
+                      >
+                        <div className="aspect-[3/4]">
+                          <img
+                            src={getProductImage(item)}
+                            alt={item.name}
+                            className="h-full w-full object-contain p-2.5 mix-blend-multiply transition duration-500 group-hover:scale-105"
+                          />
+                        </div>
+
+                        <span className="absolute left-2 top-2 rounded-[5px] bg-white/90 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
+                          {type}
+                        </span>
+
+                        {active && (
+                          <span className="absolute right-2 top-2 rounded-[5px] bg-black px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white">
+                            Picked
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="pt-2">
+                        <p className="line-clamp-1 text-xs font-black uppercase tracking-tight text-black">
+                          {item.name}
+                        </p>
+
+                        <p className="mt-0.5 line-clamp-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                          {item.category}
+                        </p>
+
+                        <p className="mt-1 text-xs font-black text-black">
+                          {currency}
+                          {getFinalPrice(item).toLocaleString()}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <aside className="rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] xl:sticky xl:top-2 xl:h-fit">
+            <div className="mb-2 flex items-end justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
+                  Live Preview
+                </p>
+
+                <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
+                  2D Fit
+                </h2>
+              </div>
+
+              <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500">
+                {mode}
+              </p>
+            </div>
+
+            <div className="mb-2 flex items-center justify-between gap-3 rounded-[5px] bg-gray-50 px-3 py-2">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
+                Background
+              </p>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={previewBg}
+                  onChange={(e) => setPreviewBg(e.target.value)}
+                  title="Pick custom background"
+                  className="h-7 w-7 cursor-pointer overflow-hidden rounded-[5px] border border-gray-300 bg-white p-0"
+                />
+
+                {PREVIEW_BACKGROUNDS.map((bg) => (
+                  <button
+                    key={bg.name}
+                    onClick={() => setPreviewBg(bg.color)}
+                    title={bg.name}
+                    className={`h-7 w-7 rounded-[5px] border transition ${
+                      previewBg.toLowerCase() === bg.color.toLowerCase()
+                        ? "border-black ring-2 ring-black ring-offset-2"
+                        : "border-gray-300"
+                    }`}
+                    style={{ backgroundColor: bg.color }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="relative flex h-[560px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
+              style={{ backgroundColor: previewBg }}
+            >
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <p
+                  className={`select-none text-[95px] font-black uppercase tracking-[-0.08em] ${
+                    isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
+                  }`}
+                >
+                  SAINT
+                </p>
+              </div>
+
+              <div className="saint-float relative h-[545px] w-[320px]">
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  style={{
+                    top: `${outfitLayout.top.top}px`,
+                    height: `${outfitLayout.top.height}px`,
+                    width: `${outfitLayout.top.width}px`,
+                  }}
+                >
+                  {selectedTop ? (
+                    <img
+                      key={selectedTop._id}
+                      src={getProductImage(selectedTop)}
+                      alt={selectedTop.name}
+                      style={getOutfitStyle(
+                        selectedTop,
+                        outfitLayout.top.scale,
+                        outfitLayout.top
+                      )}
+                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
+                        Top
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                    {filteredProducts.length} items
-                  </p>
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  style={{
+                    top: `${outfitLayout.bottom.top}px`,
+                    height: `${outfitLayout.bottom.height}px`,
+                    width: `${outfitLayout.bottom.width}px`,
+                  }}
+                >
+                  {selectedBottom ? (
+                    <img
+                      key={selectedBottom._id}
+                      src={getProductImage(selectedBottom)}
+                      alt={selectedBottom.name}
+                      style={getOutfitStyle(
+                        selectedBottom,
+                        outfitLayout.bottom.scale,
+                        outfitLayout.bottom
+                      )}
+                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
+                        Bottom
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-                  {selectedProducts.length > 0 && (
-                    <button
-                      onClick={clearFit}
-                      className="rounded-[5px] bg-red-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 transition hover:bg-red-100"
-                    >
-                      Clear
-                    </button>
+                <div
+                  className={`absolute left-1/2 h-5 w-[120px] -translate-x-1/2 rounded-[5px] blur-md ${
+                    isDarkPreview ? "bg-white/15" : "bg-black/10"
+                  }`}
+                  style={{ top: `${outfitLayout.shoes.top + 18}px` }}
+                />
+
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  style={{
+                    top: `${outfitLayout.shoes.top}px`,
+                    height: `${outfitLayout.shoes.height}px`,
+                    width: `${outfitLayout.shoes.width}px`,
+                  }}
+                >
+                  {selectedShoes ? (
+                    <img
+                      key={selectedShoes._id}
+                      src={getProductImage(selectedShoes)}
+                      alt={selectedShoes.name}
+                      style={getOutfitStyle(
+                        selectedShoes,
+                        outfitLayout.shoes.scale,
+                        outfitLayout.shoes
+                      )}
+                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-300">
+                        Shoes
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
+            </div>
 
-              <div className="mb-3 flex gap-2 overflow-x-auto border-b border-gray-100 pb-2">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategory(cat)}
-                    className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${
-                      category === cat
-                        ? "border-black bg-black text-white"
-                        : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+            <div className="mt-2 rounded-[5px] bg-gray-50 p-2.5">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
+                  Picked Items
+                </p>
+
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                  {selectedProducts.length}/3
+                </p>
               </div>
 
-              {mode === "automatic" && (
-                <button
-                  onClick={generateAutomaticFit}
-                  className="mb-3 w-full rounded-[5px] bg-black px-5 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
-                >
-                  Generate New Automatic Fit
-                </button>
-              )}
-
-              <div className="saint-scroll flex-1 overflow-y-auto pr-2">
-                <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-                  {filteredProducts.map((item) => {
-                    const active = selectedProducts.some((p) => p._id === item._id);
+              {selectedProducts.length === 0 ? (
+                <div className="rounded-[5px] bg-white px-4 py-3 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    No products picked
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {selectedProducts.map((item) => {
                     const type = getProductType(item);
 
                     return (
-                      <button
+                      <div
                         key={item._id}
-                        onClick={() => addToFit(item)}
-                        disabled={mode === "automatic"}
-                        className={`group text-left transition ${
-                          mode === "automatic"
-                            ? "cursor-default opacity-90"
-                            : "cursor-pointer"
-                        }`}
+                        className="flex w-full items-center gap-2.5 rounded-[5px] bg-white p-2 text-left transition hover:bg-gray-100"
                       >
-                        <div
-                          className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${
-                            active
-                              ? "ring-2 ring-black ring-offset-2"
-                              : "hover:bg-gray-100"
-                          }`}
-                        >
-                          <div className="aspect-[3/4]">
-                            <img
-                              src={getProductImage(item)}
-                              alt={item.name}
-                              className="h-full w-full object-contain p-2.5 mix-blend-multiply transition duration-500 group-hover:scale-105"
-                            />
-                          </div>
+                        <img
+                          src={getProductImage(item)}
+                          alt={item.name}
+                          className="h-11 w-10 rounded-[5px] bg-gray-50 object-contain p-1 mix-blend-multiply"
+                        />
 
-                          <span className="absolute left-2 top-2 rounded-[5px] bg-white/90 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400">
                             {type}
-                          </span>
+                          </p>
 
-                          {active && (
-                            <span className="absolute right-2 top-2 rounded-[5px] bg-black px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white">
-                              Picked
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="pt-2">
-                          <p className="line-clamp-1 text-xs font-black uppercase tracking-tight text-black">
+                          <p className="line-clamp-1 text-[11px] font-black uppercase text-black">
                             {item.name}
                           </p>
 
-                          <p className="mt-0.5 line-clamp-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                            {item.category}
-                          </p>
-
-                          <p className="mt-1 text-xs font-black text-black">
+                          <p className="text-[10px] font-black text-gray-500">
                             {currency}
                             {getFinalPrice(item).toLocaleString()}
                           </p>
                         </div>
-                      </button>
+
+                        {mode === "manual" && (
+                          <button
+                            onClick={() =>
+                              setSelectedProducts((prev) =>
+                                prev.filter((p) => p._id !== item._id)
+                              )
+                            }
+                            className="rounded-[5px] bg-red-50 px-2.5 py-1.5 text-[8px] font-black uppercase tracking-widest text-red-500"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
-              </div>
-            </section>
-
-            <aside className="rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] xl:sticky xl:top-2 xl:h-fit">
-              <div className="mb-2 flex items-end justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-                    Live Preview
-                  </p>
-
-                  <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
-                    2D Fit
-                  </h2>
-                </div>
-
-                <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500">
-                  {mode}
-                </p>
-              </div>
-
-              <div className="mb-2 flex items-center justify-between gap-3 rounded-[5px] bg-gray-50 px-3 py-2">
-                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
-                  Background
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={previewBg}
-                    onChange={(e) => setPreviewBg(e.target.value)}
-                    title="Pick custom background"
-                    className="h-7 w-7 cursor-pointer overflow-hidden rounded-[5px] border border-gray-300 bg-white p-0"
-                  />
-
-                  {PREVIEW_BACKGROUNDS.map((bg) => (
-                    <button
-                      key={bg.name}
-                      onClick={() => setPreviewBg(bg.color)}
-                      title={bg.name}
-                      className={`h-7 w-7 rounded-[5px] border transition ${
-                        previewBg.toLowerCase() === bg.color.toLowerCase()
-                          ? "border-black ring-2 ring-black ring-offset-2"
-                          : "border-gray-300"
-                      }`}
-                      style={{ backgroundColor: bg.color }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div
-                className="relative flex h-[600px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
-                style={{ backgroundColor: previewBg }}
-              >
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <p
-                    className={`select-none text-[100px] font-black uppercase tracking-[-0.08em] ${
-                      isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
-                    }`}
-                  >
-                    SAINT
-                  </p>
-                </div>
-
-                <div className="saint-float relative h-[585px] w-[330px]">
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
-                    style={{
-                      top: `${outfitLayout.top.top}px`,
-                      height: `${outfitLayout.top.height}px`,
-                      width: `${outfitLayout.top.width}px`,
-                    }}
-                  >
-                    {selectedTop ? (
-                      <img
-                        key={selectedTop._id}
-                        src={getProductImage(selectedTop)}
-                        alt={selectedTop.name}
-                        style={getOutfitStyle(
-                          selectedTop,
-                          outfitLayout.top.scale,
-                          outfitLayout.top
-                        )}
-                        className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
-                          Top
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
-                    style={{
-                      top: `${outfitLayout.bottom.top}px`,
-                      height: `${outfitLayout.bottom.height}px`,
-                      width: `${outfitLayout.bottom.width}px`,
-                    }}
-                  >
-                    {selectedBottom ? (
-                      <img
-                        key={selectedBottom._id}
-                        src={getProductImage(selectedBottom)}
-                        alt={selectedBottom.name}
-                        style={getOutfitStyle(
-                          selectedBottom,
-                          outfitLayout.bottom.scale,
-                          outfitLayout.bottom
-                        )}
-                        className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-300">
-                          Bottom
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    className={`absolute left-1/2 h-5 w-[125px] -translate-x-1/2 rounded-[5px] blur-md ${
-                      isDarkPreview ? "bg-white/15" : "bg-black/10"
-                    }`}
-                    style={{ top: `${outfitLayout.shoes.top + 18}px` }}
-                  />
-
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
-                    style={{
-                      top: `${outfitLayout.shoes.top}px`,
-                      height: `${outfitLayout.shoes.height}px`,
-                      width: `${outfitLayout.shoes.width}px`,
-                    }}
-                  >
-                    {selectedShoes ? (
-                      <img
-                        key={selectedShoes._id}
-                        src={getProductImage(selectedShoes)}
-                        alt={selectedShoes.name}
-                        style={getOutfitStyle(
-                          selectedShoes,
-                          outfitLayout.shoes.scale,
-                          outfitLayout.shoes
-                        )}
-                        className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-300">
-                          Shoes
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-2 rounded-[5px] bg-gray-50 p-2.5">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
-                    Picked Items
-                  </p>
-
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                    {selectedProducts.length}/3
-                  </p>
-                </div>
-
-                {selectedProducts.length === 0 ? (
-                  <div className="rounded-[5px] bg-white px-4 py-3 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                      No products picked
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    {selectedProducts.map((item) => {
-                      const type = getProductType(item);
-
-                      return (
-                        <div
-                          key={item._id}
-                          className="flex w-full items-center gap-2.5 rounded-[5px] bg-white p-2 text-left transition hover:bg-gray-100"
-                        >
-                          <img
-                            src={getProductImage(item)}
-                            alt={item.name}
-                            className="h-11 w-10 rounded-[5px] bg-gray-50 object-contain p-1 mix-blend-multiply"
-                          />
-
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400">
-                              {type}
-                            </p>
-
-                            <p className="line-clamp-1 text-[11px] font-black uppercase text-black">
-                              {item.name}
-                            </p>
-
-                            <p className="text-[10px] font-black text-gray-500">
-                              {currency}
-                              {getFinalPrice(item).toLocaleString()}
-                            </p>
-                          </div>
-
-                          {mode === "manual" && (
-                            <button
-                              onClick={() =>
-                                setSelectedProducts((prev) =>
-                                  prev.filter((p) => p._id !== item._id)
-                                )
-                              }
-                              className="rounded-[5px] bg-red-50 px-2.5 py-1.5 text-[8px] font-black uppercase tracking-widest text-red-500"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </aside>
-          </div>
+              )}
+            </div>
+          </aside>
         </div>
       </div>
     </div>
