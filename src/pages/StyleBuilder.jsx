@@ -97,6 +97,7 @@ const getSmartLayout = ({ selectedBottom }) => {
 
 const getOutfitStyle = (item, dynamicScale = 1, snap = {}, drag = {}) => {
   const position = item?.outfitPosition || {};
+
   const x =
     Number(position.x || 0) +
     Number(snap.snapX || 0) +
@@ -223,6 +224,7 @@ const StyleBuilder = () => {
     if (mode !== "manual") return;
 
     event.preventDefault();
+    event.stopPropagation();
 
     const pointer = event.touches?.[0] || event;
     const startX = pointer.clientX;
@@ -234,8 +236,9 @@ const StyleBuilder = () => {
     };
 
     const move = (moveEvent) => {
-      const movePointer = moveEvent.touches?.[0] || moveEvent;
+      moveEvent.preventDefault();
 
+      const movePointer = moveEvent.touches?.[0] || moveEvent;
       const deltaX = movePointer.clientX - startX;
       const deltaY = movePointer.clientY - startY;
 
@@ -250,16 +253,16 @@ const StyleBuilder = () => {
     };
 
     const stop = () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", stop);
-      window.removeEventListener("touchmove", move);
-      window.removeEventListener("touchend", stop);
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", stop);
+      document.removeEventListener("touchmove", move);
+      document.removeEventListener("touchend", stop);
     };
 
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", stop);
-    window.addEventListener("touchmove", move, { passive: false });
-    window.addEventListener("touchend", stop);
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", stop);
+    document.addEventListener("touchmove", move, { passive: false });
+    document.addEventListener("touchend", stop);
   };
 
   const addToFit = (product) => {
@@ -630,7 +633,7 @@ const StyleBuilder = () => {
                 <div
                   onMouseDown={(event) => startDrag(event, "top")}
                   onTouchStart={(event) => startDrag(event, "top")}
-                  className="absolute left-1/2 z-30 -translate-x-1/2 cursor-grab transition duration-300 ease-out active:cursor-grabbing"
+                  className="absolute left-1/2 z-30 -translate-x-1/2 cursor-grab touch-none select-none transition duration-300 ease-out active:cursor-grabbing"
                   style={{
                     top: `${outfitLayout.top.top}px`,
                     height: `${outfitLayout.top.height}px`,
@@ -663,7 +666,7 @@ const StyleBuilder = () => {
                 <div
                   onMouseDown={(event) => startDrag(event, "bottom")}
                   onTouchStart={(event) => startDrag(event, "bottom")}
-                  className="absolute left-1/2 z-20 -translate-x-1/2 cursor-grab transition duration-300 ease-out active:cursor-grabbing"
+                  className="absolute left-1/2 z-20 -translate-x-1/2 cursor-grab touch-none select-none transition duration-300 ease-out active:cursor-grabbing"
                   style={{
                     top: `${outfitLayout.bottom.top}px`,
                     height: `${outfitLayout.bottom.height}px`,
