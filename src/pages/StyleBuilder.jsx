@@ -65,9 +65,19 @@ const getProductType = (product) => {
 const getBottomKind = (product) => {
   const text = getProductText(product);
 
-  if (text.includes("jorts") || text.includes("short")) return "shorts";
+  if (text.includes("pants") || text.includes("jeans") || text.includes("trouser")) {
+    return "pants";
+  }
 
-  return "pants";
+  if (text.includes("jorts")) {
+    return "jorts";
+  }
+
+  if (text.includes("shorts") || text.includes("short")) {
+    return "shorts";
+  }
+
+  return "bottom";
 };
 
 const getSmartLayout = ({ selectedBottom }) => {
@@ -84,8 +94,14 @@ const getSmartLayout = ({ selectedBottom }) => {
       snapY: 0,
     },
     bottom: {
-      top: isPants ? 255 : 205,
-      height: isPants ? 315 : 305,
+      top:
+        bottomKind === "pants" ? 255 :
+          bottomKind === "jorts" ? 215 :
+            205,
+      height:
+        bottomKind === "pants" ? 315 :
+          bottomKind === "jorts" ? 305 :
+            300,
       width: 350,
       scale: 1,
       snapX: 0,
@@ -443,8 +459,8 @@ const StyleBuilder = () => {
               <button
                 onClick={() => handleModeChange("manual")}
                 className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${mode === "manual"
-                    ? "bg-white text-black"
-                    : "text-white hover:bg-white/10"
+                  ? "bg-white text-black"
+                  : "text-white hover:bg-white/10"
                   }`}
               >
                 Manual
@@ -453,8 +469,8 @@ const StyleBuilder = () => {
               <button
                 onClick={() => handleModeChange("automatic")}
                 className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${mode === "automatic"
-                    ? "bg-white text-black"
-                    : "text-white hover:bg-white/10"
+                  ? "bg-white text-black"
+                  : "text-white hover:bg-white/10"
                   }`}
               >
                 Automatic
@@ -498,8 +514,8 @@ const StyleBuilder = () => {
                   key={cat}
                   onClick={() => setCategory(cat)}
                   className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${category === cat
-                      ? "border-black bg-black text-white"
-                      : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
+                    ? "border-black bg-black text-white"
+                    : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
                     }`}
                 >
                   {cat}
@@ -528,14 +544,14 @@ const StyleBuilder = () => {
                       onClick={() => addToFit(item)}
                       disabled={mode === "automatic"}
                       className={`group text-left transition ${mode === "automatic"
-                          ? "cursor-default opacity-90"
-                          : "cursor-pointer"
+                        ? "cursor-default opacity-90"
+                        : "cursor-pointer"
                         }`}
                     >
                       <div
                         className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${active
-                            ? "ring-2 ring-black ring-offset-2"
-                            : "hover:bg-gray-100"
+                          ? "ring-2 ring-black ring-offset-2"
+                          : "hover:bg-gray-100"
                           }`}
                       >
                         <div className="aspect-[3/4]">
@@ -615,8 +631,8 @@ const StyleBuilder = () => {
                     onClick={() => setPreviewBg(bg.color)}
                     title={bg.name}
                     className={`h-7 w-7 rounded-[5px] border transition ${previewBg.toLowerCase() === bg.color.toLowerCase()
-                        ? "border-black ring-2 ring-black ring-offset-2"
-                        : "border-gray-300"
+                      ? "border-black ring-2 ring-black ring-offset-2"
+                      : "border-gray-300"
                       }`}
                     style={{ backgroundColor: bg.color }}
                   />
