@@ -50,12 +50,12 @@ const Home = () => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
 
-      {/* ================= HERO (ORIGINAL - FIXED) ================= */}
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+      {/* ================= HERO (FIXED) ================= */}
+      <div>
         <Hero />
       </div>
 
-      {/* ================= YOUR CATEGORY SECTION (UNCHANGED) ================= */}
+      {/* ================= CATEGORY (UNCHANGED) ================= */}
       <section className="mt-6">
         <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
           <div className="mb-5 flex items-end justify-between gap-4">
@@ -140,22 +140,18 @@ const Home = () => {
         )}
       </section>
 
-      {/* ================= LATEST ================= */}
       <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
         <LatestCollection />
       </div>
 
-      {/* ================= BEST SELLER ================= */}
       <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
         <BestSeller />
       </div>
 
-      {/* ================= POLICY ================= */}
       <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
         <OurPolicy />
       </div>
 
-      {/* ================= NEWSLETTER ================= */}
       <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-6 pb-6">
         <NewsletterBox />
       </div>
