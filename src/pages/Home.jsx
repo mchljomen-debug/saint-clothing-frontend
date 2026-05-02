@@ -87,6 +87,7 @@ const Home = () => {
       {/* ================= BUILD FIT PREMIUM PROMO ================= */}
       <section className="mt-6 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
         <div className="group relative overflow-hidden rounded-[5px] bg-[#050505] text-white shadow-[0_30px_80px_rgba(0,0,0,0.22)]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_85%_30%,rgba(255,255,255,0.12),transparent_28%)]" />
 
           <div className="absolute inset-0 opacity-[0.08]">
             <div className="absolute left-[-8%] top-[-20%] text-[22vw] font-black uppercase tracking-[-0.12em] text-white">
@@ -98,64 +99,113 @@ const Home = () => {
           </div>
 
           <div className="relative z-10 grid min-h-[420px] grid-cols-1 items-center gap-10 px-6 py-14 sm:px-8 md:grid-cols-[1fr_0.85fr] md:px-12 lg:px-16">
-
-            {/* TEXT */}
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.38em] text-white/50">
                 Saint Clothing Feature
               </p>
 
-              <h2 className="mt-3 text-5xl font-black uppercase tracking-[-0.07em]">
+              <h2 className="mt-3 max-w-2xl text-5xl font-black uppercase leading-[0.9] tracking-[-0.07em] text-white sm:text-6xl lg:text-7xl">
                 Build Your Fit
               </h2>
 
-              <p className="mt-5 text-sm text-white/65">
-                Mix tops and bottoms in one visual outfit builder.
+              <p className="mt-5 max-w-xl text-sm font-medium leading-7 text-white/65 md:text-base">
+                Mix tops and bottoms in one visual outfit builder. Create your
+                look before checkout and discover better style combinations.
               </p>
 
-              <button
-                onClick={goToBuildFit}
-                className="mt-6 border border-white bg-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.28em] text-black transition hover:bg-transparent hover:text-white"
-              >
-                Try Build Fit →
-              </button>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={goToBuildFit}
+                  className="border border-white bg-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.28em] text-black transition hover:bg-transparent hover:text-white"
+                >
+                  Try Build Fit →
+                </button>
 
-              <div className="mt-8 grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate("/collection")}
+                  className="border border-white/20 bg-white/5 px-8 py-4 text-[10px] font-black uppercase tracking-[0.28em] text-white transition hover:border-white hover:bg-white hover:text-black"
+                >
+                  Shop Collection
+                </button>
+              </div>
+
+              <div className="mt-8 grid max-w-lg grid-cols-3 gap-3">
                 {["Pick Top", "Pick Bottom", "Build Look"].map((item, index) => (
                   <div
                     key={item}
-                    className="rounded-[5px] border border-white/10 bg-white/[0.04] px-4 py-4"
+                    className="rounded-[5px] border border-white/10 bg-white/[0.04] px-4 py-4 backdrop-blur"
                   >
-                    <p className="text-[10px] text-white/40">0{index + 1}</p>
-                    <p className="text-[10px] uppercase">{item}</p>
+                    <p className="text-[10px] font-black text-white/40">
+                      0{index + 1}
+                    </p>
+                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+                      {item}
+                    </p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* IMAGE PREVIEW */}
             <div className="relative mx-auto w-full max-w-[420px]">
-              <div className="relative overflow-hidden rounded-[5px] border border-white/15 bg-[#f8f7f4] p-5">
+              <div className="absolute -inset-6 rounded-[5px] bg-white/10 blur-3xl transition duration-700 group-hover:bg-white/15" />
 
-                <p className="absolute inset-0 flex items-center justify-center text-[6rem] font-black text-black/[0.05]">
-                  SAINT
-                </p>
+              <div className="relative overflow-hidden rounded-[5px] border border-white/15 bg-white/[0.06] p-5 backdrop-blur-xl">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/50">
+                    Outfit Preview
+                  </p>
+                  <span className="rounded-full bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-black">
+                    Mix & Match
+                  </span>
+                </div>
 
-                <img
-                  src={assets.build_fit_preview}
-                  className="relative z-10 w-full object-contain"
-                />
+                <div className="grid grid-cols-[0.8fr_1.2fr] gap-4">
+                  <div className="space-y-3">
+                    <div className="h-24 rounded-[5px] border border-white/10 bg-white/10 p-3">
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
+                        Top
+                      </p>
+                      <div className="mt-4 h-8 rounded-[5px] bg-white/30" />
+                    </div>
 
-                <p className="mt-4 text-center text-[10px] uppercase text-black/40">
-                  Top + Bottom Styling
-                </p>
+                    <div className="h-24 rounded-[5px] border border-white/10 bg-white/10 p-3">
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
+                        Bottom
+                      </p>
+                      <div className="mt-4 h-8 rounded-[5px] bg-white/20" />
+                    </div>
 
+                    <div className="h-20 rounded-[5px] border border-white/10 bg-white/10 p-3">
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
+                        Look
+                      </p>
+                      <div className="mt-3 h-6 rounded-[5px] bg-white/25" />
+                    </div>
+                  </div>
+
+                  <div className="relative min-h-[280px] overflow-hidden rounded-[5px] border border-white/10 bg-[#f8f7f4]">
+                    <p className="absolute inset-0 flex items-center justify-center select-none text-[5.5rem] font-black uppercase tracking-[-0.1em] text-black/[0.035]">
+                      SAINT
+                    </p>
+
+                    <img
+                      src={assets.build_fit_preview}
+                      alt="Build Fit Preview"
+                      className="relative z-10 h-full w-full object-contain p-5 transition duration-700 group-hover:scale-[1.03]"
+                    />
+
+                    <p className="absolute bottom-4 left-4 right-4 z-20 text-center text-[9px] font-black uppercase tracking-[0.22em] text-black/35">
+                      Top + Bottom Visual Styling
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-
           </div>
 
-          <div className="absolute bottom-0 left-0 h-[2px] w-full bg-white/30" />
+          <div className="absolute bottom-0 left-0 h-[3px] w-full bg-gradient-to-r from-white via-white/30 to-transparent" />
         </div>
       </section>
 
