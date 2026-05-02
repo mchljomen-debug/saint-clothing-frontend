@@ -50,7 +50,6 @@ const ProductItem = ({
 
   const productId = _id || id || "";
   const isLoggedIn = !!user;
-  const safeBranch = branch || "branch1";
   const safePrice = Number(price || 0);
   const safeSalePercent = Number(salePercent || 0);
   const hasDiscount = Boolean(onSale) && safeSalePercent > 0;
@@ -74,20 +73,47 @@ const ProductItem = ({
   }, [defaultImage, productId]);
 
   const colorVariants = useMemo(() => {
-    if (!groupCode) return [];
+    if (!groupCode) {
+      return [
+        {
+          _id: productId,
+          color,
+          colorHex,
+          images,
+        },
+      ];
+    }
 
     const sameGroup = products.filter(
-      (item) =>
-        item.groupCode === groupCode &&
-        !item.isDeleted &&
-        (item.branch || "branch1") === safeBranch
+      (item) => item.groupCode === groupCode && !item.isDeleted
     );
 
-    return sameGroup.filter(
+    const uniqueVariants = sameGroup.filter(
       (item, index, arr) =>
-        index === arr.findIndex((x) => String(x._id) === String(item._id))
+        index ===
+        arr.findIndex(
+          (x) =>
+            String(x.color || "").toLowerCase() ===
+              String(item.color || "").toLowerCase() &&
+            String(x.colorHex || "").toLowerCase() ===
+              String(item.colorHex || "").toLowerCase()
+        )
     );
-  }, [products, groupCode, safeBranch]);
+
+    return uniqueVariants.length
+      ? uniqueVariants
+      : [
+          {
+            _id: productId,
+            color,
+            colorHex,
+            images,
+          },
+        ];
+  }, [products, groupCode, productId, color, colorHex, images]);
+
+  const visibleColorVariants = colorVariants.slice(0, 5);
+  const hiddenColorCount = Math.max(colorVariants.length - visibleColorVariants.length, 0);
 
   const totalStock = getTotalStock(stock);
   const isOutOfStock = totalStock <= 0;
@@ -164,38 +190,54 @@ const ProductItem = ({
           </div>
         )}
 
-        {colorVariants.length > 1 && (
+        {colorVariants.length > 0 && (
           <div
             className="absolute bottom-2 left-2 z-20 flex flex-col gap-1.5 rounded-lg bg-[#FAFAF8]/90 px-2 py-2 backdrop-blur-sm sm:bottom-3 sm:left-3 sm:gap-2"
             onMouseLeave={() => setPreviewImage(defaultImage)}
             onClick={(e) => e.stopPropagation()}
           >
-            {colorVariants.map((variant) => {
+            {visibleColorVariants.map((variant) => {
               const variantImage =
                 variant.images && variant.images.length > 0
                   ? normalizeImage(variant.images[0])
                   : defaultImage;
 
+              const variantLabel = getColorLabel({
+                color: variant.color,
+                colorHex: variant.colorHex,
+              });
+
               return (
                 <button
-                  key={variant._id}
+                  key={variant._id || variantLabel}
                   type="button"
+                  title={variantLabel}
                   onClick={() => {
                     if (!variant._id) return;
                     navigate(`/product/${variant._id}`);
                     window.scrollTo(0, 0);
                   }}
                   onMouseEnter={() => setPreviewImage(variantImage)}
-                  className={`h-4 w-4 rounded-full border-2 transition-all sm:h-5 sm:w-5 ${
+                  className={`relative h-4 w-4 rounded-full border-2 transition-all sm:h-5 sm:w-5 ${
                     String(variant._id) === String(productId)
                       ? "scale-110 border-black"
                       : "border-gray-300 hover:border-black"
                   }`}
                   style={{ backgroundColor: variant.colorHex || "#d1d5db" }}
-                  aria-label={variant.color || "Product color variant"}
-                />
+                  aria-label={variantLabel}
+                >
+                  <span className="pointer-events-none absolute left-6 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-black px-2 py-1 text-[9px] font-black uppercase tracking-widest text-white group-hover:block">
+                    {variantLabel}
+                  </span>
+                </button>
               );
             })}
+
+            {hiddenColorCount > 0 && (
+              <div className="flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1.5 text-[8px] font-black text-white sm:h-5">
+                +{hiddenColorCount}
+              </div>
+            )}
           </div>
         )}
       </div>
