@@ -1,9 +1,38 @@
 import React, { useContext, useMemo, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 
-const TOP_KEYWORDS = ["tshirt", "t-shirt", "shirt", "long sleeve", "longsleeve", "crop", "jersey", "hoodie", "jacket", "polo"];
-const BOTTOM_KEYWORDS = ["jorts", "short", "shorts", "pants", "jeans", "trouser", "bottom"];
-const SHOES_KEYWORDS = ["shoe", "shoes", "sneaker", "sneakers", "footwear", "slides", "sandals"];
+const TOP_KEYWORDS = [
+  "tshirt",
+  "t-shirt",
+  "shirt",
+  "long sleeve",
+  "longsleeve",
+  "crop",
+  "jersey",
+  "hoodie",
+  "jacket",
+  "polo",
+];
+
+const BOTTOM_KEYWORDS = [
+  "jorts",
+  "short",
+  "shorts",
+  "pants",
+  "jeans",
+  "trouser",
+  "bottom",
+];
+
+const SHOES_KEYWORDS = [
+  "shoe",
+  "shoes",
+  "sneaker",
+  "sneakers",
+  "footwear",
+  "slides",
+  "sandals",
+];
 
 const PREVIEW_BACKGROUNDS = [
   { name: "White", className: "bg-white", dot: "bg-white" },
@@ -22,23 +51,36 @@ const getProductImage = (item) => {
 };
 
 const getProductText = (product) =>
-  `${product?.category || ""} ${product?.name || ""} ${product?.subCategory || ""}`.toLowerCase();
+  `${product?.category || ""} ${product?.name || ""} ${
+    product?.subCategory || ""
+  }`.toLowerCase();
 
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
+
   if (["top", "bottom", "both", "shoes"].includes(section)) return section;
 
   const text = getProductText(product);
+
   if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
   if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
   if (SHOES_KEYWORDS.some((word) => text.includes(word))) return "shoes";
+
   return "other";
 };
 
 const getBottomKind = (product) => {
   const text = getProductText(product);
+
   if (text.includes("jorts") || text.includes("short")) return "shorts";
-  if (text.includes("pants") || text.includes("jeans") || text.includes("trouser")) return "pants";
+  if (
+    text.includes("pants") ||
+    text.includes("jeans") ||
+    text.includes("trouser")
+  ) {
+    return "pants";
+  }
+
   return "bottom";
 };
 
@@ -47,25 +89,25 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
 
   return {
     top: {
-      top: 35,
-      height: 390,
-      width: 465,
+      top: 40,
+      height: 380,
+      width: 460,
       scale: 1.15,
       snapX: 0,
       snapY: 0,
     },
     bottom: {
-      top: bottomKind === "pants" ? 245 : 260,
-      height: bottomKind === "pants" ? 410 : 380,
-      width: bottomKind === "pants" ? 455 : 445,
+      top: bottomKind === "pants" ? 250 : 265,
+      height: bottomKind === "pants" ? 400 : 370,
+      width: bottomKind === "pants" ? 450 : 440,
       scale: bottomKind === "pants" ? 1.12 : 1.08,
       snapX: 0,
       snapY: bottomKind === "pants" ? -5 : -10,
     },
     shoes: {
-      top: bottomKind === "pants" ? 610 : 575,
-      height: 125,
-      width: 365,
+      top: bottomKind === "pants" ? 610 : 580,
+      height: 120,
+      width: 360,
       scale: selectedShoes ? 1.05 : 1,
       snapX: 0,
       snapY: 0,
@@ -75,9 +117,19 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
 
 const getOutfitStyle = (item, dynamicScale = 1, manual = {}, snap = {}) => {
   const position = item?.outfitPosition || {};
-  const x = Number(position.x || 0) + Number(manual.x || 0) + Number(snap.snapX || 0);
-  const y = Number(position.y || 0) + Number(manual.y || 0) + Number(snap.snapY || 0);
-  const scale = Number(position.scale || 1) * dynamicScale * Number(manual.scale || 1);
+
+  const x =
+    Number(position.x || 0) +
+    Number(manual.x || 0) +
+    Number(snap.snapX || 0);
+
+  const y =
+    Number(position.y || 0) +
+    Number(manual.y || 0) +
+    Number(snap.snapY || 0);
+
+  const scale =
+    Number(position.scale || 1) * dynamicScale * Number(manual.scale || 1);
 
   return {
     transform: `translate(${x}px, ${y}px) scale(${scale})`,
@@ -87,24 +139,34 @@ const getOutfitStyle = (item, dynamicScale = 1, manual = {}, snap = {}) => {
 const getFinalPrice = (item) => {
   const price = Number(item?.price || 0);
   const salePercent = Number(item?.salePercent || 0);
-  if (item?.onSale && salePercent > 0) return Math.max(price - (price * salePercent) / 100, 0);
+
+  if (item?.onSale && salePercent > 0) {
+    return Math.max(price - (price * salePercent) / 100, 0);
+  }
+
   return price;
 };
 
 const scorePair = (top, bottom) => {
   let score = 0;
+
   if (!top || !bottom) return score;
 
   if (top.category && bottom.matchWith?.includes(top.category)) score += 8;
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 8;
   if (top.color && bottom.color && top.color === bottom.color) score += 3;
-  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) score += 4;
+
+  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
+    score += 4;
+  }
 
   const topTags = Array.isArray(top.styleTags) ? top.styleTags : [];
   const bottomTags = Array.isArray(bottom.styleTags) ? bottom.styleTags : [];
 
   const sharedTags = bottomTags.filter((tag) =>
-    topTags.map((t) => String(t).toLowerCase()).includes(String(tag).toLowerCase())
+    topTags
+      .map((t) => String(t).toLowerCase())
+      .includes(String(tag).toLowerCase())
   );
 
   score += sharedTags.length * 2;
@@ -127,6 +189,7 @@ const StyleBuilder = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [previewBg, setPreviewBg] = useState("bg-white");
   const [activeLayer, setActiveLayer] = useState("top");
+
   const [manualAdjustments, setManualAdjustments] = useState({
     top: { x: 0, y: 0, scale: 1 },
     bottom: { x: 0, y: 0, scale: 1 },
@@ -143,7 +206,9 @@ const StyleBuilder = () => {
   }, [products]);
 
   const filteredProducts = useMemo(() => {
-    return cleanProducts.filter((item) => category === "All" || item.category === category);
+    return cleanProducts.filter(
+      (item) => category === "All" || item.category === category
+    );
   }, [cleanProducts, category]);
 
   const selectedTop = selectedProducts.find((item) => {
@@ -156,15 +221,22 @@ const StyleBuilder = () => {
     return type === "bottom" || type === "both";
   });
 
-  const selectedShoes = selectedProducts.find((item) => getProductType(item) === "shoes");
+  const selectedShoes = selectedProducts.find(
+    (item) => getProductType(item) === "shoes"
+  );
 
-  const outfitLayout = getSmartLayout({ selectedBottom, selectedShoes });
+  const outfitLayout = getSmartLayout({
+    selectedBottom,
+    selectedShoes,
+  });
 
   const selectedLayerProduct = {
     top: selectedTop,
     bottom: selectedBottom,
     shoes: selectedShoes,
   };
+
+  const isDarkPreview = previewBg === "bg-[#050505]";
 
   const clearFit = () => {
     setSelectedProducts([]);
@@ -188,7 +260,10 @@ const StyleBuilder = () => {
       [layer]: {
         x: Math.max(-80, Math.min(80, prev[layer].x + (changes.x || 0))),
         y: Math.max(-100, Math.min(100, prev[layer].y + (changes.y || 0))),
-        scale: Math.max(0.75, Math.min(1.35, prev[layer].scale + (changes.scale || 0))),
+        scale: Math.max(
+          0.75,
+          Math.min(1.35, prev[layer].scale + (changes.scale || 0))
+        ),
       },
     }));
   };
@@ -200,21 +275,37 @@ const StyleBuilder = () => {
 
     setSelectedProducts((prev) => {
       const exists = prev.some((item) => item._id === product._id);
-      if (exists) return prev.filter((item) => item._id !== product._id);
+
+      if (exists) {
+        return prev.filter((item) => item._id !== product._id);
+      }
 
       if (productType === "top") {
         setActiveLayer("top");
-        return [...prev.filter((item) => !["top", "both"].includes(getProductType(item))), product];
+        return [
+          ...prev.filter(
+            (item) => !["top", "both"].includes(getProductType(item))
+          ),
+          product,
+        ];
       }
 
       if (productType === "bottom") {
         setActiveLayer("bottom");
-        return [...prev.filter((item) => !["bottom", "both"].includes(getProductType(item))), product];
+        return [
+          ...prev.filter(
+            (item) => !["bottom", "both"].includes(getProductType(item))
+          ),
+          product,
+        ];
       }
 
       if (productType === "shoes") {
         setActiveLayer("shoes");
-        return [...prev.filter((item) => getProductType(item) !== "shoes"), product];
+        return [
+          ...prev.filter((item) => getProductType(item) !== "shoes"),
+          product,
+        ];
       }
 
       if (productType === "both") {
@@ -237,7 +328,9 @@ const StyleBuilder = () => {
       return type === "bottom" || type === "both";
     });
 
-    const shoes = cleanProducts.filter((item) => getProductType(item) === "shoes");
+    const shoes = cleanProducts.filter(
+      (item) => getProductType(item) === "shoes"
+    );
 
     if (tops.length === 0 && bottoms.length === 0 && shoes.length === 0) return;
 
@@ -246,13 +339,23 @@ const StyleBuilder = () => {
 
     if (tops.length > 0 && bottoms.length > 0) {
       const pairs = [];
+
       tops.forEach((top) => {
         bottoms.forEach((bottom) => {
-          if (top._id !== bottom._id) pairs.push({ top, bottom, score: scorePair(top, bottom) });
+          if (top._id !== bottom._id) {
+            pairs.push({
+              top,
+              bottom,
+              score: scorePair(top, bottom),
+            });
+          }
         });
       });
 
-      const bestPairs = pairs.sort((a, b) => b.score - a.score).slice(0, Math.min(8, pairs.length));
+      const bestPairs = pairs
+        .sort((a, b) => b.score - a.score)
+        .slice(0, Math.min(8, pairs.length));
+
       const randomPair = bestPairs[Math.floor(Math.random() * bestPairs.length)];
 
       pickedTop = randomPair?.top || null;
@@ -263,9 +366,11 @@ const StyleBuilder = () => {
       pickedBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
     }
 
-    const pickedShoes = shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : null;
+    const pickedShoes =
+      shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : null;
 
     setSelectedProducts([pickedTop, pickedBottom, pickedShoes].filter(Boolean));
+
     setManualAdjustments({
       top: { x: 0, y: 0, scale: 1 },
       bottom: { x: 0, y: 0, scale: 1 },
@@ -275,10 +380,11 @@ const StyleBuilder = () => {
 
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
-    if (nextMode === "automatic") generateAutomaticFit();
-  };
 
-  const isDarkPreview = previewBg === "bg-[#050505]";
+    if (nextMode === "automatic") {
+      generateAutomaticFit();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white px-4 pt-6 pb-16 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
@@ -337,7 +443,9 @@ const StyleBuilder = () => {
           <button
             onClick={() => handleModeChange("manual")}
             className={`flex-1 rounded-full px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
-              mode === "manual" ? "bg-white text-black" : "text-white hover:bg-white/10"
+              mode === "manual"
+                ? "bg-white text-black"
+                : "text-white hover:bg-white/10"
             }`}
           >
             Manual
@@ -346,7 +454,9 @@ const StyleBuilder = () => {
           <button
             onClick={() => handleModeChange("automatic")}
             className={`flex-1 rounded-full px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
-              mode === "automatic" ? "bg-white text-black" : "text-white hover:bg-white/10"
+              mode === "automatic"
+                ? "bg-white text-black"
+                : "text-white hover:bg-white/10"
             }`}
           >
             Automatic
@@ -414,12 +524,16 @@ const StyleBuilder = () => {
                     onClick={() => addToFit(item)}
                     disabled={mode === "automatic"}
                     className={`group text-left transition ${
-                      mode === "automatic" ? "cursor-default opacity-90" : "cursor-pointer"
+                      mode === "automatic"
+                        ? "cursor-default opacity-90"
+                        : "cursor-pointer"
                     }`}
                   >
                     <div
                       className={`relative overflow-hidden rounded-[26px] bg-gray-50 transition duration-300 ${
-                        active ? "ring-2 ring-black ring-offset-4" : "group-hover:bg-gray-100"
+                        active
+                          ? "ring-2 ring-black ring-offset-4"
+                          : "group-hover:bg-gray-100"
                       }`}
                     >
                       <div className="aspect-[3/4]">
@@ -634,12 +748,16 @@ const StyleBuilder = () => {
               <div className="space-y-2">
                 {selectedProducts.map((item) => {
                   const type = getProductType(item);
+
                   return (
                     <button
                       key={item._id}
-                      onClick={() => setActiveLayer(type === "both" ? "top" : type)}
+                      onClick={() =>
+                        setActiveLayer(type === "both" ? "top" : type)
+                      }
                       className={`flex w-full items-center gap-3 rounded-[22px] p-3 text-left transition ${
-                        activeLayer === type || (type === "both" && activeLayer === "top")
+                        activeLayer === type ||
+                        (type === "both" && activeLayer === "top")
                           ? "bg-black text-white"
                           : "bg-gray-50 text-black hover:bg-gray-100"
                       }`}
@@ -669,7 +787,9 @@ const StyleBuilder = () => {
                         <span
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedProducts((prev) => prev.filter((p) => p._id !== item._id));
+                            setSelectedProducts((prev) =>
+                              prev.filter((p) => p._id !== item._id)
+                            );
                           }}
                           className="rounded-full bg-white px-3 py-2 text-[9px] font-black uppercase tracking-widest text-red-500"
                         >
@@ -707,7 +827,11 @@ const StyleBuilder = () => {
                     activeLayer === layer
                       ? "bg-black text-white"
                       : "bg-white text-gray-500 hover:text-black"
-                  } ${!selectedLayerProduct[layer] ? "cursor-not-allowed opacity-40" : ""}`}
+                  } ${
+                    !selectedLayerProduct[layer]
+                      ? "cursor-not-allowed opacity-40"
+                      : ""
+                  }`}
                 >
                   {layer}
                 </button>
@@ -715,12 +839,47 @@ const StyleBuilder = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              <button onClick={() => moveLayer(activeLayer, { y: -8 })} className="rounded-2xl bg-white py-3 text-xs font-black">↑</button>
-              <button onClick={() => moveLayer(activeLayer, { scale: 0.03 })} className="rounded-2xl bg-white py-3 text-xs font-black">＋</button>
-              <button onClick={() => moveLayer(activeLayer, { x: 8 })} className="rounded-2xl bg-white py-3 text-xs font-black">→</button>
-              <button onClick={() => moveLayer(activeLayer, { x: -8 })} className="rounded-2xl bg-white py-3 text-xs font-black">←</button>
-              <button onClick={() => moveLayer(activeLayer, { scale: -0.03 })} className="rounded-2xl bg-white py-3 text-xs font-black">－</button>
-              <button onClick={() => moveLayer(activeLayer, { y: 8 })} className="rounded-2xl bg-white py-3 text-xs font-black">↓</button>
+              <button
+                onClick={() => moveLayer(activeLayer, { y: -8 })}
+                className="rounded-2xl bg-white py-3 text-xs font-black"
+              >
+                ↑
+              </button>
+
+              <button
+                onClick={() => moveLayer(activeLayer, { scale: 0.03 })}
+                className="rounded-2xl bg-white py-3 text-xs font-black"
+              >
+                ＋
+              </button>
+
+              <button
+                onClick={() => moveLayer(activeLayer, { x: 8 })}
+                className="rounded-2xl bg-white py-3 text-xs font-black"
+              >
+                →
+              </button>
+
+              <button
+                onClick={() => moveLayer(activeLayer, { x: -8 })}
+                className="rounded-2xl bg-white py-3 text-xs font-black"
+              >
+                ←
+              </button>
+
+              <button
+                onClick={() => moveLayer(activeLayer, { scale: -0.03 })}
+                className="rounded-2xl bg-white py-3 text-xs font-black"
+              >
+                －
+              </button>
+
+              <button
+                onClick={() => moveLayer(activeLayer, { y: 8 })}
+                className="rounded-2xl bg-white py-3 text-xs font-black"
+              >
+                ↓
+              </button>
             </div>
           </div>
         </aside>
