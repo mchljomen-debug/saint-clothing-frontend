@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useContext } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
@@ -28,6 +28,8 @@ import Footer from "./components/Footer";
 import SearchBar from "./components/SearchBar";
 import ScrollToTop from "./components/ScrollToTop";
 
+import { ShopContext } from "./context/ShopContext";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -35,6 +37,20 @@ export const backendUrl =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 
 export const currency = "₱";
+
+const ProtectedRoute = ({ children }) => {
+  const { token, authReady } = useContext(ShopContext);
+
+  if (!authReady) {
+    return null;
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
 
 const App = () => {
   return (
@@ -56,17 +72,80 @@ const App = () => {
         <Route path="/product/:productId" element={<Product />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/place-order" element={<PlaceOrder />} />
-        <Route path="/orders" element={<Orders />} />
         <Route path="/verify" element={<Verify />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/myaccount" element={<MyAccount />} />
-        <Route path="/preferences" element={<Preferences />} />
-        <Route path="/support" element={<Support />} />
         <Route path="/policies" element={<Policies />} />
 
-        <Route path="/manual-payment/:orderId" element={<ManualPayment />} />
-        <Route path="/payment-submitted" element={<PaymentSubmitted />} />
+        <Route
+          path="/place-order"
+          element={
+            <ProtectedRoute>
+              <PlaceOrder />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/myaccount"
+          element={
+            <ProtectedRoute>
+              <MyAccount />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/preferences"
+          element={
+            <ProtectedRoute>
+              <Preferences />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/support"
+          element={
+            <ProtectedRoute>
+              <Support />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/manual-payment/:orderId"
+          element={
+            <ProtectedRoute>
+              <ManualPayment />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/payment-submitted"
+          element={
+            <ProtectedRoute>
+              <PaymentSubmitted />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
 
       <Footer />
