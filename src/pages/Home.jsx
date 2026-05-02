@@ -9,6 +9,8 @@ import OurPolicy from "../components/OurPolicy";
 import NewsletterBox from "../components/NewsletterBox";
 import { backendUrl } from "../App";
 
+const CATEGORY_CACHE_KEY = "saint_home_categories";
+
 const Home = () => {
   const navigate = useNavigate();
 
@@ -20,6 +22,21 @@ const Home = () => {
   }, [categories]);
 
   useEffect(() => {
+    // 🔥 STEP 1: CHECK CACHE FIRST
+    const cached = sessionStorage.getItem(CATEGORY_CACHE_KEY);
+
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        setCategories(parsed);
+        setLoadingCategories(false);
+        return; // 🚀 stop fetching again
+      } catch {
+        sessionStorage.removeItem(CATEGORY_CACHE_KEY);
+      }
+    }
+
+    // 🔥 STEP 2: FETCH ONLY IF NO CACHE
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
@@ -27,7 +44,12 @@ const Home = () => {
         const res = await axios.get(`${backendUrl}/api/category/list`);
 
         if (res.data?.success) {
-          setCategories(res.data.categories || []);
+          const data = res.data.categories || [];
+
+          setCategories(data);
+
+          // 🔥 SAVE TO CACHE
+          sessionStorage.setItem(CATEGORY_CACHE_KEY, JSON.stringify(data));
         } else {
           setCategories([]);
         }
@@ -49,7 +71,8 @@ const Home = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
-      {/* ================= HERO - SAME HEIGHT AS CATEGORY ================= */}
+
+      {/* ================= HERO ================= */}
       <section className="relative min-h-[calc(100vh-72px)] overflow-hidden md:min-h-[calc(100vh-80px)] [&>*]:min-h-[calc(100vh-72px)] md:[&>*]:min-h-[calc(100vh-80px)]">
         <Hero />
       </section>
@@ -139,6 +162,7 @@ const Home = () => {
         )}
       </section>
 
+      {/* ================= OTHER SECTIONS ================= */}
       <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
         <LatestCollection />
       </div>
