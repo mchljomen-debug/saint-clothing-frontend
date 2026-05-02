@@ -21,6 +21,38 @@ const DEFAULT_CATEGORIES = [
   "Crop Jersey",
 ];
 
+const normalizeStockObject = (stock = {}) => {
+  const stockObj = typeof stock === "string" ? JSON.parse(stock) : stock || {};
+  const normalized = {};
+
+  SIZE_ORDER.forEach((size) => {
+    const matchingKey = Object.keys(stockObj).find(
+      (key) => String(key).toUpperCase() === size
+    );
+
+    normalized[size] = Number(matchingKey ? stockObj[matchingKey] : 0);
+  });
+
+  return normalized;
+};
+
+const getAvailableStockForSize = (product, size) => {
+  const normalizedSize = String(size || "").toUpperCase();
+
+  const actualStock = Number(product?.stock?.[normalizedSize] || 0);
+  const preorderStock = Number(product?.preorderStock?.[normalizedSize] || 0);
+  const preorderEnabled = product?.preorderEnabled !== false;
+  const preorderThreshold = Number(product?.preorderThreshold ?? 5);
+
+  const isPreorderSize =
+    preorderEnabled && actualStock <= preorderThreshold && preorderStock > 0;
+
+  return {
+    availableStock: isPreorderSize ? preorderStock : actualStock,
+    isPreorderSize,
+  };
+};
+
 const ShopContextProvider = ({ children }) => {
   const currency = "₱";
   const delivery_fee = 10;
@@ -141,21 +173,11 @@ const ShopContextProvider = ({ children }) => {
 
       if (response.data.success) {
         const productsData = (response.data.products || []).map((p) => {
-          const stockObj =
-            typeof p.stock === "string" ? JSON.parse(p.stock) : p.stock || {};
-
-          const normalizedStock = {};
-          SIZE_ORDER.forEach((size) => {
-            const matchingKey = Object.keys(stockObj).find(
-              (key) => String(key).toUpperCase() === size
-            );
-
-            normalizedStock[size] = Number(
-              matchingKey ? stockObj[matchingKey] : 0
-            );
-          });
-
-          return { ...p, stock: normalizedStock };
+          return {
+            ...p,
+            stock: normalizeStockObject(p.stock),
+            preorderStock: normalizeStockObject(p.preorderStock),
+          };
         });
 
         const reversedProducts = productsData.reverse();
@@ -264,11 +286,19 @@ const ShopContextProvider = ({ children }) => {
         return;
       }
 
-      const availableStock = Number(product.stock?.[normalizedSize] || 0);
+      const { availableStock, isPreorderSize } = getAvailableStockForSize(
+        product,
+        normalizedSize
+      );
+
       const currentQty = Number(cartItems[itemId]?.[normalizedSize] || 0);
 
       if (currentQty + quantity > availableStock) {
-        toast.error("Cannot exceed available stock");
+        toast.error(
+          isPreorderSize
+            ? "Cannot exceed available pre-order slots"
+            : "Cannot exceed available stock"
+        );
         return;
       }
 
@@ -284,7 +314,8 @@ const ShopContextProvider = ({ children }) => {
           setCartItems(updatedCart);
           setCartCount(calculateCartCount(updatedCart));
           localStorage.setItem(`cart_${user._id}`, JSON.stringify(updatedCart));
-          toast.success("Added to cart");
+
+          toast.success(isPreorderSize ? "Pre-order added to cart" : "Added to cart");
         } else {
           toast.error(response.data.message || "Failed to add to cart");
         }
@@ -320,10 +351,17 @@ const ShopContextProvider = ({ children }) => {
       const product = products.find((p) => p._id === itemId);
       if (!product) return;
 
-      const availableStock = Number(product.stock?.[normalizedSize] || 0);
+      const { availableStock, isPreorderSize } = getAvailableStockForSize(
+        product,
+        normalizedSize
+      );
 
       if (quantity > availableStock) {
-        toast.error("Cannot exceed available stock");
+        toast.error(
+          isPreorderSize
+            ? "Cannot exceed available pre-order slots"
+            : "Cannot exceed available stock"
+        );
         return;
       }
 
@@ -540,4 +578,4 @@ const ShopContextProvider = ({ children }) => {
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 };
 
-export default ShopContextProvider; 
+export default ShopContextProvider;
