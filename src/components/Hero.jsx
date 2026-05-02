@@ -11,6 +11,7 @@ import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const HERO_CACHE_KEY = "saint_home_hero";
 
 const resolveImage = (img) => {
   if (!img) return "";
@@ -38,8 +39,18 @@ const Hero = () => {
   });
 
   /* ================= FETCH HERO ================= */
-  const fetchHero = useCallback(async () => {
+  const fetchHero = useCallback(async (forceRefresh = false) => {
     try {
+      if (!forceRefresh) {
+        const cachedHero = sessionStorage.getItem(HERO_CACHE_KEY);
+
+        if (cachedHero) {
+          const parsedHero = JSON.parse(cachedHero);
+          setHeroData(parsedHero);
+          return;
+        }
+      }
+
       const { data } = await axios.get(`${backendUrl}/api/hero`);
 
       if (data.success && data.hero) {
@@ -54,7 +65,7 @@ const Hero = () => {
           }))
           .filter((slide) => slide.image);
 
-        setHeroData({
+        const nextHeroData = {
           tickerEnabled:
             typeof data.hero.tickerEnabled === "boolean"
               ? data.hero.tickerEnabled
@@ -66,7 +77,10 @@ const Hero = () => {
             data.hero.tickerText ||
             "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
           slides,
-        });
+        };
+
+        setHeroData(nextHeroData);
+        sessionStorage.setItem(HERO_CACHE_KEY, JSON.stringify(nextHeroData));
       }
     } catch (error) {
       console.log("Hero fetch error:", error.message);
@@ -76,7 +90,11 @@ const Hero = () => {
   useEffect(() => {
     fetchHero();
 
-    const handleRefresh = () => fetchHero();
+    const handleRefresh = () => {
+      sessionStorage.removeItem(HERO_CACHE_KEY);
+      fetchHero(true);
+    };
+
     window.addEventListener("hero-refresh", handleRefresh);
 
     return () => {
@@ -112,20 +130,16 @@ const Hero = () => {
     const lastToken = localStorage.getItem(lastTokenKey);
     let count = Number(localStorage.getItem(loginCountKey) || 0);
 
-    // ✅ ONLY COUNT REAL LOGIN (token change)
     if (lastToken !== token) {
       count += 1;
       localStorage.setItem(loginCountKey, String(count));
       localStorage.setItem(lastTokenKey, token);
     }
 
-    // ✅ GREETING DECISION
     if (count <= 1) {
       setGreetingPrefix(heroData.newUserGreeting || "Welcome");
     } else {
-      setGreetingPrefix(
-        heroData.returningUserGreeting || "Welcome back"
-      );
+      setGreetingPrefix(heroData.returningUserGreeting || "Welcome back");
     }
   }, [
     isLoggedInUser,
@@ -178,7 +192,6 @@ const Hero = () => {
 
   return (
     <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden bg-black">
-
       {/* ================= TICKER ================= */}
       {isLoggedInUser && tickerMessage && (
         <div className="ticker-wrap">
@@ -245,57 +258,57 @@ const Hero = () => {
       </Carousel>
 
       <style jsx="true">{`
-  .ticker-wrap {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    overflow: hidden;
-    z-index: 40;
+        .ticker-wrap {
+          position: absolute;
+          top: 0;
+          width: 100%;
+          overflow: hidden;
+          z-index: 40;
 
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
 
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  }
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
 
-  .ticker-track {
-    display: flex;
-    width: max-content;
-    animation: tickerLoop 25s linear infinite;
-  }
+        .ticker-track {
+          display: flex;
+          width: max-content;
+          animation: tickerLoop 25s linear infinite;
+        }
 
-  .ticker-text {
-    display: flex;
-    white-space: nowrap;
-    padding: 10px 0;
-  }
+        .ticker-text {
+          display: flex;
+          white-space: nowrap;
+          padding: 10px 0;
+        }
 
-  .ticker-item {
-    padding-right: 28px;
-    color: #0A0D17;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
+        .ticker-item {
+          padding-right: 28px;
+          color: #0A0D17;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
 
-  .ticker-separator {
-    margin: 0 16px;
-    opacity: 0.35;
-    color: #0A0D17;
-  }
+        .ticker-separator {
+          margin: 0 16px;
+          opacity: 0.35;
+          color: #0A0D17;
+        }
 
-  @keyframes tickerLoop {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
-`}</style>
+        @keyframes tickerLoop {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </div>
   );
 };
