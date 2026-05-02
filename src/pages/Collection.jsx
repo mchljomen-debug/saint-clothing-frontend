@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
@@ -15,8 +16,16 @@ const Collection = () => {
     categoryOptions,
   } = useContext(ShopContext);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const queryCategory = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("category") || "";
+  }, [location.search]);
+
   const [showFilter, setShowFilter] = useState(false);
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(queryCategory);
   const [colorFilter, setColorFilter] = useState([]);
   const [sortType, setSortType] = useState("relavent");
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,6 +43,24 @@ const Collection = () => {
     return [...new Set((products || []).map((p) => p.color).filter(Boolean))];
   }, [products]);
 
+  useEffect(() => {
+    setCategory(queryCategory);
+    setCurrentPage(1);
+  }, [queryCategory]);
+
+  const updateCategory = (cat) => {
+    setCategory(cat);
+    setCurrentPage(1);
+
+    if (cat) {
+      navigate(`/collection?category=${encodeURIComponent(cat)}`, {
+        replace: true,
+      });
+    } else {
+      navigate("/collection", { replace: true });
+    }
+  };
+
   const toggleColor = (value) => {
     setColorFilter((prev) =>
       prev.includes(value)
@@ -49,7 +76,7 @@ const Collection = () => {
   };
 
   const filteredProducts = useMemo(() => {
-    let list = [...(products || [])];
+    let list = [...(products || [])].filter((item) => item && !item.isDeleted);
 
     if (showSearch && search) {
       const q = search.toLowerCase();
@@ -104,6 +131,12 @@ const Collection = () => {
     if (p < 1 || p > totalPages) return;
     setCurrentPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const clearFilters = () => {
+    setCategory("");
+    setColorFilter([]);
+    navigate("/collection", { replace: true });
   };
 
   return (
@@ -184,13 +217,23 @@ const Collection = () => {
                   Category
                 </p>
 
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="radio"
+                    checked={category === ""}
+                    onChange={() => updateCategory("")}
+                    className="accent-black"
+                  />
+                  <span className="text-[10px] uppercase">All</span>
+                </label>
+
                 {categories.length > 0 ? (
                   categories.map((cat) => (
                     <label key={cat} className="flex items-center gap-2 mb-2">
                       <input
                         type="radio"
                         checked={category === cat}
-                        onChange={() => setCategory(cat)}
+                        onChange={() => updateCategory(cat)}
                         className="accent-black"
                       />
                       <span className="text-[10px] uppercase">{cat}</span>
@@ -229,10 +272,7 @@ const Collection = () => {
 
               {(category || colorFilter.length > 0) && (
                 <button
-                  onClick={() => {
-                    setCategory("");
-                    setColorFilter([]);
-                  }}
+                  onClick={clearFilters}
                   className="w-full py-2 text-[10px] uppercase bg-black text-white rounded"
                 >
                   Clear
