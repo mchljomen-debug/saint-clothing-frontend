@@ -1,38 +1,9 @@
 import React, { useContext, useMemo, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 
-const TOP_KEYWORDS = [
-  "tshirt",
-  "t-shirt",
-  "shirt",
-  "long sleeve",
-  "longsleeve",
-  "crop",
-  "jersey",
-  "hoodie",
-  "jacket",
-  "polo",
-];
-
-const BOTTOM_KEYWORDS = [
-  "jorts",
-  "short",
-  "shorts",
-  "pants",
-  "jeans",
-  "trouser",
-  "bottom",
-];
-
-const SHOES_KEYWORDS = [
-  "shoe",
-  "shoes",
-  "sneaker",
-  "sneakers",
-  "footwear",
-  "slides",
-  "sandals",
-];
+const TOP_KEYWORDS = ["tshirt", "t-shirt", "shirt", "long sleeve", "longsleeve", "crop", "jersey", "hoodie", "jacket", "polo"];
+const BOTTOM_KEYWORDS = ["jorts", "short", "shorts", "pants", "jeans", "trouser", "bottom"];
+const SHOES_KEYWORDS = ["shoe", "shoes", "sneaker", "sneakers", "footwear", "slides", "sandals"];
 
 const PREVIEW_BACKGROUNDS = [
   { name: "White", className: "bg-white", dot: "bg-white" },
@@ -51,17 +22,13 @@ const getProductImage = (item) => {
 };
 
 const getProductText = (product) =>
-  `${product?.category || ""} ${product?.name || ""} ${
-    product?.subCategory || ""
-  }`.toLowerCase();
+  `${product?.category || ""} ${product?.name || ""} ${product?.subCategory || ""}`.toLowerCase();
 
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
-
   if (["top", "bottom", "both", "shoes"].includes(section)) return section;
 
   const text = getProductText(product);
-
   if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
   if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
   if (SHOES_KEYWORDS.some((word) => text.includes(word))) return "shoes";
@@ -71,16 +38,8 @@ const getProductType = (product) => {
 
 const getBottomKind = (product) => {
   const text = getProductText(product);
-
   if (text.includes("jorts") || text.includes("short")) return "shorts";
-  if (
-    text.includes("pants") ||
-    text.includes("jeans") ||
-    text.includes("trouser")
-  ) {
-    return "pants";
-  }
-
+  if (text.includes("pants") || text.includes("jeans") || text.includes("trouser")) return "pants";
   return "bottom";
 };
 
@@ -115,21 +74,11 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
   };
 };
 
-const getOutfitStyle = (item, dynamicScale = 1, manual = {}, snap = {}) => {
+const getOutfitStyle = (item, dynamicScale = 1, snap = {}) => {
   const position = item?.outfitPosition || {};
-
-  const x =
-    Number(position.x || 0) +
-    Number(manual.x || 0) +
-    Number(snap.snapX || 0);
-
-  const y =
-    Number(position.y || 0) +
-    Number(manual.y || 0) +
-    Number(snap.snapY || 0);
-
-  const scale =
-    Number(position.scale || 1) * dynamicScale * Number(manual.scale || 1);
+  const x = Number(position.x || 0) + Number(snap.snapX || 0);
+  const y = Number(position.y || 0) + Number(snap.snapY || 0);
+  const scale = Number(position.scale || 1) * dynamicScale;
 
   return {
     transform: `translate(${x}px, ${y}px) scale(${scale})`,
@@ -149,24 +98,18 @@ const getFinalPrice = (item) => {
 
 const scorePair = (top, bottom) => {
   let score = 0;
-
   if (!top || !bottom) return score;
 
   if (top.category && bottom.matchWith?.includes(top.category)) score += 8;
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 8;
   if (top.color && bottom.color && top.color === bottom.color) score += 3;
-
-  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
-    score += 4;
-  }
+  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) score += 4;
 
   const topTags = Array.isArray(top.styleTags) ? top.styleTags : [];
   const bottomTags = Array.isArray(bottom.styleTags) ? bottom.styleTags : [];
 
   const sharedTags = bottomTags.filter((tag) =>
-    topTags
-      .map((t) => String(t).toLowerCase())
-      .includes(String(tag).toLowerCase())
+    topTags.map((t) => String(t).toLowerCase()).includes(String(tag).toLowerCase())
   );
 
   score += sharedTags.length * 2;
@@ -188,13 +131,6 @@ const StyleBuilder = () => {
   const [category, setCategory] = useState("All");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [previewBg, setPreviewBg] = useState("bg-white");
-  const [activeLayer, setActiveLayer] = useState("top");
-
-  const [manualAdjustments, setManualAdjustments] = useState({
-    top: { x: 0, y: 0, scale: 1 },
-    bottom: { x: 0, y: 0, scale: 1 },
-    shoes: { x: 0, y: 0, scale: 1 },
-  });
 
   const CATEGORIES = useMemo(() => {
     return ["All", ...Array.from(new Set(categoryOptions.filter(Boolean)))];
@@ -230,42 +166,10 @@ const StyleBuilder = () => {
     selectedShoes,
   });
 
-  const selectedLayerProduct = {
-    top: selectedTop,
-    bottom: selectedBottom,
-    shoes: selectedShoes,
-  };
-
   const isDarkPreview = previewBg === "bg-[#050505]";
 
   const clearFit = () => {
     setSelectedProducts([]);
-    setManualAdjustments({
-      top: { x: 0, y: 0, scale: 1 },
-      bottom: { x: 0, y: 0, scale: 1 },
-      shoes: { x: 0, y: 0, scale: 1 },
-    });
-  };
-
-  const resetLayer = (layer = activeLayer) => {
-    setManualAdjustments((prev) => ({
-      ...prev,
-      [layer]: { x: 0, y: 0, scale: 1 },
-    }));
-  };
-
-  const moveLayer = (layer, changes) => {
-    setManualAdjustments((prev) => ({
-      ...prev,
-      [layer]: {
-        x: Math.max(-80, Math.min(80, prev[layer].x + (changes.x || 0))),
-        y: Math.max(-100, Math.min(100, prev[layer].y + (changes.y || 0))),
-        scale: Math.max(
-          0.75,
-          Math.min(1.35, prev[layer].scale + (changes.scale || 0))
-        ),
-      },
-    }));
   };
 
   const addToFit = (product) => {
@@ -281,7 +185,6 @@ const StyleBuilder = () => {
       }
 
       if (productType === "top") {
-        setActiveLayer("top");
         return [
           ...prev.filter(
             (item) => !["top", "both"].includes(getProductType(item))
@@ -291,7 +194,6 @@ const StyleBuilder = () => {
       }
 
       if (productType === "bottom") {
-        setActiveLayer("bottom");
         return [
           ...prev.filter(
             (item) => !["bottom", "both"].includes(getProductType(item))
@@ -301,7 +203,6 @@ const StyleBuilder = () => {
       }
 
       if (productType === "shoes") {
-        setActiveLayer("shoes");
         return [
           ...prev.filter((item) => getProductType(item) !== "shoes"),
           product,
@@ -309,7 +210,6 @@ const StyleBuilder = () => {
       }
 
       if (productType === "both") {
-        setActiveLayer("top");
         return [product];
       }
 
@@ -370,12 +270,6 @@ const StyleBuilder = () => {
       shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : null;
 
     setSelectedProducts([pickedTop, pickedBottom, pickedShoes].filter(Boolean));
-
-    setManualAdjustments({
-      top: { x: 0, y: 0, scale: 1 },
-      bottom: { x: 0, y: 0, scale: 1 },
-      shoes: { x: 0, y: 0, scale: 1 },
-    });
   };
 
   const handleModeChange = (nextMode) => {
@@ -434,8 +328,8 @@ const StyleBuilder = () => {
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-gray-500">
-            Build your fit manually, generate an automatic outfit, then fine-tune
-            each layer with smart snapping.
+            Build your fit manually or generate an automatic outfit from your
+            collection.
           </p>
         </div>
 
@@ -595,7 +489,7 @@ const StyleBuilder = () => {
 
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
-              Background
+              Background Color
             </p>
 
             <div className="flex gap-2">
@@ -604,7 +498,7 @@ const StyleBuilder = () => {
                   key={bg.name}
                   onClick={() => setPreviewBg(bg.className)}
                   title={bg.name}
-                  className={`h-7 w-7 rounded-full border transition ${bg.dot} ${
+                  className={`h-8 w-8 rounded-full border transition ${bg.dot} ${
                     previewBg === bg.className
                       ? "border-black ring-2 ring-black ring-offset-2"
                       : "border-gray-300"
@@ -644,7 +538,6 @@ const StyleBuilder = () => {
                     style={getOutfitStyle(
                       selectedTop,
                       outfitLayout.top.scale,
-                      manualAdjustments.top,
                       outfitLayout.top
                     )}
                     className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
@@ -674,7 +567,6 @@ const StyleBuilder = () => {
                     style={getOutfitStyle(
                       selectedBottom,
                       outfitLayout.bottom.scale,
-                      manualAdjustments.bottom,
                       outfitLayout.bottom
                     )}
                     className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
@@ -711,7 +603,6 @@ const StyleBuilder = () => {
                     style={getOutfitStyle(
                       selectedShoes,
                       outfitLayout.shoes.scale,
-                      manualAdjustments.shoes,
                       outfitLayout.shoes
                     )}
                     className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
@@ -750,17 +641,9 @@ const StyleBuilder = () => {
                   const type = getProductType(item);
 
                   return (
-                    <button
+                    <div
                       key={item._id}
-                      onClick={() =>
-                        setActiveLayer(type === "both" ? "top" : type)
-                      }
-                      className={`flex w-full items-center gap-3 rounded-[22px] p-3 text-left transition ${
-                        activeLayer === type ||
-                        (type === "both" && activeLayer === "top")
-                          ? "bg-black text-white"
-                          : "bg-gray-50 text-black hover:bg-gray-100"
-                      }`}
+                      className="flex w-full items-center gap-3 rounded-[22px] bg-gray-50 p-3 text-left transition hover:bg-gray-100"
                     >
                       <img
                         src={getProductImage(item)}
@@ -769,118 +652,37 @@ const StyleBuilder = () => {
                       />
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-60">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
                           {type}
                         </p>
 
-                        <p className="line-clamp-1 text-xs font-black uppercase">
+                        <p className="line-clamp-1 text-xs font-black uppercase text-black">
                           {item.name}
                         </p>
 
-                        <p className="text-[11px] font-black opacity-70">
+                        <p className="text-[11px] font-black text-gray-500">
                           {currency}
                           {getFinalPrice(item).toLocaleString()}
                         </p>
                       </div>
 
                       {mode === "manual" && (
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
+                        <button
+                          onClick={() =>
                             setSelectedProducts((prev) =>
                               prev.filter((p) => p._id !== item._id)
-                            );
-                          }}
+                            )
+                          }
                           className="rounded-full bg-white px-3 py-2 text-[9px] font-black uppercase tracking-widest text-red-500"
                         >
                           Remove
-                        </span>
+                        </button>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             )}
-          </div>
-
-          <div className="mt-4 rounded-[24px] bg-gray-50 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400">
-                Fine Tune
-              </p>
-
-              <button
-                onClick={() => resetLayer(activeLayer)}
-                className="text-[10px] font-black uppercase tracking-widest text-red-500"
-              >
-                Reset
-              </button>
-            </div>
-
-            <div className="mb-3 grid grid-cols-3 gap-2">
-              {["top", "bottom", "shoes"].map((layer) => (
-                <button
-                  key={layer}
-                  onClick={() => setActiveLayer(layer)}
-                  disabled={!selectedLayerProduct[layer]}
-                  className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-widest transition ${
-                    activeLayer === layer
-                      ? "bg-black text-white"
-                      : "bg-white text-gray-500 hover:text-black"
-                  } ${
-                    !selectedLayerProduct[layer]
-                      ? "cursor-not-allowed opacity-40"
-                      : ""
-                  }`}
-                >
-                  {layer}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => moveLayer(activeLayer, { y: -8 })}
-                className="rounded-2xl bg-white py-3 text-xs font-black"
-              >
-                ↑
-              </button>
-
-              <button
-                onClick={() => moveLayer(activeLayer, { scale: 0.03 })}
-                className="rounded-2xl bg-white py-3 text-xs font-black"
-              >
-                ＋
-              </button>
-
-              <button
-                onClick={() => moveLayer(activeLayer, { x: 8 })}
-                className="rounded-2xl bg-white py-3 text-xs font-black"
-              >
-                →
-              </button>
-
-              <button
-                onClick={() => moveLayer(activeLayer, { x: -8 })}
-                className="rounded-2xl bg-white py-3 text-xs font-black"
-              >
-                ←
-              </button>
-
-              <button
-                onClick={() => moveLayer(activeLayer, { scale: -0.03 })}
-                className="rounded-2xl bg-white py-3 text-xs font-black"
-              >
-                －
-              </button>
-
-              <button
-                onClick={() => moveLayer(activeLayer, { y: 8 })}
-                className="rounded-2xl bg-white py-3 text-xs font-black"
-              >
-                ↓
-              </button>
-            </div>
           </div>
         </aside>
       </div>
