@@ -8,9 +8,7 @@ const getTotalStock = (stockObj) => {
 
   if (typeof stockObj.get === "function") {
     let total = 0;
-    for (const [, value] of stockObj.entries()) {
-      total += Number(value) || 0;
-    }
+    for (const [, value] of stockObj.entries()) total += Number(value) || 0;
     return total;
   }
 
@@ -51,12 +49,29 @@ const ProductItem = ({
   const navigate = useNavigate();
 
   const productId = _id || id || "";
-
   const isLoggedIn = !!user;
   const safeBranch = branch || "branch1";
   const safePrice = Number(price || 0);
   const safeSalePercent = Number(salePercent || 0);
   const hasDiscount = Boolean(onSale) && safeSalePercent > 0;
+
+  const normalizeImage = (img) => {
+    if (!img) return "fallback-image.jpg";
+    if (String(img).startsWith("http")) return img;
+    return `${backendUrl}/uploads/${img}`;
+  };
+
+  const defaultImage =
+    images && images.length > 0 ? normalizeImage(images[0]) : "fallback-image.jpg";
+
+  const hoverImage =
+    images && images.length > 1 ? normalizeImage(images[1]) : defaultImage;
+
+  const [previewImage, setPreviewImage] = useState(defaultImage);
+
+  useEffect(() => {
+    setPreviewImage(defaultImage);
+  }, [defaultImage, productId]);
 
   const colorVariants = useMemo(() => {
     if (!groupCode) return [];
@@ -74,21 +89,6 @@ const ProductItem = ({
     );
   }, [products, groupCode, safeBranch]);
 
-  const normalizeImage = (img) => {
-    if (!img) return "fallback-image.jpg";
-    if (String(img).startsWith("http")) return img;
-    return `${backendUrl}/uploads/${img}`;
-  };
-
-  const defaultImage =
-    images && images.length > 0 ? normalizeImage(images[0]) : "fallback-image.jpg";
-
-  const [previewImage, setPreviewImage] = useState(defaultImage);
-
-  useEffect(() => {
-    setPreviewImage(defaultImage);
-  }, [defaultImage, productId]);
-
   const totalStock = getTotalStock(stock);
   const isOutOfStock = totalStock <= 0;
 
@@ -105,12 +105,7 @@ const ProductItem = ({
   const showDiscountBadge = !isOutOfStock && hasDiscount;
 
   const handleNavigateToProduct = () => {
-    if (!productId) {
-      console.log("❌ Missing product ID:", { id, _id, name });
-      return;
-    }
-
-    console.log("✅ Navigating to product:", productId, name);
+    if (!productId) return;
     navigate(`/product/${productId}`);
     window.scrollTo(0, 0);
   };
@@ -118,33 +113,37 @@ const ProductItem = ({
   return (
     <div
       onClick={handleNavigateToProduct}
-      className={`group cursor-pointer bg-white border transition-all duration-300 overflow-hidden ${
+      className={`group cursor-pointer overflow-hidden border bg-[#FAFAF8] shadow-[0_10px_24px_rgba(0,0,0,0.035)] transition-all duration-300 hover:-translate-y-1 ${
         isOutOfStock
           ? "border-gray-300 opacity-90"
-          : "border-gray-200 hover:border-black hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
+          : "border-black/10 hover:border-black hover:bg-[#F7F4EE] hover:shadow-[0_18px_40px_rgba(0,0,0,0.10)]"
       }`}
     >
-      <div className="relative overflow-hidden aspect-[4/5] bg-[#F5F5F5]">
+      <div
+        className="relative aspect-[4/5] overflow-hidden bg-[#F2F1ED]"
+        onMouseEnter={() => setPreviewImage(hoverImage)}
+        onMouseLeave={() => setPreviewImage(defaultImage)}
+      >
         {showNewArrivalBadge && (
-          <div className="absolute top-2 sm:top-3 left-0 z-20 bg-black text-white text-[9px] sm:text-[10px] font-black px-2.5 sm:px-3 py-1 uppercase">
+          <div className="absolute left-0 top-2 z-20 bg-black px-2.5 py-1 text-[9px] font-black uppercase text-white sm:top-3 sm:px-3 sm:text-[10px]">
             New Arrival
           </div>
         )}
 
         {showBestSellerBadge && (
-          <div className="absolute top-2 sm:top-3 left-0 z-20 bg-[#1A1A1A] text-white text-[9px] sm:text-[10px] font-black px-2.5 sm:px-3 py-1 uppercase">
+          <div className="absolute left-0 top-2 z-20 bg-[#1A1A1A] px-2.5 py-1 text-[9px] font-black uppercase text-white sm:top-3 sm:px-3 sm:text-[10px]">
             Best Seller
           </div>
         )}
 
         {showDiscountBadge && (
-          <div className="absolute top-2 sm:top-3 right-0 z-20 bg-red-600 text-white text-[9px] sm:text-[10px] font-black px-2.5 sm:px-3 py-1 uppercase">
+          <div className="absolute right-0 top-2 z-20 bg-red-600 px-2.5 py-1 text-[9px] font-black uppercase text-white sm:top-3 sm:px-3 sm:text-[10px]">
             {safeSalePercent}% Off
           </div>
         )}
 
         {isOutOfStock && (
-          <div className="absolute top-2 sm:top-3 left-0 z-30 bg-black text-white text-[9px] sm:text-[10px] font-black px-2.5 sm:px-3 py-1 uppercase">
+          <div className="absolute left-0 top-2 z-30 bg-black px-2.5 py-1 text-[9px] font-black uppercase text-white sm:top-3 sm:px-3 sm:text-[10px]">
             Out of Stock
           </div>
         )}
@@ -152,14 +151,14 @@ const ProductItem = ({
         <img
           src={previewImage}
           alt={name}
-          className={`w-full h-full object-cover transition-transform duration-500 ${
+          className={`h-full w-full object-cover transition-all duration-500 ${
             isOutOfStock ? "grayscale opacity-75" : "group-hover:scale-105"
           }`}
         />
 
         {!isOutOfStock && (
-          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-            <span className="bg-black text-white px-3 sm:px-4 py-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em] sm:tracking-[0.2em]">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/5 opacity-0 transition-all duration-300 group-hover:opacity-100">
+            <span className="bg-black px-3 py-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white sm:px-4 sm:text-[10px] sm:tracking-[0.2em]">
               View Details
             </span>
           </div>
@@ -167,7 +166,7 @@ const ProductItem = ({
 
         {colorVariants.length > 1 && (
           <div
-            className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-20 flex flex-col gap-1.5 sm:gap-2 bg-white/90 px-2 py-2 rounded-lg backdrop-blur-sm"
+            className="absolute bottom-2 left-2 z-20 flex flex-col gap-1.5 rounded-lg bg-[#FAFAF8]/90 px-2 py-2 backdrop-blur-sm sm:bottom-3 sm:left-3 sm:gap-2"
             onMouseLeave={() => setPreviewImage(defaultImage)}
             onClick={(e) => e.stopPropagation()}
           >
@@ -182,23 +181,14 @@ const ProductItem = ({
                   key={variant._id}
                   type="button"
                   onClick={() => {
-                    if (!variant._id) {
-                      console.log("❌ Missing variant ID:", variant);
-                      return;
-                    }
-
-                    console.log(
-                      "✅ Navigating to variant:",
-                      variant._id,
-                      variant.name
-                    );
+                    if (!variant._id) return;
                     navigate(`/product/${variant._id}`);
                     window.scrollTo(0, 0);
                   }}
                   onMouseEnter={() => setPreviewImage(variantImage)}
-                  className={`w-4 h-4 sm:w-5 sm:h-5 border-2 rounded-full transition-all ${
+                  className={`h-4 w-4 rounded-full border-2 transition-all sm:h-5 sm:w-5 ${
                     String(variant._id) === String(productId)
-                      ? "border-black scale-110"
+                      ? "scale-110 border-black"
                       : "border-gray-300 hover:border-black"
                   }`}
                   style={{ backgroundColor: variant.colorHex || "#d1d5db" }}
@@ -210,37 +200,37 @@ const ProductItem = ({
         )}
       </div>
 
-      <div className="p-3 sm:p-4 text-left flex flex-col">
-        <p className="text-gray-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.16em] sm:tracking-[0.18em]">
+      <div className="flex flex-col p-3 text-left sm:p-4">
+        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-gray-400 sm:text-[10px] sm:tracking-[0.18em]">
           Saint Clothing
         </p>
 
-        <p className="text-black font-bold text-[13px] sm:text-sm uppercase mt-1 min-h-[36px] sm:min-h-[40px] leading-snug line-clamp-2">
+        <p className="mt-1 min-h-[36px] text-[13px] font-bold uppercase leading-snug text-black line-clamp-2 sm:min-h-[40px] sm:text-sm">
           {name}
         </p>
 
-        <p className="text-[10px] sm:text-[11px] uppercase font-bold mt-1 min-h-[16px] text-gray-500 line-clamp-1">
+        <p className="mt-1 min-h-[16px] text-[10px] font-bold uppercase text-gray-500 line-clamp-1 sm:text-[11px]">
           {getColorLabel({ color, colorHex })}
         </p>
 
         {isOutOfStock ? (
-          <p className="text-[10px] font-bold uppercase text-gray-500 mt-1 min-h-[16px]">
+          <p className="mt-1 min-h-[16px] text-[10px] font-bold uppercase text-gray-500">
             Out of stock
           </p>
         ) : (
-          <div className="min-h-[16px] mt-1"></div>
+          <div className="mt-1 min-h-[16px]"></div>
         )}
 
-        <div className="flex justify-between items-end gap-2 pt-3">
+        <div className="flex items-end justify-between gap-2 pt-3">
           {isLoggedIn ? (
-            <div className="min-h-[44px] sm:min-h-[48px] flex flex-col justify-end min-w-0">
+            <div className="flex min-h-[44px] min-w-0 flex-col justify-end sm:min-h-[48px]">
               {hasDiscount ? (
                 <>
-                  <p className="text-[11px] sm:text-[12px] text-gray-400 line-through font-bold leading-none">
+                  <p className="text-[11px] font-bold leading-none text-gray-400 line-through sm:text-[12px]">
                     {currency}
                     {safePrice.toFixed(2)}
                   </p>
-                  <p className="text-base sm:text-lg font-black text-black leading-tight mt-1 break-words">
+                  <p className="mt-1 break-words text-base font-black leading-tight text-black sm:text-lg">
                     {currency}
                     {finalPrice}
                   </p>
@@ -248,7 +238,7 @@ const ProductItem = ({
               ) : (
                 <>
                   <div className="h-[11px] sm:h-[12px]"></div>
-                  <p className="text-base sm:text-lg font-black text-black leading-tight mt-1 break-words">
+                  <p className="mt-1 break-words text-base font-black leading-tight text-black sm:text-lg">
                     {currency}
                     {safePrice.toFixed(2)}
                   </p>
@@ -256,15 +246,15 @@ const ProductItem = ({
               )}
             </div>
           ) : (
-            <div className="min-h-[44px] sm:min-h-[48px] flex items-end min-w-0">
-              <p className="text-[10px] sm:text-[11px] font-black text-gray-400 uppercase leading-tight">
+            <div className="flex min-h-[44px] min-w-0 items-end sm:min-h-[48px]">
+              <p className="text-[10px] font-black uppercase leading-tight text-gray-400 sm:text-[11px]">
                 Login to see price
               </p>
             </div>
           )}
 
           <div
-            className={`h-8 w-8 sm:h-9 sm:w-9 shrink-0 border flex items-center justify-center text-sm transition-all duration-300 ${
+            className={`flex h-8 w-8 shrink-0 items-center justify-center border text-sm transition-all duration-300 sm:h-9 sm:w-9 ${
               isOutOfStock
                 ? "border-gray-300 text-gray-400"
                 : "border-black text-black group-hover:bg-black group-hover:text-white"
