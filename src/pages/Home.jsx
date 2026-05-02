@@ -49,13 +49,12 @@ const Home = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
-
-      {/* ================= HERO (FIXED) ================= */}
-      <div>
+      {/* ================= HERO - SAME HEIGHT AS CATEGORY ================= */}
+      <section className="relative min-h-[calc(100vh-72px)] overflow-hidden md:min-h-[calc(100vh-80px)] [&>*]:min-h-[calc(100vh-72px)] md:[&>*]:min-h-[calc(100vh-80px)]">
         <Hero />
-      </div>
+      </section>
 
-      {/* ================= CATEGORY (UNCHANGED) ================= */}
+      {/* ================= CATEGORY ================= */}
       <section className="mt-6">
         <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
           <div className="mb-5 flex items-end justify-between gap-4">
