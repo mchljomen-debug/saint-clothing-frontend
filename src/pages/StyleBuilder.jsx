@@ -304,54 +304,54 @@ const StyleBuilder = () => {
   };
 
   const generateAutomaticFit = () => {
-    const tops = cleanProducts.filter((item) => {
-      const type = getProductType(item);
-      return type === "top" || type === "both";
-    });
+  const tops = cleanProducts.filter((item) => {
+    const type = getProductType(item);
+    return type === "top" || type === "both";
+  });
 
-    const bottoms = cleanProducts.filter((item) => {
-      const type = getProductType(item);
-      return type === "bottom" || type === "both";
-    });
+  const bottoms = cleanProducts.filter((item) => {
+    const type = getProductType(item);
+    return type === "bottom" || type === "both";
+  });
 
-    if (tops.length === 0 && bottoms.length === 0) return;
+  if (tops.length === 0 && bottoms.length === 0) return;
 
-    let pickedTop = null;
-    let pickedBottom = null;
+  if (tops.length > 0 && bottoms.length > 0) {
+    const rankedPairs = [];
 
-    if (tops.length > 0 && bottoms.length > 0) {
-      const pairs = [];
-
-      tops.forEach((top) => {
-        bottoms.forEach((bottom) => {
-          if (top._id !== bottom._id) {
-            pairs.push({
-              top,
-              bottom,
-              score: scorePair(top, bottom),
-            });
-          }
-        });
+    tops.forEach((top) => {
+      bottoms.forEach((bottom) => {
+        if (top._id !== bottom._id) {
+          rankedPairs.push({
+            top,
+            bottom,
+            score: scorePair(top, bottom),
+          });
+        }
       });
+    });
 
-      const bestPairs = pairs
-        .sort((a, b) => b.score - a.score)
-        .slice(0, Math.min(8, pairs.length));
+    const bestPairs = rankedPairs
+      .sort((a, b) => b.score - a.score)
+      .slice(0, Math.min(5, rankedPairs.length));
 
-      const randomPair = bestPairs[Math.floor(Math.random() * bestPairs.length)];
+    const selectedPair =
+      bestPairs[Math.floor(Math.random() * bestPairs.length)] || bestPairs[0];
 
-      pickedTop = randomPair?.top || null;
-      pickedBottom = randomPair?.bottom || null;
-    } else if (tops.length > 0) {
-      pickedTop = tops[Math.floor(Math.random() * tops.length)];
-    } else if (bottoms.length > 0) {
-      pickedBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
-    }
-
-    setSelectedProducts([pickedTop, pickedBottom].filter(Boolean));
+    setSelectedProducts([selectedPair.top, selectedPair.bottom].filter(Boolean));
     setPositions(DEFAULT_POSITIONS);
-  };
+    return;
+  }
 
+  if (tops.length > 0) {
+    setSelectedProducts([tops[Math.floor(Math.random() * tops.length)]]);
+    setPositions(DEFAULT_POSITIONS);
+    return;
+  }
+
+  setSelectedProducts([bottoms[Math.floor(Math.random() * bottoms.length)]]);
+  setPositions(DEFAULT_POSITIONS);
+};
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
 
