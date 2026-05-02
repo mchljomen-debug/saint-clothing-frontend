@@ -11,6 +11,7 @@ import { backendUrl } from "../App";
 
 const Home = () => {
   const navigate = useNavigate();
+
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -22,6 +23,7 @@ const Home = () => {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
+
         const res = await axios.get(`${backendUrl}/api/category/list`);
 
         if (res.data?.success) {
@@ -47,21 +49,38 @@ const Home = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
-      {/* HERO - CONTROLLED HEIGHT */}
+
+      {/* ================= HERO ================= */}
       <section className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <div className="h-[420px] overflow-hidden sm:h-[480px] md:h-[520px] lg:h-[560px] xl:h-[600px]">
+        <div className="relative h-[360px] overflow-hidden rounded-[6px] shadow-[0_20px_50px_rgba(0,0,0,0.08)] sm:h-[420px] md:h-[460px] lg:h-[500px] xl:h-[540px]">
+          
+          {/* Hero Component */}
           <Hero />
+
+          {/* 🔥 SCROLL INDICATOR */}
+          <div className="pointer-events-none absolute bottom-5 left-1/2 z-30 -translate-x-1/2">
+            <div className="flex flex-col items-center gap-2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
+              <p className="text-[9px] font-black uppercase tracking-[0.32em]">
+                Scroll
+              </p>
+              <span className="text-lg animate-bounce">↓</span>
+            </div>
+          </div>
         </div>
+
+        {/* 👇 spacing so next section is slightly visible */}
+        <div className="mt-6" />
       </section>
 
-      {/* CATEGORIES - UNIQLO STYLE */}
-      <section className="mt-6">
+      {/* ================= CATEGORIES ================= */}
+      <section className="mt-4">
         <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
                 Saint Clothing
               </p>
+
               <h2 className="mt-1 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
                 Categories
               </h2>
@@ -77,7 +96,7 @@ const Home = () => {
         </div>
 
         {loadingCategories ? (
-          <div className="flex h-[70vh] items-center justify-center">
+          <div className="flex h-[60vh] items-center justify-center">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
               Loading categories...
             </p>
@@ -87,8 +106,9 @@ const Home = () => {
             {visibleCategories.map((cat, index) => (
               <section
                 key={cat._id || cat.name}
-                className="relative flex min-h-[calc(100vh-72px)] snap-start items-end overflow-hidden bg-[#e8e2d7] md:min-h-[calc(100vh-80px)]"
+                className="relative flex min-h-[90vh] snap-start items-end overflow-hidden bg-[#e8e2d7]"
               >
+                {/* IMAGE */}
                 {cat.image ? (
                   <img
                     src={cat.image}
@@ -96,29 +116,25 @@ const Home = () => {
                     className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#e8e2d7]">
-                    <p className="select-none text-[18vw] font-black uppercase tracking-[-0.08em] text-black/[0.04]">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-[15vw] font-black text-black/[0.04]">
                       SAINT
                     </p>
                   </div>
                 )}
 
+                {/* OVERLAY */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
+                {/* CONTENT */}
                 <div className="relative z-10 w-full px-5 pb-10 sm:px-[7vw] sm:pb-14 lg:px-[8vw]">
                   <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/70">
                     {cat.section || "category"}
                   </p>
 
-                  <h2 className="mt-2 text-5xl font-black uppercase tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
+                  <h2 className="mt-2 text-5xl font-black uppercase text-white sm:text-7xl">
                     {cat.name}
                   </h2>
-
-                  {Array.isArray(cat.matchWith) && cat.matchWith.length > 0 && (
-                    <p className="mt-3 max-w-xl text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
-                      Pairs with {cat.matchWith.slice(0, 3).join(", ")}
-                    </p>
-                  )}
 
                   <button
                     onClick={() => goToCategory(cat.name)}
@@ -127,7 +143,7 @@ const Home = () => {
                     Shop {cat.name} →
                   </button>
 
-                  <p className="absolute bottom-5 right-5 text-[10px] font-black uppercase tracking-[0.25em] text-white/60 sm:right-[7vw] lg:right-[8vw]">
+                  <p className="absolute bottom-5 right-5 text-[10px] font-black text-white/60">
                     {String(index + 1).padStart(2, "0")} /{" "}
                     {String(visibleCategories.length).padStart(2, "0")}
                   </p>
@@ -136,14 +152,15 @@ const Home = () => {
             ))}
           </div>
         ) : (
-          <div className="flex h-[70vh] items-center justify-center text-center">
-            <p className="text-sm font-black uppercase tracking-widest text-gray-400">
+          <div className="flex h-[60vh] items-center justify-center text-center">
+            <p className="text-sm font-black uppercase text-gray-400">
               No categories available
             </p>
           </div>
         )}
       </section>
 
+      {/* ================= COLLECTIONS ================= */}
       <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
         <div className="mt-10">
           <LatestCollection />
