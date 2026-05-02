@@ -88,7 +88,6 @@ const scorePair = (top, bottom) => {
 
   if (top.category && bottom.matchWith?.includes(top.category)) score += 8;
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 8;
-
   if (top.color && bottom.color && top.color === bottom.color) score += 3;
 
   if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
@@ -164,9 +163,7 @@ const StyleBuilder = () => {
     setSelectedProducts((prev) => {
       const exists = prev.some((item) => item._id === product._id);
 
-      if (exists) {
-        return prev.filter((item) => item._id !== product._id);
-      }
+      if (exists) return prev.filter((item) => item._id !== product._id);
 
       if (productType === "top") {
         return [
@@ -195,9 +192,7 @@ const StyleBuilder = () => {
         ];
       }
 
-      if (productType === "both") {
-        return [product];
-      }
+      if (productType === "both") return [product];
 
       return [...prev, product].slice(0, 4);
     });
@@ -264,6 +259,53 @@ const StyleBuilder = () => {
 
   return (
     <div className="min-h-screen bg-white px-4 pt-6 pb-16 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+      <style>
+        {`
+          @keyframes saintFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+          }
+
+          @keyframes saintFade {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+          }
+
+          .saint-float {
+            animation: saintFloat 4.5s ease-in-out infinite;
+          }
+
+          .saint-fade {
+            animation: saintFade 0.45s ease both;
+          }
+
+          .saint-preview:hover .saint-parallax-top {
+            transform: translateY(-8px) scale(1.03);
+          }
+
+          .saint-preview:hover .saint-parallax-bottom {
+            transform: translateY(-4px) scale(1.02);
+          }
+
+          .saint-preview:hover .saint-parallax-shoes {
+            transform: translateY(3px) scale(1.02);
+          }
+
+          .saint-scroll::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          .saint-scroll::-webkit-scrollbar-thumb {
+            background: #d4d4d4;
+            border-radius: 999px;
+          }
+
+          .saint-scroll::-webkit-scrollbar-track {
+            background: transparent;
+          }
+        `}
+      </style>
+
       <div className="mb-8 flex flex-col gap-5 border-b border-gray-200 pb-7 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.35em] text-gray-400">
@@ -275,8 +317,8 @@ const StyleBuilder = () => {
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-gray-500">
-            Build a clean outfit manually or let Saint create a smart automatic
-            fit using your collection.
+            Build your fit manually or generate an automatic outfit from your
+            collection.
           </p>
         </div>
 
@@ -305,7 +347,7 @@ const StyleBuilder = () => {
         </div>
       </div>
 
-      <div className="grid gap-10 xl:grid-cols-[1fr_390px]">
+      <div className="grid gap-10 xl:grid-cols-[1fr_430px]">
         <section className="min-w-0">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -353,70 +395,72 @@ const StyleBuilder = () => {
             </button>
           )}
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-            {filteredProducts.map((item) => {
-              const active = selectedProducts.some((p) => p._id === item._id);
-              const type = getProductType(item);
+          <div className="saint-scroll max-h-[calc(100vh-260px)] overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+              {filteredProducts.map((item) => {
+                const active = selectedProducts.some((p) => p._id === item._id);
+                const type = getProductType(item);
 
-              return (
-                <button
-                  key={item._id}
-                  onClick={() => addToFit(item)}
-                  disabled={mode === "automatic"}
-                  className={`group text-left transition ${
-                    mode === "automatic"
-                      ? "cursor-default opacity-90"
-                      : "cursor-pointer"
-                  }`}
-                >
-                  <div
-                    className={`relative overflow-hidden rounded-[26px] bg-gray-50 transition duration-300 ${
-                      active
-                        ? "ring-2 ring-black ring-offset-4"
-                        : "group-hover:bg-gray-100"
+                return (
+                  <button
+                    key={item._id}
+                    onClick={() => addToFit(item)}
+                    disabled={mode === "automatic"}
+                    className={`group text-left transition ${
+                      mode === "automatic"
+                        ? "cursor-default opacity-90"
+                        : "cursor-pointer"
                     }`}
                   >
-                    <div className="aspect-[3/4]">
-                      <img
-                        src={getProductImage(item)}
-                        alt={item.name}
-                        className="h-full w-full object-contain p-4 mix-blend-multiply transition duration-500 group-hover:scale-105"
-                      />
+                    <div
+                      className={`relative overflow-hidden rounded-[26px] bg-gray-50 transition duration-300 ${
+                        active
+                          ? "ring-2 ring-black ring-offset-4"
+                          : "group-hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="aspect-[3/4]">
+                        <img
+                          src={getProductImage(item)}
+                          alt={item.name}
+                          className="h-full w-full object-contain p-4 mix-blend-multiply transition duration-500 group-hover:scale-105"
+                        />
+                      </div>
+
+                      <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
+                        {type}
+                      </span>
+
+                      {active && (
+                        <span className="absolute right-3 top-3 rounded-full bg-black px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white">
+                          Picked
+                        </span>
+                      )}
                     </div>
 
-                    <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
-                      {type}
-                    </span>
+                    <div className="pt-3">
+                      <p className="line-clamp-1 text-sm font-black uppercase tracking-tight text-black">
+                        {item.name}
+                      </p>
 
-                    {active && (
-                      <span className="absolute right-3 top-3 rounded-full bg-black px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white">
-                        Picked
-                      </span>
-                    )}
-                  </div>
+                      <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                        {item.category}
+                      </p>
 
-                  <div className="pt-3">
-                    <p className="line-clamp-1 text-sm font-black uppercase tracking-tight text-black">
-                      {item.name}
-                    </p>
-
-                    <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                      {item.category}
-                    </p>
-
-                    <p className="mt-2 text-sm font-black text-black">
-                      {currency}
-                      {getFinalPrice(item).toLocaleString()}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
+                      <p className="mt-2 text-sm font-black text-black">
+                        {currency}
+                        {getFinalPrice(item).toLocaleString()}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
 
         <aside className="bg-white xl:sticky xl:top-24 xl:h-fit">
-          <div className="mb-4 flex items-end justify-between">
+          <div className="mb-2 flex items-end justify-between">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400">
                 Live Preview
@@ -432,21 +476,22 @@ const StyleBuilder = () => {
             </p>
           </div>
 
-          <div className="relative flex min-h-[720px] items-center justify-center bg-transparent">
+          <div className="saint-preview relative flex min-h-[760px] items-center justify-center bg-transparent">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="select-none text-[150px] font-black uppercase tracking-[-0.08em] text-black/[0.02]">
+              <p className="select-none text-[165px] font-black uppercase tracking-[-0.08em] text-black/[0.018]">
                 SAINT
               </p>
             </div>
 
-            <div className="relative h-[700px] w-[400px]">
-              <div className="absolute left-1/2 top-[40px] h-[320px] w-[360px] -translate-x-1/2">
+            <div className="saint-float relative h-[740px] w-[440px]">
+              <div className="saint-parallax-top absolute left-1/2 top-[35px] h-[365px] w-[420px] -translate-x-1/2 transition duration-500 ease-out">
                 {selectedTop ? (
                   <img
+                    key={selectedTop._id}
                     src={getProductImage(selectedTop)}
                     alt={selectedTop.name}
                     style={getOutfitStyle(selectedTop)}
-                    className="h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
@@ -457,13 +502,14 @@ const StyleBuilder = () => {
                 )}
               </div>
 
-              <div className="absolute left-1/2 top-[310px] h-[300px] w-[360px] -translate-x-1/2">
+              <div className="saint-parallax-bottom absolute left-1/2 top-[300px] h-[340px] w-[420px] -translate-x-1/2 transition duration-500 ease-out">
                 {selectedBottom ? (
                   <img
+                    key={selectedBottom._id}
                     src={getProductImage(selectedBottom)}
                     alt={selectedBottom.name}
                     style={getOutfitStyle(selectedBottom)}
-                    className="h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
@@ -474,13 +520,16 @@ const StyleBuilder = () => {
                 )}
               </div>
 
-              <div className="absolute left-1/2 top-[590px] h-[120px] w-[320px] -translate-x-1/2">
+              <div className="absolute left-1/2 top-[655px] h-5 w-[170px] -translate-x-1/2 rounded-full bg-black/10 blur-md" />
+
+              <div className="saint-parallax-shoes absolute left-1/2 top-[625px] h-[120px] w-[360px] -translate-x-1/2 transition duration-500 ease-out">
                 {selectedShoes ? (
                   <img
+                    key={selectedShoes._id}
                     src={getProductImage(selectedShoes)}
                     alt={selectedShoes.name}
                     style={getOutfitStyle(selectedShoes)}
-                    className="h-full w-full object-contain mix-blend-multiply transition duration-300"
+                    className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
@@ -493,7 +542,7 @@ const StyleBuilder = () => {
             </div>
           </div>
 
-          <div className="mt-4 border-t border-gray-100 pt-4">
+          <div className="mt-2 border-t border-gray-100 pt-4">
             {selectedProducts.length === 0 ? (
               <p className="text-center text-xs font-bold uppercase tracking-widest text-gray-400">
                 No products picked
