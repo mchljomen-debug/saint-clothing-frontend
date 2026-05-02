@@ -50,109 +50,80 @@ const Home = () => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
 
-      {/* ================= HERO ================= */}
-      <section className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <div className="relative h-[360px] overflow-hidden rounded-[6px] shadow-[0_20px_50px_rgba(0,0,0,0.08)] sm:h-[420px] md:h-[460px] lg:h-[500px] xl:h-[540px]">
-          
-          {/* Hero Component */}
-          <Hero />
-
-          {/* 🔥 SCROLL INDICATOR */}
-          <div className="pointer-events-none absolute bottom-5 left-1/2 z-30 -translate-x-1/2">
-            <div className="flex flex-col items-center gap-2 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
-              <p className="text-[9px] font-black uppercase tracking-[0.32em]">
-                Scroll
-              </p>
-              <span className="text-lg animate-bounce">↓</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 👇 spacing so next section is slightly visible */}
-        <div className="mt-6" />
-      </section>
+      {/* ================= HERO (ORIGINAL) ================= */}
+      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <Hero />
+      </div>
 
       {/* ================= CATEGORIES ================= */}
-      <section className="mt-4">
-        <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
-                Saint Clothing
-              </p>
+      <section className="mt-6 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
+              Saint Clothing
+            </p>
 
-              <h2 className="mt-1 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
-                Categories
-              </h2>
-            </div>
-
-            <button
-              onClick={() => navigate("/collection")}
-              className="hidden bg-black px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white hover:text-black sm:block"
-            >
-              View All →
-            </button>
+            <h2 className="mt-1 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
+              Categories
+            </h2>
           </div>
+
+          <button
+            onClick={() => navigate("/collection")}
+            className="hidden bg-black px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white hover:text-black sm:block"
+          >
+            View All →
+          </button>
         </div>
 
         {loadingCategories ? (
-          <div className="flex h-[60vh] items-center justify-center">
+          <div className="flex h-[40vh] items-center justify-center">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
               Loading categories...
             </p>
           </div>
         ) : visibleCategories.length > 0 ? (
-          <div className="snap-y snap-mandatory">
-            {visibleCategories.map((cat, index) => (
-              <section
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleCategories.map((cat) => (
+              <button
                 key={cat._id || cat.name}
-                className="relative flex min-h-[90vh] snap-start items-end overflow-hidden bg-[#e8e2d7]"
+                onClick={() => goToCategory(cat.name)}
+                className="group relative h-[380px] overflow-hidden rounded-[6px] bg-[#e8e2d7] text-left shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)]"
               >
-                {/* IMAGE */}
                 {cat.image ? (
                   <img
                     src={cat.image}
                     alt={cat.name}
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105"
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-[15vw] font-black text-black/[0.04]">
+                  <div className="flex h-full w-full items-center justify-center">
+                    <p className="text-6xl font-black text-black/10">
                       SAINT
                     </p>
                   </div>
                 )}
 
-                {/* OVERLAY */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-black/30" />
 
-                {/* CONTENT */}
-                <div className="relative z-10 w-full px-5 pb-10 sm:px-[7vw] sm:pb-14 lg:px-[8vw]">
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/70">
-                    {cat.section || "category"}
+                <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-white/70">
+                    Category
                   </p>
 
-                  <h2 className="mt-2 text-5xl font-black uppercase text-white sm:text-7xl">
+                  <h3 className="mt-1 text-2xl font-black uppercase">
                     {cat.name}
-                  </h2>
+                  </h3>
 
-                  <button
-                    onClick={() => goToCategory(cat.name)}
-                    className="mt-6 bg-white px-7 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-black transition hover:bg-black hover:text-white"
-                  >
-                    Shop {cat.name} →
-                  </button>
-
-                  <p className="absolute bottom-5 right-5 text-[10px] font-black text-white/60">
-                    {String(index + 1).padStart(2, "0")} /{" "}
-                    {String(visibleCategories.length).padStart(2, "0")}
+                  <p className="mt-2 text-xs uppercase tracking-widest">
+                    Shop Now →
                   </p>
                 </div>
-              </section>
+              </button>
             ))}
           </div>
         ) : (
-          <div className="flex h-[60vh] items-center justify-center text-center">
+          <div className="flex h-[40vh] items-center justify-center text-center">
             <p className="text-sm font-black uppercase text-gray-400">
               No categories available
             </p>
@@ -160,23 +131,24 @@ const Home = () => {
         )}
       </section>
 
-      {/* ================= COLLECTIONS ================= */}
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <div className="mt-10">
-          <LatestCollection />
-        </div>
+      {/* ================= LATEST ================= */}
+      <div className="mt-10 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <LatestCollection />
+      </div>
 
-        <div className="mt-10">
-          <BestSeller />
-        </div>
+      {/* ================= BEST SELLER ================= */}
+      <div className="mt-10 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <BestSeller />
+      </div>
 
-        <div className="mt-10">
-          <OurPolicy />
-        </div>
+      {/* ================= POLICY ================= */}
+      <div className="mt-10 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <OurPolicy />
+      </div>
 
-        <div className="mt-6 pb-6">
-          <NewsletterBox />
-        </div>
+      {/* ================= NEWSLETTER ================= */}
+      <div className="mt-6 pb-6 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <NewsletterBox />
       </div>
     </div>
   );
