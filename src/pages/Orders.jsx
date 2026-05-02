@@ -13,6 +13,40 @@ const ORDER_STEPS = [
   "Delivered",
 ];
 
+const ORDER_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "toPay", label: "To Pay" },
+  { key: "processing", label: "Processing" },
+  { key: "shipping", label: "Shipping" },
+  { key: "delivered", label: "Delivered" },
+];
+
+const addDays = (date, days) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const formatEstimateFromOrder = (order) => {
+  if (order?.deliveryEstimate?.range) return order.deliveryEstimate.range;
+  if (order?.estimatedDelivery?.range) return order.estimatedDelivery.range;
+
+  const baseDate = new Date(order?.createdAt || order?.date || Date.now());
+
+  const start = addDays(baseDate, 3).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+
+  const end = addDays(baseDate, 5).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
+  return `${start} - ${end}`;
+};
+
 const StarPicker = ({ value, onChange }) => {
   return (
     <div className="flex items-center gap-1">
@@ -22,7 +56,9 @@ const StarPicker = ({ value, onChange }) => {
           type="button"
           onClick={() => onChange(star)}
           className={`text-3xl transition ${
-            star <= value ? "text-yellow-400" : "text-gray-300 hover:text-yellow-300"
+            star <= value
+              ? "text-yellow-400"
+              : "text-gray-300 hover:text-yellow-300"
           }`}
         >
           ★
@@ -36,6 +72,7 @@ const Orders = () => {
   const { backendUrl, token, user } = useContext(ShopContext);
   const [orderData, setOrderData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState("all");
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedReviewItem, setSelectedReviewItem] = useState(null);
@@ -213,7 +250,9 @@ const Orders = () => {
       return `${backendUrl}/${clean}`;
     }
 
-    const normalizedFolder = folder ? `${folder.replace(/^\/+|\/+$/g, "")}/` : "";
+    const normalizedFolder = folder
+      ? `${folder.replace(/^\/+|\/+$/g, "")}/`
+      : "";
     return `${backendUrl}/uploads/${normalizedFolder}${clean}`;
   };
 
@@ -272,17 +311,52 @@ const Orders = () => {
     return getNewestOrders(orderData);
   }, [orderData]);
 
+  const filteredOrders = useMemo(() => {
+    return sortedOrderData.filter((order) => {
+      const status = normalizeStatus(order.status);
+      const paymentState = normalizePaymentStatus(order);
+
+      if (activeFilter === "all") return true;
+
+      if (activeFilter === "toPay") {
+        return (
+          paymentState === "pending" ||
+          paymentState === "verifying" ||
+          paymentState === "cod_pending" ||
+          status === "Pending Payment"
+        );
+      }
+
+      if (activeFilter === "processing") {
+        return status === "Order Placed" || status === "Packing";
+      }
+
+      if (activeFilter === "shipping") {
+        return status === "Shipped" || status === "Out for Delivery";
+      }
+
+      if (activeFilter === "delivered") {
+        return status === "Delivered";
+      }
+
+      return true;
+    });
+  }, [sortedOrderData, activeFilter]);
+
   const flattenedOrderItems = useMemo(() => {
-    return sortedOrderData.flatMap((order, index) =>
+    return filteredOrders.flatMap((order, index) =>
       (order.items || []).map((item, i) => ({
         key: `${order._id}-${i}-${index}`,
         order,
         item,
       }))
     );
-  }, [sortedOrderData]);
+  }, [filteredOrders]);
 
-  const totalPages = Math.max(1, Math.ceil(flattenedOrderItems.length / itemsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(flattenedOrderItems.length / itemsPerPage)
+  );
 
   const paginatedOrderItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -393,7 +467,27 @@ const Orders = () => {
           </div>
         </div>
 
-        <div className="mt-8 md:mt-10 flex flex-col gap-4">
+        <div className="mt-7 flex gap-2 overflow-x-auto pb-2">
+          {ORDER_FILTERS.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={() => {
+                setActiveFilter(filter.key);
+                setCurrentPage(1);
+              }}
+              className={`shrink-0 rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+                activeFilter === filter.key
+                  ? "border-black bg-black text-white"
+                  : "border-black/10 bg-white/70 text-[#0A0D17] hover:border-black"
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-6 md:mt-8 flex flex-col gap-4">
           {flattenedOrderItems.length === 0 ? (
             <div className="rounded-[22px] border border-black/10 bg-white/45 backdrop-blur-md py-28 text-center">
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
@@ -467,7 +561,7 @@ const Orders = () => {
                               </span>
                             </div>
 
-                            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                               <div>
                                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
                                   Date
@@ -480,6 +574,15 @@ const Orders = () => {
                                     month: "long",
                                     year: "numeric",
                                   })}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Est. Delivery
+                                </p>
+                                <p className="mt-1 text-[12px] font-bold text-gray-700">
+                                  {formatEstimateFromOrder(order)}
                                 </p>
                               </div>
 
@@ -530,7 +633,9 @@ const Orders = () => {
                                 }`}
                               >
                                 <p className="text-[10px] font-black uppercase tracking-[0.16em]">
-                                  {isPaymentFailed ? "Payment Issue" : "Payment Update"}
+                                  {isPaymentFailed
+                                    ? "Payment Issue"
+                                    : "Payment Update"}
                                 </p>
                                 <p className="mt-1 text-xs font-semibold">
                                   {isPaymentFailed
@@ -554,7 +659,9 @@ const Orders = () => {
                           </div>
 
                           <button
-                            onClick={() => toast.info(`Current order stage: ${normalizedStatus}`)}
+                            onClick={() =>
+                              toast.info(`Current order stage: ${normalizedStatus}`)
+                            }
                             className="h-11 w-full xl:w-auto rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
                           >
                             Track Order
@@ -606,7 +713,9 @@ const Orders = () => {
                                     {stepIndex !== ORDER_STEPS.length - 1 && (
                                       <div
                                         className={`flex-1 h-[2px] ml-2 ${
-                                          stepIndex < currentStep ? "bg-black" : "bg-black/10"
+                                          stepIndex < currentStep
+                                            ? "bg-black"
+                                            : "bg-black/10"
                                         }`}
                                       ></div>
                                     )}

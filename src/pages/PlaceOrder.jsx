@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useMemo } from "react";
 import Title from "../components/Title";
 import CartTotal from "../components/CartTotal";
 import { ShopContext } from "../context/ShopContext";
@@ -30,6 +30,64 @@ const emptyAddress = {
   psgcProvinceCode: "",
   psgcMunicipalityCode: "",
   psgcBarangayCode: "",
+};
+
+const addDays = (date, days) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const formatDeliveryRange = (minDays, maxDays) => {
+  const today = new Date();
+
+  const start = addDays(today, minDays).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+
+  const end = addDays(today, maxDays).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
+  return `${start} - ${end}`;
+};
+
+const getEstimatedDelivery = (address) => {
+  const region = String(address?.region || "").toLowerCase();
+  const province = String(address?.province || "").toLowerCase();
+
+  if (region.includes("national capital") || region.includes("ncr")) {
+    return {
+      minDays: 2,
+      maxDays: 4,
+      label: "2-4 business days",
+      range: formatDeliveryRange(2, 4),
+    };
+  }
+
+  if (
+    province.includes("cavite") ||
+    province.includes("laguna") ||
+    province.includes("bulacan") ||
+    province.includes("rizal")
+  ) {
+    return {
+      minDays: 3,
+      maxDays: 5,
+      label: "3-5 business days",
+      range: formatDeliveryRange(3, 5),
+    };
+  }
+
+  return {
+    minDays: 5,
+    maxDays: 7,
+    label: "5-7 business days",
+    range: formatDeliveryRange(5, 7),
+  };
 };
 
 const getFirstName = (user) => {
@@ -219,13 +277,22 @@ const PlaceOrder = () => {
 
   const hasSavedMainAddress = Boolean(
     savedAddress.street ||
-    savedAddress.barangay ||
-    savedAddress.city ||
-    savedAddress.province ||
-    savedAddress.region
+      savedAddress.barangay ||
+      savedAddress.city ||
+      savedAddress.province ||
+      savedAddress.region
   );
 
   const displayedAddress = addressMode === "saved" ? savedAddress : formData;
+
+  const deliveryEstimate = useMemo(() => {
+    return getEstimatedDelivery(displayedAddress);
+  }, [
+    displayedAddress.region,
+    displayedAddress.province,
+    displayedAddress.city,
+    displayedAddress.barangay,
+  ]);
 
   const formatSavedAddress = () => {
     const parts = [
@@ -312,6 +379,12 @@ const PlaceOrder = () => {
     })),
     amount: subtotal + delivery_fee,
     paymentMethod: normalizePaymentMethod(selectedMethod),
+    deliveryEstimate: {
+      minDays: deliveryEstimate.minDays,
+      maxDays: deliveryEstimate.maxDays,
+      label: deliveryEstimate.label,
+      range: deliveryEstimate.range,
+    },
   });
 
   const clearCartEverywhere = async () => {
@@ -447,10 +520,11 @@ const PlaceOrder = () => {
 
             <div className="grid gap-3">
               <label
-                className={`rounded-2xl border p-4 cursor-pointer transition ${addressMode === "saved"
-                  ? "border-black bg-black text-white"
-                  : "border-black/10 bg-white hover:border-black"
-                  } ${!hasSavedMainAddress ? "opacity-60" : ""}`}
+                className={`rounded-2xl border p-4 cursor-pointer transition ${
+                  addressMode === "saved"
+                    ? "border-black bg-black text-white"
+                    : "border-black/10 bg-white hover:border-black"
+                } ${!hasSavedMainAddress ? "opacity-60" : ""}`}
               >
                 <div className="flex gap-3 items-start">
                   <input
@@ -463,14 +537,18 @@ const PlaceOrder = () => {
                   />
                   <div className="min-w-0">
                     <p
-                      className={`text-sm font-black uppercase tracking-[0.12em] ${addressMode === "saved" ? "text-white" : "text-[#0A0D17]"
-                        }`}
+                      className={`text-sm font-black uppercase tracking-[0.12em] ${
+                        addressMode === "saved"
+                          ? "text-white"
+                          : "text-[#0A0D17]"
+                      }`}
                     >
                       Use Main Address
                     </p>
                     <p
-                      className={`mt-2 text-xs leading-5 ${addressMode === "saved" ? "text-white/75" : "text-gray-500"
-                        }`}
+                      className={`mt-2 text-xs leading-5 ${
+                        addressMode === "saved" ? "text-white/75" : "text-gray-500"
+                      }`}
                     >
                       {formatSavedAddress()}
                     </p>
@@ -479,10 +557,11 @@ const PlaceOrder = () => {
               </label>
 
               <label
-                className={`rounded-2xl border p-4 cursor-pointer transition ${addressMode === "other"
-                  ? "border-black bg-black text-white"
-                  : "border-black/10 bg-white hover:border-black"
-                  }`}
+                className={`rounded-2xl border p-4 cursor-pointer transition ${
+                  addressMode === "other"
+                    ? "border-black bg-black text-white"
+                    : "border-black/10 bg-white hover:border-black"
+                }`}
               >
                 <div className="flex gap-3 items-start">
                   <input
@@ -494,14 +573,18 @@ const PlaceOrder = () => {
                   />
                   <div>
                     <p
-                      className={`text-sm font-black uppercase tracking-[0.12em] ${addressMode === "other" ? "text-white" : "text-[#0A0D17]"
-                        }`}
+                      className={`text-sm font-black uppercase tracking-[0.12em] ${
+                        addressMode === "other"
+                          ? "text-white"
+                          : "text-[#0A0D17]"
+                      }`}
                     >
                       Use Another Address
                     </p>
                     <p
-                      className={`mt-2 text-xs leading-5 ${addressMode === "other" ? "text-white/75" : "text-gray-500"
-                        }`}
+                      className={`mt-2 text-xs leading-5 ${
+                        addressMode === "other" ? "text-white/75" : "text-gray-500"
+                      }`}
                     >
                       Enter another delivery address just for this purchase
                     </p>
@@ -511,7 +594,8 @@ const PlaceOrder = () => {
 
               {!hasSavedMainAddress && (
                 <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-semibold text-red-600">
-                  No main address found in your profile. Please use another address or save one in My Account.
+                  No main address found in your profile. Please use another
+                  address or save one in My Account.
                 </div>
               )}
             </div>
@@ -523,8 +607,9 @@ const PlaceOrder = () => {
                 value={displayedAddress.firstName}
                 onChange={addressMode === "other" ? onChangeHandler : undefined}
                 readOnly={addressMode === "saved"}
-                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                  }`}
+                className={`${inputStyle} ${
+                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                }`}
                 placeholder="First name"
               />
 
@@ -534,8 +619,9 @@ const PlaceOrder = () => {
                 value={displayedAddress.lastName}
                 onChange={addressMode === "other" ? onChangeHandler : undefined}
                 readOnly={addressMode === "saved"}
-                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                  }`}
+                className={`${inputStyle} ${
+                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                }`}
                 placeholder="Last name"
               />
             </div>
@@ -547,8 +633,9 @@ const PlaceOrder = () => {
                 value={displayedAddress.email}
                 onChange={addressMode === "other" ? onChangeHandler : undefined}
                 readOnly={addressMode === "saved"}
-                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                  }`}
+                className={`${inputStyle} ${
+                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                }`}
                 placeholder="Email"
               />
 
@@ -560,8 +647,9 @@ const PlaceOrder = () => {
                 readOnly={addressMode === "saved"}
                 inputMode="numeric"
                 maxLength={11}
-                className={`${inputStyle} ${addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
-                  }`}
+                className={`${inputStyle} ${
+                  addressMode === "saved" ? "bg-gray-50 cursor-not-allowed" : ""
+                }`}
                 placeholder="Phone"
               />
             </div>
@@ -569,7 +657,9 @@ const PlaceOrder = () => {
             <div className="mt-4">
               <ShippingAddressFields
                 formData={addressMode === "saved" ? savedAddress : formData}
-                setFormData={addressMode === "saved" ? setSavedAddress : setFormData}
+                setFormData={
+                  addressMode === "saved" ? setSavedAddress : setFormData
+                }
                 backendUrl={backendUrl}
                 readOnly={addressMode === "saved"}
               />
@@ -585,6 +675,18 @@ const PlaceOrder = () => {
               </h3>
               <p className="mt-2 text-[11px] font-semibold text-gray-500">
                 Review your checkout before confirming
+              </p>
+            </div>
+
+            <div className="mb-4 rounded-2xl border border-black/10 bg-white px-4 py-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
+                Estimated Delivery
+              </p>
+              <p className="mt-2 text-lg font-black text-[#0A0D17]">
+                {deliveryEstimate.label}
+              </p>
+              <p className="mt-1 text-xs font-semibold text-gray-500">
+                Expected arrival: {deliveryEstimate.range}
               </p>
             </div>
 
@@ -644,8 +746,9 @@ const PlaceOrder = () => {
                     key={option.key}
                     type="button"
                     onClick={() => setMethod(option.key)}
-                    className={`group relative overflow-hidden rounded-[22px] border p-4 text-left transition-all duration-300 ${option.cardClass} ${isActive ? option.activeClass : "shadow-sm"
-                      }`}
+                    className={`group relative overflow-hidden rounded-[22px] border p-4 text-left transition-all duration-300 ${
+                      option.cardClass
+                    } ${isActive ? option.activeClass : "shadow-sm"}`}
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-black/5">
@@ -668,21 +771,25 @@ const PlaceOrder = () => {
                           </span>
                         </div>
 
-                        <p className={`mt-2 text-xs font-semibold ${option.subtitleClass}`}>
+                        <p
+                          className={`mt-2 text-xs font-semibold ${option.subtitleClass}`}
+                        >
                           {option.subtitle}
                         </p>
                       </div>
 
                       <div className="pt-1">
                         <div
-                          className={`h-5 w-5 rounded-full border-2 transition ${isActive
-                            ? "border-black bg-black"
-                            : "border-black/20 bg-white"
-                            }`}
+                          className={`h-5 w-5 rounded-full border-2 transition ${
+                            isActive
+                              ? "border-black bg-black"
+                              : "border-black/20 bg-white"
+                          }`}
                         >
                           <div
-                            className={`m-auto mt-[3px] h-2 w-2 rounded-full bg-white transition ${isActive ? "opacity-100" : "opacity-0"
-                              }`}
+                            className={`m-auto mt-[3px] h-2 w-2 rounded-full bg-white transition ${
+                              isActive ? "opacity-100" : "opacity-0"
+                            }`}
                           />
                         </div>
                       </div>
@@ -711,8 +818,8 @@ const PlaceOrder = () => {
               {loading
                 ? "Processing..."
                 : method === "COD"
-                  ? "Confirm Order"
-                  : "Proceed to QR Payment"}
+                ? "Confirm Order"
+                : "Proceed to QR Payment"}
             </button>
 
             <button
