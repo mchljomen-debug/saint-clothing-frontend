@@ -105,7 +105,7 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
       snapY: -6,
     },
     shoes: {
-      top: bottomKind === "pants" ? 560 : 530,
+      top: bottomKind === "pants" ? 570 : 540,
       height: 95,
       width: 300,
       scale: selectedShoes ? 1 : 1,
@@ -416,8 +416,8 @@ const StyleBuilder = () => {
             </div>
           </div>
 
-          <div className="grid items-stretch gap-3 xl:grid-cols-[1fr_430px] 2xl:grid-cols-[1fr_460px]">
-            <section className="flex min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5 xl:h-[calc(100vh-118px)]">
+          <div className="grid items-start gap-3 xl:grid-cols-[1fr_430px] 2xl:grid-cols-[1fr_460px]">
+            <section className="min-w-0 rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
@@ -470,7 +470,7 @@ const StyleBuilder = () => {
                 </button>
               )}
 
-              <div className="saint-scroll min-h-0 flex-1 overflow-y-auto pr-2">
+              <div className="saint-scroll max-h-[calc(100vh-255px)] overflow-y-auto pr-2">
                 <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                   {filteredProducts.map((item) => {
                     const active = selectedProducts.some((p) => p._id === item._id);
@@ -582,7 +582,7 @@ const StyleBuilder = () => {
               </div>
 
               <div
-                className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
+                className="relative flex min-h-[650px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
                 style={{ backgroundColor: previewBg }}
               >
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -595,7 +595,7 @@ const StyleBuilder = () => {
                   </p>
                 </div>
 
-                <div className="saint-float relative h-[580px] w-[350px]">
+                <div className="saint-float relative h-[660px] w-[350px]">
                   <div
                     className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
                     style={{
