@@ -370,8 +370,8 @@ const StyleBuilder = () => {
           }
 
           @keyframes saintFade {
-            from { opacity: 0; transform: translateY(8px) scale(0.985); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
 
           .saint-float {
