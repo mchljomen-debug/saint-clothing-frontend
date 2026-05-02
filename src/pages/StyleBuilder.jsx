@@ -416,8 +416,8 @@ const StyleBuilder = () => {
             </div>
           </div>
 
-          <div className="grid items-start gap-3 xl:grid-cols-[1fr_430px] 2xl:grid-cols-[1fr_460px]">
-            <section className="min-w-0 rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5">
+          <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_430px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
+            <section className="flex min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
@@ -470,7 +470,7 @@ const StyleBuilder = () => {
                 </button>
               )}
 
-              <div className="saint-scroll max-h-[calc(100vh-255px)] overflow-y-auto pr-2">
+              <div className="saint-scroll min-h-0 flex-1 overflow-y-auto pr-2">
                 <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                   {filteredProducts.map((item) => {
                     const active = selectedProducts.some((p) => p._id === item._id);
