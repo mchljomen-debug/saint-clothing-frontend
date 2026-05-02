@@ -47,10 +47,14 @@ const Home = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
+      {/* HERO - CONTROLLED HEIGHT */}
       <section className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <Hero />
+        <div className="h-[420px] overflow-hidden sm:h-[480px] md:h-[520px] lg:h-[560px] xl:h-[600px]">
+          <Hero />
+        </div>
       </section>
 
+      {/* CATEGORIES - UNIQLO STYLE */}
       <section className="mt-6">
         <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
           <div className="mb-5 flex items-end justify-between gap-4">
