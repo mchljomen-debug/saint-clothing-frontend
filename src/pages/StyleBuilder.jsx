@@ -98,31 +98,19 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
       snapY: 0,
     },
     bottom: {
-      // 🔥 tighter connection to top
       top: isPants ? 185 : 210,
-
-      // 🔥 pants slightly taller
       height: isPants ? 360 : 292,
       width: isPants ? 360 : 340,
-
-      // 🔥 subtle scale for realism
       scale: isPants ? 1.05 : 1,
-
-      // 🔥 align overlap nicely
       snapX: 0,
       snapY: isPants ? 4 : -6,
     },
     shoes: {
-      // 🔥 pulled up closer (THIS FIXES GAP)
       top: isPants ? 510 : 470,
-
       height: isPants ? 85 : 78,
       width: isPants ? 270 : 260,
-
       scale: 1,
       snapX: 0,
-
-      // 🔥 slight upward nudge
       snapY: isPants ? -10 : 0,
     },
   };
@@ -339,7 +327,7 @@ const StyleBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] px-2 py-2 sm:px-3 lg:px-4">
+    <div className="h-screen overflow-hidden bg-[#f8f7f4] px-2 py-2 sm:px-3 lg:px-4">
       <style>
         {`
           @keyframes saintFloat {
@@ -384,8 +372,8 @@ const StyleBuilder = () => {
         `}
       </style>
 
-      <div className="mx-auto max-w-[1950px]">
-        <div className="mb-2 rounded-[5px] border border-black/10 bg-white px-5 py-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:px-6">
+      <div className="mx-auto flex h-full max-w-[1950px] flex-col">
+        <div className="mb-2 shrink-0 rounded-[5px] border border-black/10 bg-white px-5 py-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:px-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
@@ -428,9 +416,9 @@ const StyleBuilder = () => {
           </div>
         </div>
 
-        <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
-          <section className="flex h-[640px] min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="grid min-h-0 flex-1 items-stretch gap-2 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
+          <section className="flex min-h-0 min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
+            <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
                   Collection
@@ -457,7 +445,7 @@ const StyleBuilder = () => {
               </div>
             </div>
 
-            <div className="mb-3 flex gap-2 overflow-x-auto border-b border-gray-100 pb-2">
+            <div className="mb-3 flex shrink-0 gap-2 overflow-x-auto border-b border-gray-100 pb-2">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
@@ -476,13 +464,13 @@ const StyleBuilder = () => {
             {mode === "automatic" && (
               <button
                 onClick={generateAutomaticFit}
-                className="mb-3 w-full rounded-[5px] bg-black px-5 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
+                className="mb-3 shrink-0 w-full rounded-[5px] bg-black px-5 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
               >
                 Generate New Automatic Fit
               </button>
             )}
 
-            <div className="saint-scroll flex-1 overflow-y-auto pr-2">
+            <div className="saint-scroll min-h-0 flex-1 overflow-y-auto pr-2">
               <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                 {filteredProducts.map((item) => {
                   const active = selectedProducts.some((p) => p._id === item._id);
@@ -546,8 +534,8 @@ const StyleBuilder = () => {
             </div>
           </section>
 
-          <aside className="rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] xl:sticky xl:top-2 xl:h-fit">
-            <div className="mb-2 flex items-end justify-between">
+          <aside className="flex min-h-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)]">
+            <div className="mb-2 flex shrink-0 items-end justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
                   Live Preview
@@ -563,7 +551,7 @@ const StyleBuilder = () => {
               </p>
             </div>
 
-            <div className="mb-2 flex items-center justify-between gap-3 rounded-[5px] bg-gray-50 px-3 py-2">
+            <div className="mb-2 flex shrink-0 items-center justify-between gap-3 rounded-[5px] bg-gray-50 px-3 py-2">
               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
                 Background
               </p>
@@ -594,7 +582,7 @@ const StyleBuilder = () => {
             </div>
 
             <div
-              className="relative flex h-[560px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
+              className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
               style={{ backgroundColor: previewBg }}
             >
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -704,7 +692,7 @@ const StyleBuilder = () => {
               </div>
             </div>
 
-            <div className="mt-2 rounded-[5px] bg-gray-50 p-2.5">
+            <div className="mt-2 shrink-0 rounded-[5px] bg-gray-50 p-2.5">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
                   Picked Items
