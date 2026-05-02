@@ -3,8 +3,8 @@ import { Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
-import LatestPage from "./pages/LatestPage";
-import BestSellersPage from "./pages/BestSellersPage";
+import LatestCollection from "./pages/LatestCollection";
+import BestSeller from "./pages/BestSeller";
 
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -43,14 +43,12 @@ const App = () => {
       <SearchBar />
 
       <Routes>
-        {/* MAIN */}
         <Route path="/" element={<Home />} />
         <Route path="/collection" element={<Collection />} />
-        <Route path="/latest" element={<LatestPage />} />
-        <Route path="/best-sellers" element={<BestSellersPage />} />
+        <Route path="/latest" element={<LatestCollection />} />
+        <Route path="/best-sellers" element={<BestSeller />} />
         <Route path="/style-builder" element={<StyleBuilder />} />
 
-        {/* OTHER PAGES */}
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/product/:productId" element={<Product />} />
@@ -65,7 +63,6 @@ const App = () => {
         <Route path="/support" element={<Support />} />
         <Route path="/policies" element={<Policies />} />
 
-        {/* PAYMENT */}
         <Route path="/manual-payment/:orderId" element={<ManualPayment />} />
         <Route path="/payment-submitted" element={<PaymentSubmitted />} />
       </Routes>
