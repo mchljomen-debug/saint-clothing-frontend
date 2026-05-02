@@ -73,15 +73,17 @@ const getBottomKind = (product) => {
   const text = getProductText(product);
 
   if (text.includes("jorts") || text.includes("short")) return "shorts";
+
   if (
     text.includes("pants") ||
     text.includes("jeans") ||
-    text.includes("trouser")
+    text.includes("trouser") ||
+    text.includes("bottom")
   ) {
     return "pants";
   }
 
-  return "bottom";
+  return "pants";
 };
 
 const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
@@ -91,27 +93,27 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
   return {
     top: {
       top: 24,
-      height: 305,
-      width: 355,
+      height: 315,
+      width: 365,
       scale: 1,
       snapX: 0,
       snapY: 0,
     },
     bottom: {
-      top: isPants ? 185 : 210,
-      height: isPants ? 360 : 292,
-      width: isPants ? 360 : 340,
-      scale: isPants ? 1.05 : 1,
+      top: isPants ? 175 : 215,
+      height: isPants ? 390 : 295,
+      width: isPants ? 375 : 345,
+      scale: isPants ? 1.03 : 1,
       snapX: 0,
-      snapY: isPants ? 4 : -6,
+      snapY: isPants ? 8 : -6,
     },
     shoes: {
-      top: isPants ? 510 : 470,
-      height: isPants ? 85 : 78,
-      width: isPants ? 270 : 260,
-      scale: 1,
+      top: isPants ? 515 : 470,
+      height: isPants ? 88 : 78,
+      width: isPants ? 275 : 260,
+      scale: selectedShoes ? 1 : 1,
       snapX: 0,
-      snapY: isPants ? -10 : 0,
+      snapY: isPants ? -8 : 0,
     },
   };
 };
@@ -582,7 +584,7 @@ const StyleBuilder = () => {
             </div>
 
             <div
-              className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
+              className="relative flex h-[600px] shrink-0 items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
               style={{ backgroundColor: previewBg }}
             >
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -595,7 +597,7 @@ const StyleBuilder = () => {
                 </p>
               </div>
 
-              <div className="saint-float relative h-[545px] w-[320px]">
+              <div className="saint-float relative h-[585px] w-[340px]">
                 <div
                   className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
                   style={{
