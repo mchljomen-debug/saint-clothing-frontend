@@ -3,6 +3,9 @@ import { Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
+import LatestPage from "./pages/LatestPage";
+import BestSellersPage from "./pages/BestSellersPage";
+
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Product from "./pages/Product";
@@ -18,8 +21,6 @@ import Policies from "./pages/Policies";
 import Verify from "./pages/Verify";
 import ManualPayment from "./pages/ManualPayment";
 import PaymentSubmitted from "./pages/PaymentSubmitted";
-
-/* ✅ ADD THIS */
 import StyleBuilder from "./pages/StyleBuilder";
 
 import Navbar from "./components/Navbar";
@@ -45,8 +46,8 @@ const App = () => {
         {/* MAIN */}
         <Route path="/" element={<Home />} />
         <Route path="/collection" element={<Collection />} />
-
-        {/* 🔥 NEW STYLE BUILDER ROUTE */}
+        <Route path="/latest" element={<LatestPage />} />
+        <Route path="/best-sellers" element={<BestSellersPage />} />
         <Route path="/style-builder" element={<StyleBuilder />} />
 
         {/* OTHER PAGES */}
@@ -64,6 +65,7 @@ const App = () => {
         <Route path="/support" element={<Support />} />
         <Route path="/policies" element={<Policies />} />
 
+        {/* PAYMENT */}
         <Route path="/manual-payment/:orderId" element={<ManualPayment />} />
         <Route path="/payment-submitted" element={<PaymentSubmitted />} />
       </Routes>
