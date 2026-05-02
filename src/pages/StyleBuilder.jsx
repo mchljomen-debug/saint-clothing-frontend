@@ -326,7 +326,7 @@ const StyleBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] px-2 pt-3 pb-4 sm:px-4 lg:px-5">
+    <div className="min-h-screen bg-[#f8f7f4] px-2 pt-3 pb-4 sm:px-3 lg:px-4">
       <style>
         {`
           @keyframes saintFloat {
@@ -371,9 +371,9 @@ const StyleBuilder = () => {
         `}
       </style>
 
-      <div className="origin-top scale-[0.96]">
-        <div className="mx-auto max-w-[1760px]">
-          <div className="mb-3 rounded-[18px] border border-black/10 bg-white px-5 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:px-6">
+      <div className="origin-top scale-[0.94]">
+        <div className="mx-auto max-w-[1900px]">
+          <div className="mb-3 rounded-[5px] border border-black/10 bg-white px-5 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:px-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
@@ -390,10 +390,10 @@ const StyleBuilder = () => {
                 </p>
               </div>
 
-              <div className="flex w-full rounded-[999px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
+              <div className="flex w-full rounded-[5px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
                 <button
                   onClick={() => handleModeChange("manual")}
-                  className={`flex-1 rounded-[999px] px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  className={`flex-1 rounded-[5px] px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
                     mode === "manual"
                       ? "bg-white text-black"
                       : "text-white hover:bg-white/10"
@@ -404,7 +404,7 @@ const StyleBuilder = () => {
 
                 <button
                   onClick={() => handleModeChange("automatic")}
-                  className={`flex-1 rounded-[999px] px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  className={`flex-1 rounded-[5px] px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
                     mode === "automatic"
                       ? "bg-white text-black"
                       : "text-white hover:bg-white/10"
@@ -417,7 +417,7 @@ const StyleBuilder = () => {
           </div>
 
           <div className="grid items-stretch gap-3 xl:grid-cols-[1fr_430px] 2xl:grid-cols-[1fr_460px]">
-            <section className="flex min-w-0 flex-col rounded-[18px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5 xl:h-[calc(100vh-118px)]">
+            <section className="flex min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5 xl:h-[calc(100vh-118px)]">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
@@ -430,14 +430,14 @@ const StyleBuilder = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <p className="rounded-[999px] bg-gray-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  <p className="rounded-[5px] bg-gray-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
                     {filteredProducts.length} items
                   </p>
 
                   {selectedProducts.length > 0 && (
                     <button
                       onClick={clearFit}
-                      className="rounded-[999px] bg-red-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-500 transition hover:bg-red-100"
+                      className="rounded-[5px] bg-red-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-500 transition hover:bg-red-100"
                     >
                       Clear
                     </button>
@@ -450,7 +450,7 @@ const StyleBuilder = () => {
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`shrink-0 rounded-[999px] border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition ${
+                    className={`shrink-0 rounded-[5px] border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition ${
                       category === cat
                         ? "border-black bg-black text-white"
                         : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
@@ -464,7 +464,7 @@ const StyleBuilder = () => {
               {mode === "automatic" && (
                 <button
                   onClick={generateAutomaticFit}
-                  className="mb-4 w-full rounded-[14px] bg-black px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
+                  className="mb-4 w-full rounded-[5px] bg-black px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
                 >
                   Generate New Automatic Fit
                 </button>
@@ -488,7 +488,7 @@ const StyleBuilder = () => {
                         }`}
                       >
                         <div
-                          className={`relative overflow-hidden rounded-[16px] bg-[#f5f5f3] transition duration-300 ${
+                          className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${
                             active
                               ? "ring-2 ring-black ring-offset-2"
                               : "hover:bg-gray-100"
@@ -502,12 +502,12 @@ const StyleBuilder = () => {
                             />
                           </div>
 
-                          <span className="absolute left-2 top-2 rounded-[999px] bg-white/90 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
+                          <span className="absolute left-2 top-2 rounded-[5px] bg-white/90 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
                             {type}
                           </span>
 
                           {active && (
-                            <span className="absolute right-2 top-2 rounded-[999px] bg-black px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-white">
+                            <span className="absolute right-2 top-2 rounded-[5px] bg-black px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-white">
                               Picked
                             </span>
                           )}
@@ -534,7 +534,7 @@ const StyleBuilder = () => {
               </div>
             </section>
 
-            <aside className="rounded-[18px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] xl:sticky xl:top-3 xl:h-fit">
+            <aside className="rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] xl:sticky xl:top-3 xl:h-fit">
               <div className="mb-3 flex items-end justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
@@ -546,12 +546,12 @@ const StyleBuilder = () => {
                   </h2>
                 </div>
 
-                <p className="rounded-[999px] bg-gray-100 px-3.5 py-2 text-[9px] font-black uppercase tracking-widest text-gray-500">
+                <p className="rounded-[5px] bg-gray-100 px-3.5 py-2 text-[9px] font-black uppercase tracking-widest text-gray-500">
                   {mode}
                 </p>
               </div>
 
-              <div className="mb-3 flex items-center justify-between gap-3 rounded-[14px] bg-gray-50 px-3 py-2.5">
+              <div className="mb-3 flex items-center justify-between gap-3 rounded-[5px] bg-gray-50 px-3 py-2.5">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
                   Background
                 </p>
@@ -562,7 +562,7 @@ const StyleBuilder = () => {
                     value={previewBg}
                     onChange={(e) => setPreviewBg(e.target.value)}
                     title="Pick custom background"
-                    className="h-7 w-7 cursor-pointer overflow-hidden rounded-[999px] border border-gray-300 bg-white p-0"
+                    className="h-7 w-7 cursor-pointer overflow-hidden rounded-[5px] border border-gray-300 bg-white p-0"
                   />
 
                   {PREVIEW_BACKGROUNDS.map((bg) => (
@@ -570,7 +570,7 @@ const StyleBuilder = () => {
                       key={bg.name}
                       onClick={() => setPreviewBg(bg.color)}
                       title={bg.name}
-                      className={`h-7 w-7 rounded-[999px] border transition ${
+                      className={`h-7 w-7 rounded-[5px] border transition ${
                         previewBg.toLowerCase() === bg.color.toLowerCase()
                           ? "border-black ring-2 ring-black ring-offset-2"
                           : "border-gray-300"
@@ -582,7 +582,7 @@ const StyleBuilder = () => {
               </div>
 
               <div
-                className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[18px] transition-colors duration-500"
+                className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
                 style={{ backgroundColor: previewBg }}
               >
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -655,7 +655,7 @@ const StyleBuilder = () => {
                   </div>
 
                   <div
-                    className={`absolute left-1/2 h-5 w-[130px] -translate-x-1/2 rounded-[999px] blur-md ${
+                    className={`absolute left-1/2 h-5 w-[130px] -translate-x-1/2 rounded-[5px] blur-md ${
                       isDarkPreview ? "bg-white/15" : "bg-black/10"
                     }`}
                     style={{ top: `${outfitLayout.shoes.top + 18}px` }}
@@ -692,7 +692,7 @@ const StyleBuilder = () => {
                 </div>
               </div>
 
-              <div className="mt-3 rounded-[16px] bg-gray-50 p-3">
+              <div className="mt-3 rounded-[5px] bg-gray-50 p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
                     Picked Items
@@ -704,7 +704,7 @@ const StyleBuilder = () => {
                 </div>
 
                 {selectedProducts.length === 0 ? (
-                  <div className="rounded-[12px] bg-white px-4 py-4 text-center">
+                  <div className="rounded-[5px] bg-white px-4 py-4 text-center">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
                       No products picked
                     </p>
@@ -717,12 +717,12 @@ const StyleBuilder = () => {
                       return (
                         <div
                           key={item._id}
-                          className="flex w-full items-center gap-3 rounded-[14px] bg-white p-2.5 text-left transition hover:bg-gray-100"
+                          className="flex w-full items-center gap-3 rounded-[5px] bg-white p-2.5 text-left transition hover:bg-gray-100"
                         >
                           <img
                             src={getProductImage(item)}
                             alt={item.name}
-                            className="h-12 w-10 rounded-[10px] bg-gray-50 object-contain p-1 mix-blend-multiply"
+                            className="h-12 w-10 rounded-[5px] bg-gray-50 object-contain p-1 mix-blend-multiply"
                           />
 
                           <div className="min-w-0 flex-1">
@@ -747,7 +747,7 @@ const StyleBuilder = () => {
                                   prev.filter((p) => p._id !== item._id)
                                 )
                               }
-                              className="rounded-[999px] bg-red-50 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-red-500"
+                              className="rounded-[5px] bg-red-50 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-red-500"
                             >
                               Remove
                             </button>
