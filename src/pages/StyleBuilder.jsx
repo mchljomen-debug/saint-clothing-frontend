@@ -1,25 +1,40 @@
 import React, { useContext, useMemo, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
-import ProductItem from "../components/ProductItem";
-import useRecommendations from "../hooks/useRecommendations";
 
-const TOP_KEYWORDS = ["tshirt", "t-shirt", "shirt", "long sleeve", "longsleeve", "crop", "jersey", "hoodie", "jacket", "polo"];
-const BOTTOM_KEYWORDS = ["jorts", "short", "shorts", "pants", "jeans", "trouser", "bottom"];
+const TOP_KEYWORDS = [
+  "tshirt",
+  "t-shirt",
+  "shirt",
+  "long sleeve",
+  "longsleeve",
+  "crop",
+  "jersey",
+  "hoodie",
+  "jacket",
+  "polo",
+];
+
+const BOTTOM_KEYWORDS = [
+  "jorts",
+  "short",
+  "shorts",
+  "pants",
+  "jeans",
+  "trouser",
+  "bottom",
+];
 
 const getProductImage = (item) => {
   if (item?.outfitImage) return item.outfitImage;
-
   if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
   if (Array.isArray(item?.image) && item.image.length > 0) return item.image[0];
   if (typeof item?.images === "string") return item.images;
   if (typeof item?.image === "string") return item.image;
-
   return "/placeholder.png";
 };
 
 const getOutfitStyle = (item) => {
   const position = item?.outfitPosition || {};
-
   const x = Number(position.x || 0);
   const y = Number(position.y || 0);
   const scale = Number(position.scale || 1);
@@ -55,67 +70,59 @@ const getFinalPrice = (item) => {
   return price;
 };
 
-const scoreMatch = (baseItems, candidate) => {
+const scorePair = (top, bottom) => {
   let score = 0;
 
-  const candidateType = getProductType(candidate);
-  const selectedTypes = baseItems.map(getProductType);
+  if (!top || !bottom) return score;
 
-  if (candidateType === "top" && selectedTypes.includes("bottom")) score += 10;
-  if (candidateType === "bottom" && selectedTypes.includes("top")) score += 10;
-  if (candidateType === "both") score += 5;
+  if (top.category && bottom.matchWith?.includes(top.category)) score += 8;
+  if (bottom.category && top.matchWith?.includes(bottom.category)) score += 8;
 
-  for (const selected of baseItems) {
-    if (candidate.category && selected.matchWith?.includes(candidate.category)) {
-      score += 8;
-    }
-
-    if (selected.category && candidate.matchWith?.includes(selected.category)) {
-      score += 8;
-    }
-
-    if (candidate.color && selected.color && candidate.color === selected.color) {
-      score += 3;
-    }
-
-    if (candidate.styleVibe && selected.styleVibe && candidate.styleVibe === selected.styleVibe) {
-      score += 4;
-    }
-
-    const selectedTags = Array.isArray(selected.styleTags) ? selected.styleTags : [];
-    const candidateTags = Array.isArray(candidate.styleTags) ? candidate.styleTags : [];
-
-    const sharedTags = candidateTags.filter((tag) =>
-      selectedTags.map((t) => t.toLowerCase()).includes(String(tag).toLowerCase())
-    );
-
-    score += sharedTags.length * 2;
+  if (top.color && bottom.color && top.color === bottom.color) score += 3;
+  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
+    score += 4;
   }
 
-  if (candidate.bestseller) score += 2;
-  if (candidate.newArrival) score += 2;
-  if (candidate.onSale) score += 1;
+  const topTags = Array.isArray(top.styleTags) ? top.styleTags : [];
+  const bottomTags = Array.isArray(bottom.styleTags) ? bottom.styleTags : [];
+
+  const sharedTags = bottomTags.filter((tag) =>
+    topTags.map((t) => String(t).toLowerCase()).includes(String(tag).toLowerCase())
+  );
+
+  score += sharedTags.length * 2;
+
+  if (top.bestseller) score += 2;
+  if (bottom.bestseller) score += 2;
+  if (top.newArrival) score += 1;
+  if (bottom.newArrival) score += 1;
+  if (top.onSale) score += 1;
+  if (bottom.onSale) score += 1;
 
   return score;
 };
 
 const StyleBuilder = () => {
-  const {
-    products,
-    backendUrl,
-    currency,
-    token,
-    user,
-    categoryOptions = [],
-  } = useContext(ShopContext);
+  const { products, currency, categoryOptions = [] } = useContext(ShopContext);
 
-  const [mode, setMode] = useState("automatic");
+  const [mode, setMode] = useState("manual");
   const [category, setCategory] = useState("All");
   const [selectedProducts, setSelectedProducts] = useState([]);
 
   const CATEGORIES = useMemo(() => {
     return ["All", ...Array.from(new Set(categoryOptions.filter(Boolean)))];
   }, [categoryOptions]);
+
+  const cleanProducts = useMemo(() => {
+    if (!Array.isArray(products)) return [];
+    return products.filter((item) => item && !item.isDeleted);
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    return cleanProducts.filter(
+      (item) => category === "All" || item.category === category
+    );
+  }, [cleanProducts, category]);
 
   const selectedTop = selectedProducts.find((item) => {
     const type = getProductType(item);
@@ -127,51 +134,21 @@ const StyleBuilder = () => {
     return type === "bottom" || type === "both";
   });
 
-  const selectedIds = useMemo(
-    () => selectedProducts.map((item) => item._id),
-    [selectedProducts]
-  );
-
-  const { recommendations, loadingRecommendations } = useRecommendations({
-    backendUrl,
-    products,
-    productIds: selectedIds,
-    userId: user?._id || null,
-    limit: 10,
-    enabled: mode === "automatic" && selectedProducts.length > 0,
-  });
-
-  const filteredProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
-
-    return products
-      .filter((item) => item && !item.isDeleted)
-      .filter((item) => category === "All" || item.category === category);
-  }, [products, category]);
-
-  const smartSuggestions = useMemo(() => {
-    if (!Array.isArray(products) || selectedProducts.length === 0) return [];
-
-    return products
-      .filter((item) => item && !item.isDeleted)
-      .filter((item) => !selectedIds.includes(item._id))
-      .map((item) => ({
-        ...item,
-        __score: scoreMatch(selectedProducts, item),
-      }))
-      .filter((item) => item.__score > 0)
-      .sort((a, b) => b.__score - a.__score)
-      .slice(0, 10);
-  }, [products, selectedProducts, selectedIds]);
+  const clearFit = () => {
+    setSelectedProducts([]);
+  };
 
   const addToFit = (product) => {
-    if (!product?._id) return;
+    if (!product?._id || mode !== "manual") return;
 
     const productType = getProductType(product);
 
     setSelectedProducts((prev) => {
       const exists = prev.some((item) => item._id === product._id);
-      if (exists) return prev.filter((item) => item._id !== product._id);
+
+      if (exists) {
+        return prev.filter((item) => item._id !== product._id);
+      }
 
       if (productType === "top") {
         return [
@@ -194,37 +171,72 @@ const StyleBuilder = () => {
       }
 
       if (productType === "both") {
-        return [
-          ...prev.filter((item) => {
-            const type = getProductType(item);
-            return type !== "top" && type !== "bottom" && type !== "both";
-          }),
-          product,
-        ];
+        return [product];
       }
 
       return [...prev, product].slice(0, 4);
     });
   };
 
-  const removeFromFit = (id) => {
-    setSelectedProducts((prev) => prev.filter((item) => item._id !== id));
+  const generateAutomaticFit = () => {
+    const tops = cleanProducts.filter((item) => {
+      const type = getProductType(item);
+      return type === "top" || type === "both";
+    });
+
+    const bottoms = cleanProducts.filter((item) => {
+      const type = getProductType(item);
+      return type === "bottom" || type === "both";
+    });
+
+    if (tops.length === 0 && bottoms.length === 0) return;
+
+    if (tops.length > 0 && bottoms.length > 0) {
+      const pairs = [];
+
+      tops.forEach((top) => {
+        bottoms.forEach((bottom) => {
+          if (top._id !== bottom._id) {
+            pairs.push({
+              top,
+              bottom,
+              score: scorePair(top, bottom),
+            });
+          }
+        });
+      });
+
+      const sortedPairs = pairs.sort((a, b) => b.score - a.score);
+      const bestPairs = sortedPairs.slice(0, Math.min(8, sortedPairs.length));
+      const randomPair = bestPairs[Math.floor(Math.random() * bestPairs.length)];
+
+      setSelectedProducts([randomPair.top, randomPair.bottom]);
+      return;
+    }
+
+    if (tops.length > 0) {
+      const randomTop = tops[Math.floor(Math.random() * tops.length)];
+      setSelectedProducts([randomTop]);
+      return;
+    }
+
+    if (bottoms.length > 0) {
+      const randomBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
+      setSelectedProducts([randomBottom]);
+    }
   };
 
-  const clearFit = () => {
-    setSelectedProducts([]);
-  };
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
 
-  const finalSuggestions =
-    mode === "automatic"
-      ? recommendations.length > 0
-        ? recommendations
-        : smartSuggestions
-      : selectedProducts;
+    if (nextMode === "automatic") {
+      generateAutomaticFit();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white px-4 pt-6 pb-16 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
-      <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-7 flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">
             Saint Clothing
@@ -235,25 +247,14 @@ const StyleBuilder = () => {
           </h1>
 
           <p className="mt-3 max-w-xl text-sm font-medium text-gray-500">
-            Choose one top and one bottom to build a clean 2D outfit preview.
+            Pick products manually or let Saint automatically build a clean outfit.
           </p>
         </div>
 
-        <div className="flex rounded-full border border-black bg-black p-1">
+        <div className="flex w-full rounded-full border border-black bg-black p-1 sm:w-auto">
           <button
-            onClick={() => setMode("automatic")}
-            className={`rounded-full px-5 py-2 text-xs font-black uppercase tracking-widest transition ${
-              mode === "automatic"
-                ? "bg-white text-black"
-                : "text-white hover:bg-white/10"
-            }`}
-          >
-            Automatic
-          </button>
-
-          <button
-            onClick={() => setMode("manual")}
-            className={`rounded-full px-5 py-2 text-xs font-black uppercase tracking-widest transition ${
+            onClick={() => handleModeChange("manual")}
+            className={`flex-1 rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
               mode === "manual"
                 ? "bg-white text-black"
                 : "text-white hover:bg-white/10"
@@ -261,20 +262,37 @@ const StyleBuilder = () => {
           >
             Manual
           </button>
+
+          <button
+            onClick={() => handleModeChange("automatic")}
+            className={`flex-1 rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+              mode === "automatic"
+                ? "bg-white text-black"
+                : "text-white hover:bg-white/10"
+            }`}
+          >
+            Automatic
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
-        <aside className="rounded-[28px] border border-gray-200 bg-gray-50 p-4 sm:p-5 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)]">
+      <div className="grid gap-7 lg:grid-cols-[390px_1fr]">
+        <aside className="rounded-[30px] border border-gray-200 bg-gray-50 p-4 sm:p-5 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)]">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-black">
-              Collection
-            </h2>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400">
+                Left Section
+              </p>
+
+              <h2 className="mt-1 text-lg font-black uppercase text-black">
+                Collection
+              </h2>
+            </div>
 
             {selectedProducts.length > 0 && (
               <button
                 onClick={clearFit}
-                className="text-xs font-bold uppercase text-red-500"
+                className="rounded-full bg-white px-4 py-2 text-[11px] font-black uppercase text-red-500 shadow-sm"
               >
                 Clear
               </button>
@@ -297,7 +315,16 @@ const StyleBuilder = () => {
             ))}
           </div>
 
-          <div className="grid max-h-[65vh] grid-cols-2 gap-3 overflow-y-auto pr-1">
+          {mode === "automatic" && (
+            <button
+              onClick={generateAutomaticFit}
+              className="mb-4 w-full rounded-2xl bg-black px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:bg-gray-800"
+            >
+              Generate Random Best Pick
+            </button>
+          )}
+
+          <div className="max-h-[65vh] space-y-2 overflow-y-auto pr-1">
             {filteredProducts.map((item) => {
               const active = selectedProducts.some((p) => p._id === item._id);
               const type = getProductType(item);
@@ -306,237 +333,209 @@ const StyleBuilder = () => {
                 <button
                   key={item._id}
                   onClick={() => addToFit(item)}
-                  className={`group overflow-hidden rounded-[20px] border bg-white text-left transition ${
+                  disabled={mode === "automatic"}
+                  className={`flex w-full items-center gap-3 rounded-[20px] border bg-white p-3 text-left transition ${
                     active
-                      ? "border-black shadow-lg"
+                      ? "border-black shadow-md"
                       : "border-gray-200 hover:border-black"
+                  } ${
+                    mode === "automatic"
+                      ? "cursor-default opacity-90"
+                      : "cursor-pointer"
                   }`}
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden bg-transparent">
-                    <img
-                      src={getProductImage(item)}
-                      alt={item.name}
-                      className="h-full w-full object-contain p-2 mix-blend-multiply bg-transparent transition duration-500 group-hover:scale-105"
-                    />
+                  <img
+                    src={getProductImage(item)}
+                    alt={item.name}
+                    className="h-16 w-14 rounded-2xl bg-gray-50 object-contain p-1 mix-blend-multiply"
+                  />
 
-                    <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase text-black shadow-sm">
-                      {type}
-                    </span>
-
-                    {active && (
-                      <span className="absolute right-2 top-2 rounded-full bg-black px-2.5 py-1 text-[10px] font-black uppercase text-white">
-                        Added
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="p-3">
+                  <div className="min-w-0 flex-1">
                     <p className="line-clamp-1 text-xs font-black uppercase text-black">
                       {item.name}
                     </p>
 
-                    <p className="mt-1 text-[11px] font-bold text-gray-400">
-                      {item.category}
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      {item.category} • {type}
                     </p>
 
-                    <p className="mt-2 text-xs font-black text-black">
+                    <p className="mt-1 text-xs font-black text-black">
                       {currency}
                       {getFinalPrice(item).toLocaleString()}
                     </p>
                   </div>
+
+                  {active && (
+                    <span className="rounded-full bg-black px-3 py-1 text-[9px] font-black uppercase text-white">
+                      Picked
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         </aside>
 
-        <main className="space-y-7">
-          <section className="rounded-[32px] border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">
-                  2D Outfit Preview
-                </p>
-
-                <h2 className="mt-1 text-2xl font-black uppercase text-black">
-                  Build Your Fit
-                </h2>
-              </div>
-
-              <p className="rounded-full bg-gray-100 px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-500">
-                {selectedTop ? "Top Selected" : "No Top"} /{" "}
-                {selectedBottom ? "Bottom Selected" : "No Bottom"}
+        <main className="rounded-[34px] border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400">
+                Right Section
               </p>
+
+              <h2 className="mt-1 text-2xl font-black uppercase text-black">
+                Product Preview
+              </h2>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-              <div className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[28px] bg-transparent">
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <p className="text-[120px] font-black uppercase tracking-tight text-black/[0.025] sm:text-[150px]">
-                    SAINT
-                  </p>
-                </div>
+            <p className="w-fit rounded-full bg-gray-100 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-gray-500">
+              {mode === "manual" ? "Manual Mode" : "Automatic Mode"}
+            </p>
+          </div>
 
-                <div className="relative h-[520px] w-[280px]">
-                  <div className="absolute left-1/2 top-[85px] h-[210px] w-[250px] -translate-x-1/2">
-                    {selectedTop ? (
-                      <img
-                        src={getProductImage(selectedTop)}
-                        alt={selectedTop.name}
-                        style={getOutfitStyle(selectedTop)}
-                        className="h-full w-full object-contain mix-blend-multiply bg-transparent transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-                          Select Top
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="absolute left-1/2 top-[275px] h-[210px] w-[220px] -translate-x-1/2">
-                    {selectedBottom ? (
-                      <img
-                        src={getProductImage(selectedBottom)}
-                        alt={selectedBottom.name}
-                        style={getOutfitStyle(selectedBottom)}
-                        className="h-full w-full object-contain mix-blend-multiply bg-transparent transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-                          Select Bottom
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+          <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+            <div className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[30px] bg-gray-50">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p className="text-[115px] font-black uppercase tracking-tight text-black/[0.035] sm:text-[155px]">
+                  SAINT
+                </p>
               </div>
 
-              <div>
-                <h3 className="mb-4 text-sm font-black uppercase tracking-[0.2em] text-black">
-                  Selected Pieces
+              <div className="relative h-[520px] w-[290px]">
+                <div className="absolute left-1/2 top-[80px] h-[215px] w-[260px] -translate-x-1/2">
+                  {selectedTop ? (
+                    <img
+                      src={getProductImage(selectedTop)}
+                      alt={selectedTop.name}
+                      style={getOutfitStyle(selectedTop)}
+                      className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                        Select Top
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="absolute left-1/2 top-[275px] h-[215px] w-[230px] -translate-x-1/2">
+                  {selectedBottom ? (
+                    <img
+                      src={getProductImage(selectedBottom)}
+                      alt={selectedBottom.name}
+                      style={getOutfitStyle(selectedBottom)}
+                      className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                        Select Bottom
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-black">
+                  Picked Products
                 </h3>
 
-                {selectedProducts.length === 0 ? (
-                  <div className="flex min-h-[260px] items-center justify-center rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
-                    <div>
-                      <p className="text-lg font-black uppercase text-black">
-                        No pieces selected
-                      </p>
+                <p className="text-xs font-black uppercase text-gray-400">
+                  {selectedProducts.length} selected
+                </p>
+              </div>
 
-                      <p className="mt-2 text-sm font-medium text-gray-500">
-                        Choose one top and one bottom from the left side.
-                      </p>
-                    </div>
+              {selectedProducts.length === 0 ? (
+                <div className="flex min-h-[300px] items-center justify-center rounded-[26px] border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                  <div>
+                    <p className="text-lg font-black uppercase text-black">
+                      No product showing
+                    </p>
+
+                    <p className="mt-2 text-sm font-medium text-gray-500">
+                      Use Manual to pick from the left, or Automatic to generate
+                      a random best outfit.
+                    </p>
                   </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {selectedProducts.map((item) => (
-                      <div
-                        key={item._id}
-                        className="flex gap-3 rounded-[22px] border border-gray-200 bg-gray-50 p-3"
-                      >
-                        <img
-                          src={getProductImage(item)}
-                          alt={item.name}
-                          className="h-24 w-20 rounded-[16px] bg-transparent object-contain mix-blend-multiply p-1"
-                        />
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {selectedProducts.map((item) => (
+                    <div
+                      key={item._id}
+                      className="flex gap-3 rounded-[24px] border border-gray-200 bg-gray-50 p-3"
+                    >
+                      <img
+                        src={getProductImage(item)}
+                        alt={item.name}
+                        className="h-24 w-20 rounded-[18px] bg-white object-contain p-1 mix-blend-multiply"
+                      />
 
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                            {getProductType(item)}
-                          </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                          {getProductType(item)}
+                        </p>
 
-                          <p className="mt-1 line-clamp-1 text-sm font-black uppercase text-black">
-                            {item.name}
-                          </p>
+                        <p className="mt-1 line-clamp-1 text-sm font-black uppercase text-black">
+                          {item.name}
+                        </p>
 
-                          <p className="text-xs font-bold text-gray-500">
-                            {item.category}
-                          </p>
+                        <p className="text-xs font-bold text-gray-500">
+                          {item.category}
+                        </p>
 
-                          <p className="mt-1 text-sm font-black text-black">
-                            {currency}
-                            {getFinalPrice(item).toLocaleString()}
-                          </p>
+                        <p className="mt-1 text-sm font-black text-black">
+                          {currency}
+                          {getFinalPrice(item).toLocaleString()}
+                        </p>
 
+                        {mode === "manual" && (
                           <button
-                            onClick={() => removeFromFit(item._id)}
+                            onClick={() =>
+                              setSelectedProducts((prev) =>
+                                prev.filter((p) => p._id !== item._id)
+                              )
+                            }
                             className="mt-2 text-[11px] font-black uppercase text-red-500"
                           >
                             Remove
                           </button>
-                        </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                {!token && (
-                  <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                    <p className="text-xs font-bold text-amber-700">
-                      Login to save better style signals and get more accurate
-                      recommendations.
-                    </p>
-                  </div>
-                )}
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleModeChange("manual")}
+                  className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-widest transition ${
+                    mode === "manual"
+                      ? "border-black bg-black text-white"
+                      : "border-gray-200 bg-white text-black hover:border-black"
+                  }`}
+                >
+                  Manual
+                </button>
+
+                <button
+                  onClick={() => handleModeChange("automatic")}
+                  className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-widest transition ${
+                    mode === "automatic"
+                      ? "border-black bg-black text-white"
+                      : "border-gray-200 bg-white text-black hover:border-black"
+                  }`}
+                >
+                  Automatic
+                </button>
               </div>
             </div>
-          </section>
-
-          <section className="rounded-[32px] border border-gray-200 bg-gray-50 p-5 sm:p-7">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">
-                  {mode === "automatic" ? "Smart Matches" : "Manual Picks"}
-                </p>
-
-                <h2 className="mt-1 text-2xl font-black uppercase text-black">
-                  Complete The Fit
-                </h2>
-              </div>
-            </div>
-
-            {selectedProducts.length === 0 ? (
-              <div className="rounded-[24px] border border-dashed border-gray-300 bg-white p-8 text-center">
-                <p className="text-sm font-bold text-gray-500">
-                  Select at least one product to see outfit suggestions.
-                </p>
-              </div>
-            ) : loadingRecommendations ? (
-              <div className="rounded-[24px] bg-white p-8 text-center">
-                <p className="text-sm font-black uppercase tracking-widest text-gray-400">
-                  Loading recommendations...
-                </p>
-              </div>
-            ) : finalSuggestions.length === 0 ? (
-              <div className="rounded-[24px] bg-white p-8 text-center">
-                <p className="text-sm font-bold text-gray-500">
-                  No suggestions found yet.
-                </p>
-              </div>
-            ) : (
-              <div className="flex gap-4 overflow-x-auto pb-3">
-                {finalSuggestions.map((item) => (
-                  <div
-                    key={item._id}
-                    className="w-[180px] shrink-0 sm:w-[220px]"
-                  >
-                    <ProductItem
-                      id={item._id}
-                      image={item.images}
-                      name={item.name}
-                      price={item.price}
-                      onSale={item.onSale}
-                      salePercent={item.salePercent}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          </div>
         </main>
       </div>
     </div>
