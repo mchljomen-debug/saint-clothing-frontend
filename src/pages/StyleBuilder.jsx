@@ -89,25 +89,25 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
 
   return {
     top: {
-      top: 40,
-      height: 340,
-      width: 400,
-      scale: 1.05,
+      top: 28,
+      height: 318,
+      width: 370,
+      scale: 1.02,
       snapX: 0,
       snapY: 0,
     },
     bottom: {
-      top: bottomKind === "pants" ? 235 : 245,
-      height: bottomKind === "pants" ? 360 : 330,
-      width: bottomKind === "pants" ? 390 : 380,
-      scale: 1.02,
+      top: bottomKind === "pants" ? 218 : 230,
+      height: bottomKind === "pants" ? 340 : 305,
+      width: bottomKind === "pants" ? 365 : 355,
+      scale: 1,
       snapX: 0,
       snapY: -6,
     },
     shoes: {
-      top: bottomKind === "pants" ? 570 : 540,
-      height: 95,
-      width: 300,
+      top: bottomKind === "pants" ? 520 : 495,
+      height: 85,
+      width: 280,
       scale: selectedShoes ? 1 : 1,
       snapX: 0,
       snapY: 0,
@@ -326,7 +326,7 @@ const StyleBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] px-2 pt-3 pb-4 sm:px-3 lg:px-4">
+    <div className="min-h-screen overflow-hidden bg-[#f8f7f4] px-2 py-2 sm:px-3 lg:px-4">
       <style>
         {`
           @keyframes saintFloat {
@@ -366,25 +366,25 @@ const StyleBuilder = () => {
 
           input[type="color"]::-webkit-color-swatch {
             border: none;
-            border-radius: 999px;
+            border-radius: 5px;
           }
         `}
       </style>
 
-      <div className="origin-top scale-[0.94]">
-        <div className="mx-auto max-w-[1900px]">
-          <div className="mb-3 rounded-[5px] border border-black/10 bg-white px-5 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:px-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="origin-top scale-[0.9]">
+        <div className="mx-auto max-w-[1950px]">
+          <div className="mb-2 rounded-[5px] border border-black/10 bg-white px-5 py-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:px-6">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
                   Saint Clothing
                 </p>
 
-                <h1 className="mt-1 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
+                <h1 className="mt-0.5 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
                   Style Builder
                 </h1>
 
-                <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-gray-500">
+                <p className="mt-1 max-w-2xl text-sm font-medium leading-5 text-gray-500">
                   Build a fit manually or generate a smart outfit from your product
                   collection.
                 </p>
@@ -393,7 +393,7 @@ const StyleBuilder = () => {
               <div className="flex w-full rounded-[5px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
                 <button
                   onClick={() => handleModeChange("manual")}
-                  className={`flex-1 rounded-[5px] px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
                     mode === "manual"
                       ? "bg-white text-black"
                       : "text-white hover:bg-white/10"
@@ -404,7 +404,7 @@ const StyleBuilder = () => {
 
                 <button
                   onClick={() => handleModeChange("automatic")}
-                  className={`flex-1 rounded-[5px] px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
                     mode === "automatic"
                       ? "bg-white text-black"
                       : "text-white hover:bg-white/10"
@@ -416,28 +416,28 @@ const StyleBuilder = () => {
             </div>
           </div>
 
-          <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_430px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
-            <section className="flex min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] sm:p-5">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="grid items-stretch gap-2 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
+            <section className="flex h-[720px] min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
                     Collection
                   </p>
 
-                  <h2 className="mt-1 text-xl font-black uppercase tracking-tight text-black">
+                  <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
                     Pick Your Pieces
                   </h2>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <p className="rounded-[5px] bg-gray-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
                     {filteredProducts.length} items
                   </p>
 
                   {selectedProducts.length > 0 && (
                     <button
                       onClick={clearFit}
-                      className="rounded-[5px] bg-red-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-500 transition hover:bg-red-100"
+                      className="rounded-[5px] bg-red-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 transition hover:bg-red-100"
                     >
                       Clear
                     </button>
@@ -445,12 +445,12 @@ const StyleBuilder = () => {
                 </div>
               </div>
 
-              <div className="mb-4 flex gap-2 overflow-x-auto border-b border-gray-100 pb-3">
+              <div className="mb-3 flex gap-2 overflow-x-auto border-b border-gray-100 pb-2">
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`shrink-0 rounded-[5px] border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition ${
+                    className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${
                       category === cat
                         ? "border-black bg-black text-white"
                         : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
@@ -464,14 +464,14 @@ const StyleBuilder = () => {
               {mode === "automatic" && (
                 <button
                   onClick={generateAutomaticFit}
-                  className="mb-4 w-full rounded-[5px] bg-black px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
+                  className="mb-3 w-full rounded-[5px] bg-black px-5 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
                 >
                   Generate New Automatic Fit
                 </button>
               )}
 
-              <div className="saint-scroll min-h-0 flex-1 overflow-y-auto pr-2">
-                <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+              <div className="saint-scroll flex-1 overflow-y-auto pr-2">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                   {filteredProducts.map((item) => {
                     const active = selectedProducts.some((p) => p._id === item._id);
                     const type = getProductType(item);
@@ -498,31 +498,31 @@ const StyleBuilder = () => {
                             <img
                               src={getProductImage(item)}
                               alt={item.name}
-                              className="h-full w-full object-contain p-3 mix-blend-multiply transition duration-500 group-hover:scale-105"
+                              className="h-full w-full object-contain p-2.5 mix-blend-multiply transition duration-500 group-hover:scale-105"
                             />
                           </div>
 
-                          <span className="absolute left-2 top-2 rounded-[5px] bg-white/90 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
+                          <span className="absolute left-2 top-2 rounded-[5px] bg-white/90 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
                             {type}
                           </span>
 
                           {active && (
-                            <span className="absolute right-2 top-2 rounded-[5px] bg-black px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-white">
+                            <span className="absolute right-2 top-2 rounded-[5px] bg-black px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white">
                               Picked
                             </span>
                           )}
                         </div>
 
-                        <div className="pt-2.5">
+                        <div className="pt-2">
                           <p className="line-clamp-1 text-xs font-black uppercase tracking-tight text-black">
                             {item.name}
                           </p>
 
-                          <p className="mt-1 line-clamp-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                          <p className="mt-0.5 line-clamp-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                             {item.category}
                           </p>
 
-                          <p className="mt-1.5 text-xs font-black text-black">
+                          <p className="mt-1 text-xs font-black text-black">
                             {currency}
                             {getFinalPrice(item).toLocaleString()}
                           </p>
@@ -534,24 +534,24 @@ const StyleBuilder = () => {
               </div>
             </section>
 
-            <aside className="rounded-[5px] border border-black/10 bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.05)] xl:sticky xl:top-3 xl:h-fit">
-              <div className="mb-3 flex items-end justify-between">
+            <aside className="rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] xl:sticky xl:top-2 xl:h-fit">
+              <div className="mb-2 flex items-end justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
                     Live Preview
                   </p>
 
-                  <h2 className="mt-1 text-xl font-black uppercase tracking-tight text-black">
+                  <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
                     2D Fit
                   </h2>
                 </div>
 
-                <p className="rounded-[5px] bg-gray-100 px-3.5 py-2 text-[9px] font-black uppercase tracking-widest text-gray-500">
+                <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500">
                   {mode}
                 </p>
               </div>
 
-              <div className="mb-3 flex items-center justify-between gap-3 rounded-[5px] bg-gray-50 px-3 py-2.5">
+              <div className="mb-2 flex items-center justify-between gap-3 rounded-[5px] bg-gray-50 px-3 py-2">
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
                   Background
                 </p>
@@ -582,12 +582,12 @@ const StyleBuilder = () => {
               </div>
 
               <div
-                className="relative flex min-h-[650px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
+                className="relative flex h-[600px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
                 style={{ backgroundColor: previewBg }}
               >
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <p
-                    className={`select-none text-[110px] font-black uppercase tracking-[-0.08em] ${
+                    className={`select-none text-[100px] font-black uppercase tracking-[-0.08em] ${
                       isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
                     }`}
                   >
@@ -595,7 +595,7 @@ const StyleBuilder = () => {
                   </p>
                 </div>
 
-                <div className="saint-float relative h-[660px] w-[350px]">
+                <div className="saint-float relative h-[585px] w-[330px]">
                   <div
                     className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
                     style={{
@@ -655,7 +655,7 @@ const StyleBuilder = () => {
                   </div>
 
                   <div
-                    className={`absolute left-1/2 h-5 w-[130px] -translate-x-1/2 rounded-[5px] blur-md ${
+                    className={`absolute left-1/2 h-5 w-[125px] -translate-x-1/2 rounded-[5px] blur-md ${
                       isDarkPreview ? "bg-white/15" : "bg-black/10"
                     }`}
                     style={{ top: `${outfitLayout.shoes.top + 18}px` }}
@@ -692,7 +692,7 @@ const StyleBuilder = () => {
                 </div>
               </div>
 
-              <div className="mt-3 rounded-[5px] bg-gray-50 p-3">
+              <div className="mt-2 rounded-[5px] bg-gray-50 p-2.5">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
                     Picked Items
@@ -704,25 +704,25 @@ const StyleBuilder = () => {
                 </div>
 
                 {selectedProducts.length === 0 ? (
-                  <div className="rounded-[5px] bg-white px-4 py-4 text-center">
+                  <div className="rounded-[5px] bg-white px-4 py-3 text-center">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
                       No products picked
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {selectedProducts.map((item) => {
                       const type = getProductType(item);
 
                       return (
                         <div
                           key={item._id}
-                          className="flex w-full items-center gap-3 rounded-[5px] bg-white p-2.5 text-left transition hover:bg-gray-100"
+                          className="flex w-full items-center gap-2.5 rounded-[5px] bg-white p-2 text-left transition hover:bg-gray-100"
                         >
                           <img
                             src={getProductImage(item)}
                             alt={item.name}
-                            className="h-12 w-10 rounded-[5px] bg-gray-50 object-contain p-1 mix-blend-multiply"
+                            className="h-11 w-10 rounded-[5px] bg-gray-50 object-contain p-1 mix-blend-multiply"
                           />
 
                           <div className="min-w-0 flex-1">
@@ -747,7 +747,7 @@ const StyleBuilder = () => {
                                   prev.filter((p) => p._id !== item._id)
                                 )
                               }
-                              className="rounded-[5px] bg-red-50 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-red-500"
+                              className="rounded-[5px] bg-red-50 px-2.5 py-1.5 text-[8px] font-black uppercase tracking-widest text-red-500"
                             >
                               Remove
                             </button>
