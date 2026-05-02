@@ -99,19 +99,23 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
       snapX: 0,
       snapY: 0,
     },
+
+    // 🔥 FIXED SHORTS GAP HERE
     bottom: {
-      top: isPants ? 255 : 245,
-      height: isPants ? 315 : 285,
-      width: isPants ? 350 : 335,
+      top: isPants ? 255 : 205,   // ⬅ moved UP for shorts
+      height: isPants ? 315 : 305,
+      width: isPants ? 350 : 350,
       scale: 1,
       snapX: 0,
       snapY: 0,
     },
+
+    // 🔥 FIXED SHOES POSITION
     shoes: {
-      top: isPants ? 500 : 485,
+      top: isPants ? 500 : 465,
       height: 78,
       width: 255,
-      scale: selectedShoes ? 1 : 1,
+      scale: 1,
       snapX: 0,
       snapY: 0,
     },
