@@ -21,7 +21,6 @@ const Home = () => {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
-
         const res = await axios.get(`${backendUrl}/api/category/list`);
 
         if (res.data?.success) {
@@ -47,126 +46,113 @@ const Home = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <div className="mb-5">
-          <Hero />
-        </div>
+      {/* HERO */}
+      <section className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <Hero />
+      </section>
 
-        <section className="py-8">
-          <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
-                Saint Clothing
-              </p>
+      {/* TOP NAV BUTTONS */}
+      <section className="sticky top-[72px] z-30 border-y border-black/10 bg-[#f8f7f4]/90 px-3 py-3 backdrop-blur-md sm:px-[5vw] md:top-[80px] md:px-[7vw] lg:px-[8vw]">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">
+            Shop Categories
+          </p>
 
-              <h1 className="mt-2 text-3xl font-black uppercase tracking-[-0.04em] text-black sm:text-5xl">
-                Shop by Category
-              </h1>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate("/latest")}
+              className="rounded-full bg-black px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white"
+            >
+              Latest
+            </button>
 
-              <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-gray-500">
-                Explore Saint Clothing by category. Clean streetwear essentials,
-                curated by style and fit.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => navigate("/latest")}
-                className="rounded-full border border-black bg-black px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white hover:text-black"
-              >
-                Latest
-              </button>
-
-              <button
-                onClick={() => navigate("/best-sellers")}
-                className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-black transition hover:border-black"
-              >
-                Best Sellers
-              </button>
-            </div>
+            <button
+              onClick={() => navigate("/best-sellers")}
+              className="rounded-full border border-black/10 bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-black"
+            >
+              Best
+            </button>
           </div>
+        </div>
+      </section>
 
-          {loadingCategories ? (
-            <div className="rounded-[8px] border border-black/10 bg-white p-10 text-center">
-              <p className="text-sm font-black uppercase tracking-widest text-gray-400">
-                Loading categories...
-              </p>
-            </div>
-          ) : visibleCategories.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {visibleCategories.map((cat, index) => (
-                <button
-                  key={cat._id || cat.name}
-                  onClick={() => goToCategory(cat.name)}
-                  className={`group relative overflow-hidden rounded-[8px] bg-[#e8e2d7] text-left shadow-[0_16px_40px_rgba(0,0,0,0.06)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,0,0,0.14)] ${
-                    index === 0 ? "sm:col-span-2 xl:col-span-1" : ""
-                  }`}
-                >
-                  <div className="relative h-[420px] sm:h-[480px]">
-                    {cat.image ? (
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-[#e8e2d7]">
-                        <p className="select-none text-7xl font-black uppercase tracking-[-0.08em] text-black/[0.04]">
-                          SAINT
-                        </p>
-                      </div>
-                    )}
+      {/* FULL SCREEN CATEGORY SECTIONS */}
+      {loadingCategories ? (
+        <div className="flex h-[70vh] items-center justify-center">
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
+            Loading categories...
+          </p>
+        </div>
+      ) : visibleCategories.length > 0 ? (
+        <div>
+          {visibleCategories.map((cat, index) => (
+            <section
+              key={cat._id || cat.name}
+              className="relative flex min-h-[calc(100vh-72px)] items-end overflow-hidden bg-[#e8e2d7] md:min-h-[calc(100vh-80px)]"
+            >
+              {cat.image ? (
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#e8e2d7]">
+                  <p className="select-none text-[18vw] font-black uppercase tracking-[-0.08em] text-black/[0.04]">
+                    SAINT
+                  </p>
+                </div>
+              )}
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                    <div className="absolute inset-0 border border-black/10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
-                    <div className="absolute left-0 right-0 top-0 flex items-center justify-between p-4">
-                      <span className="rounded-full bg-white/85 px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-black backdrop-blur-sm">
-                        {cat.section || "category"}
-                      </span>
+              <div className="relative z-10 w-full px-5 pb-10 sm:px-[7vw] sm:pb-14 lg:px-[8vw]">
+                <div className="max-w-3xl">
+                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/70">
+                    {String(cat.section || "category")}
+                  </p>
 
-                      <span className="rounded-full bg-black/70 px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] text-white backdrop-blur-sm">
-                        Shop
-                      </span>
-                    </div>
+                  <h2 className="mt-2 text-5xl font-black uppercase tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
+                    {cat.name}
+                  </h2>
 
-                    <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/65">
-                        Category
-                      </p>
+                  {Array.isArray(cat.matchWith) && cat.matchWith.length > 0 && (
+                    <p className="mt-3 max-w-xl text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
+                      Pairs with {cat.matchWith.slice(0, 3).join(", ")}
+                    </p>
+                  )}
 
-                      <h2 className="mt-1 text-3xl font-black uppercase tracking-[-0.04em] text-white sm:text-4xl">
-                        {cat.name}
-                      </h2>
+                  <button
+                    onClick={() => goToCategory(cat.name)}
+                    className="mt-6 bg-white px-7 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-black transition hover:bg-black hover:text-white"
+                  >
+                    Shop {cat.name}
+                  </button>
+                </div>
 
-                      {Array.isArray(cat.matchWith) &&
-                        cat.matchWith.length > 0 && (
-                          <p className="mt-2 line-clamp-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
-                            Pairs with {cat.matchWith.slice(0, 3).join(", ")}
-                          </p>
-                        )}
+                <p className="absolute bottom-5 right-5 text-[10px] font-black uppercase tracking-[0.25em] text-white/60 sm:right-[7vw] lg:right-[8vw]">
+                  {String(index + 1).padStart(2, "0")} /{" "}
+                  {String(visibleCategories.length).padStart(2, "0")}
+                </p>
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="flex h-[70vh] items-center justify-center px-4 text-center">
+          <div>
+            <p className="text-sm font-black uppercase tracking-widest text-gray-400">
+              No categories available
+            </p>
+            <p className="mt-2 text-sm text-gray-400">
+              Add category images in admin first.
+            </p>
+          </div>
+        </div>
+      )}
 
-                      <div className="mt-4 inline-flex items-center gap-3 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-black transition group-hover:bg-black group-hover:text-white">
-                        Shop Now <span>→</span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-[8px] border border-black/10 bg-white p-10 text-center">
-              <p className="text-sm font-black uppercase tracking-widest text-gray-400">
-                No categories available
-              </p>
-              <p className="mt-2 text-sm text-gray-400">
-                Check your backend URL or add categories in admin.
-              </p>
-            </div>
-          )}
-        </section>
-
-        <div className="mt-4">
+      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <div className="mt-6">
           <OurPolicy />
         </div>
 
