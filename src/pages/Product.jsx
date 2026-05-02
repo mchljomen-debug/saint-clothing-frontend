@@ -77,6 +77,20 @@ const getMediaUrl = (value, backendUrl) => {
   return `${backendUrl}/uploads/${stringValue.replace(/^\/+/, "")}`;
 };
 
+const formatRestockDate = (value) => {
+  if (!value) return "To be announced";
+
+  try {
+    return new Date(value).toLocaleDateString("en-PH", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return "To be announced";
+  }
+};
+
 const Product = () => {
   const { products, currency, addToCart, backendUrl, user, token } =
     useContext(ShopContext);
@@ -289,6 +303,20 @@ const Product = () => {
     return result;
   }, [productData]);
 
+  const normalizedPreorderStock = useMemo(() => {
+    if (!productData || productData === false) return {};
+
+    const result = {};
+    SIZE_ORDER.forEach((s) => {
+      result[s] = getStockValue(productData.preorderStock, s);
+    });
+
+    return result;
+  }, [productData]);
+
+  const preorderThreshold = Number(productData?.preorderThreshold ?? 5);
+  const preorderEnabled = productData?.preorderEnabled !== false;
+
   const availableSizes = useMemo(() => {
     if (!productData || productData === false) return [];
 
@@ -301,12 +329,31 @@ const Product = () => {
         ? Object.keys(productData.stock).map((s) => String(s).toUpperCase())
         : [];
 
-    const merged = [...new Set([...backendSizes, ...stockSizes])];
+    const preorderSizes =
+      productData.preorderStock && typeof productData.preorderStock === "object"
+        ? Object.keys(productData.preorderStock).map((s) =>
+            String(s).toUpperCase()
+          )
+        : [];
+
+    const merged = [...new Set([...backendSizes, ...stockSizes, ...preorderSizes])];
 
     return merged
       .filter((s) => SIZE_ORDER.includes(s))
       .sort((a, b) => SIZE_ORDER.indexOf(a) - SIZE_ORDER.indexOf(b));
   }, [productData]);
+
+  const isSizeAvailableForPurchase = useCallback(
+    (targetSize) => {
+      const actual = Number(normalizedStock[targetSize] || 0);
+      const preorder = Number(normalizedPreorderStock[targetSize] || 0);
+
+      if (actual > 0) return true;
+
+      return preorderEnabled && preorder > 0;
+    },
+    [normalizedStock, normalizedPreorderStock, preorderEnabled]
+  );
 
   useEffect(() => {
     if (!availableSizes.length) {
@@ -321,26 +368,31 @@ const Product = () => {
     const preferredAvailable =
       preferredSize &&
       availableSizes.includes(preferredSize) &&
-      Number(normalizedStock[preferredSize] || 0) > 0;
+      isSizeAvailableForPurchase(preferredSize);
 
     if (preferredAvailable) {
       setSize((prev) => (prev === preferredSize ? prev : preferredSize));
       return;
     }
 
-    const firstAvailableInStock = availableSizes.find(
-      (item) => Number(normalizedStock[item] || 0) > 0
+    const firstAvailable = availableSizes.find((item) =>
+      isSizeAvailableForPurchase(item)
     );
 
-    if (firstAvailableInStock) {
-      setSize((prev) =>
-        prev === firstAvailableInStock ? prev : firstAvailableInStock
-      );
+    if (firstAvailable) {
+      setSize((prev) => (prev === firstAvailable ? prev : firstAvailable));
       return;
     }
 
     setSize("");
-  }, [availableSizes, normalizedStock, user?.preferences?.preferredSize, pid]);
+  }, [
+    availableSizes,
+    normalizedStock,
+    normalizedPreorderStock,
+    isSizeAvailableForPurchase,
+    user?.preferences?.preferredSize,
+    pid,
+  ]);
 
   const reviews = Array.isArray(productData?.reviews) ? productData.reviews : [];
 
@@ -372,13 +424,43 @@ const Product = () => {
     return productData.color || "Default";
   }, [productData]);
 
-  const selectedStock = size ? Number(normalizedStock[size] || 0) : 0;
-  const totalProductStock = getTotalStockFromObject(productData?.stock);
-  const isProductOutOfStock = totalProductStock <= 0;
+  const selectedActualStock = size ? Number(normalizedStock[size] || 0) : 0;
+  const selectedPreorderStock = size
+    ? Number(normalizedPreorderStock[size] || 0)
+    : 0;
 
-  const isSelectedSizeOutOfStock = size ? selectedStock <= 0 : false;
-  const isSelectedSizeCritical = size && selectedStock > 0 && selectedStock <= 5;
-  const isProductSellingFast = totalProductStock > 0 && totalProductStock <= 10;
+  const totalProductStock = getTotalStockFromObject(productData?.stock);
+  const totalPreorderStock = getTotalStockFromObject(productData?.preorderStock);
+
+  const isProductPreOrder =
+    preorderEnabled &&
+    totalProductStock <= preorderThreshold &&
+    totalPreorderStock > 0;
+
+  const isProductOutOfStock =
+    totalProductStock <= 0 && (!preorderEnabled || totalPreorderStock <= 0);
+
+  const isProductSellingFast =
+    !isProductPreOrder &&
+    totalProductStock > preorderThreshold &&
+    totalProductStock <= 10;
+
+  const isSelectedSizePreOrder =
+    preorderEnabled &&
+    size &&
+    selectedActualStock <= preorderThreshold &&
+    selectedPreorderStock > 0;
+
+  const isSelectedSizeOutOfStock =
+    size &&
+    selectedActualStock <= 0 &&
+    (!preorderEnabled || selectedPreorderStock <= 0);
+
+  const selectedStock = isSelectedSizePreOrder
+    ? selectedPreorderStock
+    : selectedActualStock;
+
+  const expectedRestockDate = formatRestockDate(productData?.preorderRestockDate);
 
   const has3DModel = !!productData?.model3d;
 
@@ -469,11 +551,11 @@ const Product = () => {
       return {
         branch: branchCode,
         branchName: branchItem.name || branchItem.code || branchCode,
-        available: totalStock > 0,
+        available: totalStock > 0 || isProductPreOrder,
         totalStock,
       };
     });
-  }, [productData, products, branches]);
+  }, [productData, products, branches, isProductPreOrder]);
 
   const { recommendations: styleRecommendations } = useRecommendations({
     backendUrl,
@@ -643,7 +725,11 @@ const Product = () => {
     }
 
     if (quantity > selectedStock) {
-      toast.error(`Only ${selectedStock} stock left for size ${size}`);
+      toast.error(
+        isSelectedSizePreOrder
+          ? `Only ${selectedStock} pre-order slots left for size ${size}`
+          : `Only ${selectedStock} stock left for size ${size}`
+      );
       return;
     }
 
@@ -652,6 +738,9 @@ const Product = () => {
         ...productData,
         quantity,
         size,
+        isPreorder: !!isSelectedSizePreOrder,
+        expectedRestockDate: productData.preorderRestockDate || null,
+        preorderNote: productData.preorderNote || "",
       },
     ];
 
@@ -694,7 +783,11 @@ const Product = () => {
     }
 
     if (selectedStock < quantity) {
-      toast.error(`Only ${selectedStock} stock left for size ${size}`);
+      toast.error(
+        isSelectedSizePreOrder
+          ? `Only ${selectedStock} pre-order slots left for size ${size}`
+          : `Only ${selectedStock} stock left for size ${size}`
+      );
       return;
     }
 
@@ -884,9 +977,15 @@ const Product = () => {
                     </span>
                   )}
 
-                  {!isProductOutOfStock && isProductSellingFast && (
+                  {!isProductOutOfStock && isProductPreOrder && (
                     <span className="inline-flex items-center gap-2 rounded-full bg-orange-600 text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
                       <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                      Pre-order
+                    </span>
+                  )}
+
+                  {!isProductOutOfStock && isProductSellingFast && (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-amber-500 text-black px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
                       Selling Fast
                     </span>
                   )}
@@ -988,6 +1087,23 @@ const Product = () => {
                 </div>
               )}
 
+              {isProductPreOrder && (
+                <div className="mt-4 rounded-[18px] border border-orange-200 bg-orange-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-700">
+                    Pre-order information
+                  </p>
+                  <p className="mt-2 text-xs font-bold leading-5 text-orange-700/80">
+                    This item is currently available for pre-order. Expected
+                    restock: <span className="font-black">{expectedRestockDate}</span>
+                  </p>
+                  {productData.preorderNote && (
+                    <p className="mt-2 text-xs font-bold leading-5 text-orange-700/80">
+                      {productData.preorderNote}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-5">
                 <div className="mb-2.5 flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-500">
@@ -1004,9 +1120,14 @@ const Product = () => {
 
                 <div className="flex gap-2 overflow-x-auto scrollbar-thin-hide pb-3">
                   {availableSizes.map((s) => {
-                    const sizeStock = Number(normalizedStock[s] || 0);
-                    const isOut = sizeStock <= 0;
-                    const isCritical = sizeStock > 0 && sizeStock <= 5;
+                    const actualStock = Number(normalizedStock[s] || 0);
+                    const preorderStock = Number(normalizedPreorderStock[s] || 0);
+                    const isPreOrder =
+                      preorderEnabled &&
+                      actualStock <= preorderThreshold &&
+                      preorderStock > 0;
+                    const isOut =
+                      actualStock <= 0 && (!preorderEnabled || preorderStock <= 0);
                     const isPreferred =
                       String(user?.preferences?.preferredSize || "").toUpperCase() === s;
 
@@ -1028,9 +1149,9 @@ const Product = () => {
                       >
                         {s}
 
-                        {isCritical && !isOut && (
+                        {isPreOrder && !isOut && (
                           <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-orange-600 px-1.5 py-0.5 text-[7px] font-black uppercase text-white">
-                            Few
+                            Pre
                           </span>
                         )}
 
@@ -1050,10 +1171,17 @@ const Product = () => {
                   })}
                 </div>
 
-                {isSelectedSizeCritical && (
-                  <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-orange-600">
-                    Only {selectedStock} left in size {size}
-                  </p>
+                {isSelectedSizePreOrder && (
+                  <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-3">
+                    <p className="text-xs font-black uppercase tracking-[0.12em] text-orange-700">
+                      Pre-order size selected
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-orange-700/80">
+                      Size {size} is available for pre-order. Slots left:{" "}
+                      {selectedPreorderStock}. Expected restock:{" "}
+                      {expectedRestockDate}
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -1065,7 +1193,9 @@ const Product = () => {
 
                   {size && (
                     <p className="text-[11px] sm:text-xs font-semibold text-gray-500 text-right">
-                      Stock for {size}: {selectedStock}
+                      {isSelectedSizePreOrder
+                        ? `Pre-order slots for ${size}: ${selectedPreorderStock}`
+                        : `Stock for ${size}: ${selectedActualStock}`}
                     </p>
                   )}
                 </div>
@@ -1114,7 +1244,11 @@ const Product = () => {
                       : "bg-black text-white hover:translate-y-[-1px] shadow-lg"
                   }`}
                 >
-                  {isProductOutOfStock ? "Out of Stock" : "Add to Cart"}
+                  {isProductOutOfStock
+                    ? "Out of Stock"
+                    : isSelectedSizePreOrder
+                    ? "Pre-order"
+                    : "Add to Cart"}
                 </button>
 
                 <button
@@ -1126,7 +1260,11 @@ const Product = () => {
                       : "border-black bg-white text-black hover:bg-black hover:text-white"
                   }`}
                 >
-                  {isProductOutOfStock ? "Unavailable" : "Buy Now"}
+                  {isProductOutOfStock
+                    ? "Unavailable"
+                    : isSelectedSizePreOrder
+                    ? "Pre-order Now"
+                    : "Buy Now"}
                 </button>
               </div>
 
