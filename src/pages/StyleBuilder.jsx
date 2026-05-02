@@ -24,6 +24,16 @@ const BOTTOM_KEYWORDS = [
   "bottom",
 ];
 
+const SHOES_KEYWORDS = [
+  "shoe",
+  "shoes",
+  "sneaker",
+  "sneakers",
+  "footwear",
+  "slides",
+  "sandals",
+];
+
 const getProductImage = (item) => {
   if (item?.outfitImage) return item.outfitImage;
   if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
@@ -47,7 +57,7 @@ const getOutfitStyle = (item) => {
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
 
-  if (["top", "bottom", "both"].includes(section)) return section;
+  if (["top", "bottom", "both", "shoes"].includes(section)) return section;
 
   const text = `${product?.category || ""} ${product?.name || ""} ${
     product?.subCategory || ""
@@ -55,6 +65,7 @@ const getProductType = (product) => {
 
   if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
   if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
+  if (SHOES_KEYWORDS.some((word) => text.includes(word))) return "shoes";
 
   return "other";
 };
@@ -134,6 +145,11 @@ const StyleBuilder = () => {
     return type === "bottom" || type === "both";
   });
 
+  const selectedShoes = selectedProducts.find((item) => {
+    const type = getProductType(item);
+    return type === "shoes";
+  });
+
   const clearFit = () => {
     setSelectedProducts([]);
   };
@@ -170,6 +186,13 @@ const StyleBuilder = () => {
         ];
       }
 
+      if (productType === "shoes") {
+        return [
+          ...prev.filter((item) => getProductType(item) !== "shoes"),
+          product,
+        ];
+      }
+
       if (productType === "both") {
         return [product];
       }
@@ -189,7 +212,12 @@ const StyleBuilder = () => {
       return type === "bottom" || type === "both";
     });
 
-    if (tops.length === 0 && bottoms.length === 0) return;
+    const shoes = cleanProducts.filter((item) => getProductType(item) === "shoes");
+
+    if (tops.length === 0 && bottoms.length === 0 && shoes.length === 0) return;
+
+    let pickedTop = null;
+    let pickedBottom = null;
 
     if (tops.length > 0 && bottoms.length > 0) {
       const pairs = [];
@@ -210,20 +238,18 @@ const StyleBuilder = () => {
       const bestPairs = sortedPairs.slice(0, Math.min(8, sortedPairs.length));
       const randomPair = bestPairs[Math.floor(Math.random() * bestPairs.length)];
 
-      setSelectedProducts([randomPair.top, randomPair.bottom]);
-      return;
+      pickedTop = randomPair?.top || null;
+      pickedBottom = randomPair?.bottom || null;
+    } else if (tops.length > 0) {
+      pickedTop = tops[Math.floor(Math.random() * tops.length)];
+    } else if (bottoms.length > 0) {
+      pickedBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
     }
 
-    if (tops.length > 0) {
-      const randomTop = tops[Math.floor(Math.random() * tops.length)];
-      setSelectedProducts([randomTop]);
-      return;
-    }
+    const pickedShoes =
+      shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : null;
 
-    if (bottoms.length > 0) {
-      const randomBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
-      setSelectedProducts([randomBottom]);
-    }
+    setSelectedProducts([pickedTop, pickedBottom, pickedShoes].filter(Boolean));
   };
 
   const handleModeChange = (nextMode) => {
@@ -384,7 +410,7 @@ const StyleBuilder = () => {
               </p>
 
               <h2 className="mt-1 text-2xl font-black uppercase text-black">
-                Product Preview
+                2D Human Preview
               </h2>
             </div>
 
@@ -393,148 +419,132 @@ const StyleBuilder = () => {
             </p>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
-            <div className="relative flex min-h-[560px] items-center justify-center overflow-hidden rounded-[30px] bg-gray-50">
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="text-[115px] font-black uppercase tracking-tight text-black/[0.035] sm:text-[155px]">
-                  SAINT
-                </p>
-              </div>
-
-              <div className="relative h-[520px] w-[290px]">
-                <div className="absolute left-1/2 top-[80px] h-[215px] w-[260px] -translate-x-1/2">
-                  {selectedTop ? (
-                    <img
-                      src={getProductImage(selectedTop)}
-                      alt={selectedTop.name}
-                      style={getOutfitStyle(selectedTop)}
-                      className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-                        Select Top
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="absolute left-1/2 top-[275px] h-[215px] w-[230px] -translate-x-1/2">
-                  {selectedBottom ? (
-                    <img
-                      src={getProductImage(selectedBottom)}
-                      alt={selectedBottom.name}
-                      style={getOutfitStyle(selectedBottom)}
-                      className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-[28px] border border-dashed border-gray-300 bg-white">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-                        Select Bottom
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+          <div className="relative flex min-h-[760px] items-center justify-center overflow-hidden rounded-[34px] bg-gray-50">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <p className="text-[150px] font-black uppercase tracking-tight text-black/[0.035] sm:text-[220px]">
+                SAINT
+              </p>
             </div>
 
-            <div>
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-black">
-                  Picked Products
-                </h3>
+            <div className="relative h-[720px] w-[430px]">
+              <div className="absolute left-1/2 top-[20px] h-[82px] w-[82px] -translate-x-1/2 rounded-full border border-gray-300 bg-white shadow-sm" />
 
-                <p className="text-xs font-black uppercase text-gray-400">
-                  {selectedProducts.length} selected
-                </p>
-              </div>
+              <div className="absolute left-1/2 top-[95px] h-[35px] w-[38px] -translate-x-1/2 rounded-b-2xl border-x border-b border-gray-300 bg-white" />
 
-              {selectedProducts.length === 0 ? (
-                <div className="flex min-h-[300px] items-center justify-center rounded-[26px] border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
-                  <div>
-                    <p className="text-lg font-black uppercase text-black">
-                      No product showing
-                    </p>
+              <div className="absolute left-1/2 top-[125px] h-[470px] w-[260px] -translate-x-1/2 rounded-[120px] border border-dashed border-gray-300 bg-white/40" />
 
-                    <p className="mt-2 text-sm font-medium text-gray-500">
-                      Use Manual to pick from the left, or Automatic to generate
-                      a random best outfit.
-                    </p>
+              <div className="absolute left-1/2 top-[115px] h-[270px] w-[350px] -translate-x-1/2">
+                {selectedTop ? (
+                  <img
+                    src={getProductImage(selectedTop)}
+                    alt={selectedTop.name}
+                    style={getOutfitStyle(selectedTop)}
+                    className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-[30px] border border-dashed border-gray-300 bg-white/80">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                      Select Top
+                    </span>
                   </div>
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  {selectedProducts.map((item) => (
-                    <div
-                      key={item._id}
-                      className="flex gap-3 rounded-[24px] border border-gray-200 bg-gray-50 p-3"
-                    >
-                      <img
-                        src={getProductImage(item)}
-                        alt={item.name}
-                        className="h-24 w-20 rounded-[18px] bg-white object-contain p-1 mix-blend-multiply"
-                      />
+                )}
+              </div>
 
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          {getProductType(item)}
-                        </p>
+              <div className="absolute left-1/2 top-[365px] h-[250px] w-[310px] -translate-x-1/2">
+                {selectedBottom ? (
+                  <img
+                    src={getProductImage(selectedBottom)}
+                    alt={selectedBottom.name}
+                    style={getOutfitStyle(selectedBottom)}
+                    className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-[30px] border border-dashed border-gray-300 bg-white/80">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                      Select Bottom
+                    </span>
+                  </div>
+                )}
+              </div>
 
-                        <p className="mt-1 line-clamp-1 text-sm font-black uppercase text-black">
-                          {item.name}
-                        </p>
-
-                        <p className="text-xs font-bold text-gray-500">
-                          {item.category}
-                        </p>
-
-                        <p className="mt-1 text-sm font-black text-black">
-                          {currency}
-                          {getFinalPrice(item).toLocaleString()}
-                        </p>
-
-                        {mode === "manual" && (
-                          <button
-                            onClick={() =>
-                              setSelectedProducts((prev) =>
-                                prev.filter((p) => p._id !== item._id)
-                              )
-                            }
-                            className="mt-2 text-[11px] font-black uppercase text-red-500"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleModeChange("manual")}
-                  className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-widest transition ${
-                    mode === "manual"
-                      ? "border-black bg-black text-white"
-                      : "border-gray-200 bg-white text-black hover:border-black"
-                  }`}
-                >
-                  Manual
-                </button>
-
-                <button
-                  onClick={() => handleModeChange("automatic")}
-                  className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-widest transition ${
-                    mode === "automatic"
-                      ? "border-black bg-black text-white"
-                      : "border-gray-200 bg-white text-black hover:border-black"
-                  }`}
-                >
-                  Automatic
-                </button>
+              <div className="absolute left-1/2 top-[610px] h-[90px] w-[260px] -translate-x-1/2">
+                {selectedShoes ? (
+                  <img
+                    src={getProductImage(selectedShoes)}
+                    alt={selectedShoes.name}
+                    style={getOutfitStyle(selectedShoes)}
+                    className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-[26px] border border-dashed border-gray-300 bg-white/80">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      Shoes Slot
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 rounded-[28px] border border-gray-200 bg-gray-50 p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-black">
+                Picked Products
+              </h3>
+
+              <p className="text-xs font-black uppercase text-gray-400">
+                {selectedProducts.length} selected
+              </p>
+            </div>
+
+            {selectedProducts.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-gray-300 bg-white p-5 text-center text-sm font-bold text-gray-500">
+                No products picked yet.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {selectedProducts.map((item) => (
+                  <div
+                    key={item._id}
+                    className="flex gap-3 rounded-[22px] border border-gray-200 bg-white p-3"
+                  >
+                    <img
+                      src={getProductImage(item)}
+                      alt={item.name}
+                      className="h-20 w-16 rounded-[16px] bg-gray-50 object-contain p-1 mix-blend-multiply"
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        {getProductType(item)}
+                      </p>
+
+                      <p className="mt-1 line-clamp-1 text-xs font-black uppercase text-black">
+                        {item.name}
+                      </p>
+
+                      <p className="mt-1 text-xs font-black text-black">
+                        {currency}
+                        {getFinalPrice(item).toLocaleString()}
+                      </p>
+
+                      {mode === "manual" && (
+                        <button
+                          onClick={() =>
+                            setSelectedProducts((prev) =>
+                              prev.filter((p) => p._id !== item._id)
+                            )
+                          }
+                          className="mt-1 text-[10px] font-black uppercase text-red-500"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </main>
       </div>
