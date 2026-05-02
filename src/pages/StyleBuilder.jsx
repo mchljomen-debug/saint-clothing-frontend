@@ -3,27 +3,14 @@ import { ShopContext } from "../context/ShopContext";
 import ProductItem from "../components/ProductItem";
 import useRecommendations from "../hooks/useRecommendations";
 
-const CATEGORIES = [
-  "All",
-  "Tshirt",
-  "Long Sleeve",
-  "Jorts",
-  "Mesh Shorts",
-  "Crop Jersey",
-];
-
-const TOP_CATEGORIES = ["Tshirt", "Long Sleeve", "Crop Jersey"];
-const BOTTOM_CATEGORIES = ["Jorts", "Mesh Shorts"];
+const TOP_KEYWORDS = ["tshirt", "t-shirt", "shirt", "long sleeve", "longsleeve", "crop", "jersey", "hoodie", "jacket", "polo"];
+const BOTTOM_KEYWORDS = ["jorts", "short", "shorts", "pants", "jeans", "trouser", "bottom"];
 
 const getProductImage = (item) => {
   if (item?.outfitImage) return item.outfitImage;
 
-  if (Array.isArray(item?.images) && item.images.length > 0)
-    return item.images[0];
-
-  if (Array.isArray(item?.image) && item.image.length > 0)
-    return item.image[0];
-
+  if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
+  if (Array.isArray(item?.image) && item.image.length > 0) return item.image[0];
   if (typeof item?.images === "string") return item.images;
   if (typeof item?.image === "string") return item.image;
 
@@ -45,23 +32,90 @@ const getOutfitStyle = (item) => {
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
 
-  if (section === "top") return "top";
-  if (section === "bottom") return "bottom";
-  if (section === "both") return "both";
+  if (["top", "bottom", "both"].includes(section)) return section;
 
-  if (TOP_CATEGORIES.includes(product?.category)) return "top";
-  if (BOTTOM_CATEGORIES.includes(product?.category)) return "bottom";
+  const text = `${product?.category || ""} ${product?.name || ""} ${
+    product?.subCategory || ""
+  }`.toLowerCase();
+
+  if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
+  if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
 
   return "other";
 };
 
+const getFinalPrice = (item) => {
+  const price = Number(item?.price || 0);
+  const salePercent = Number(item?.salePercent || 0);
+
+  if (item?.onSale && salePercent > 0) {
+    return Math.max(price - (price * salePercent) / 100, 0);
+  }
+
+  return price;
+};
+
+const scoreMatch = (baseItems, candidate) => {
+  let score = 0;
+
+  const candidateType = getProductType(candidate);
+  const selectedTypes = baseItems.map(getProductType);
+
+  if (candidateType === "top" && selectedTypes.includes("bottom")) score += 10;
+  if (candidateType === "bottom" && selectedTypes.includes("top")) score += 10;
+  if (candidateType === "both") score += 5;
+
+  for (const selected of baseItems) {
+    if (candidate.category && selected.matchWith?.includes(candidate.category)) {
+      score += 8;
+    }
+
+    if (selected.category && candidate.matchWith?.includes(selected.category)) {
+      score += 8;
+    }
+
+    if (candidate.color && selected.color && candidate.color === selected.color) {
+      score += 3;
+    }
+
+    if (candidate.styleVibe && selected.styleVibe && candidate.styleVibe === selected.styleVibe) {
+      score += 4;
+    }
+
+    const selectedTags = Array.isArray(selected.styleTags) ? selected.styleTags : [];
+    const candidateTags = Array.isArray(candidate.styleTags) ? candidate.styleTags : [];
+
+    const sharedTags = candidateTags.filter((tag) =>
+      selectedTags.map((t) => t.toLowerCase()).includes(String(tag).toLowerCase())
+    );
+
+    score += sharedTags.length * 2;
+  }
+
+  if (candidate.bestseller) score += 2;
+  if (candidate.newArrival) score += 2;
+  if (candidate.onSale) score += 1;
+
+  return score;
+};
+
 const StyleBuilder = () => {
-  const { products, backendUrl, currency, token, user } =
-    useContext(ShopContext);
+  const {
+    products,
+    backendUrl,
+    currency,
+    token,
+    user,
+    categoryOptions = [],
+  } = useContext(ShopContext);
 
   const [mode, setMode] = useState("automatic");
   const [category, setCategory] = useState("All");
   const [selectedProducts, setSelectedProducts] = useState([]);
+
+  const CATEGORIES = useMemo(() => {
+    return ["All", ...Array.from(new Set(categoryOptions.filter(Boolean)))];
+  }, [categoryOptions]);
 
   const selectedTop = selectedProducts.find((item) => {
     const type = getProductType(item);
@@ -94,6 +148,21 @@ const StyleBuilder = () => {
       .filter((item) => item && !item.isDeleted)
       .filter((item) => category === "All" || item.category === category);
   }, [products, category]);
+
+  const smartSuggestions = useMemo(() => {
+    if (!Array.isArray(products) || selectedProducts.length === 0) return [];
+
+    return products
+      .filter((item) => item && !item.isDeleted)
+      .filter((item) => !selectedIds.includes(item._id))
+      .map((item) => ({
+        ...item,
+        __score: scoreMatch(selectedProducts, item),
+      }))
+      .filter((item) => item.__score > 0)
+      .sort((a, b) => b.__score - a.__score)
+      .slice(0, 10);
+  }, [products, selectedProducts, selectedIds]);
 
   const addToFit = (product) => {
     if (!product?._id) return;
@@ -147,7 +216,11 @@ const StyleBuilder = () => {
   };
 
   const finalSuggestions =
-    mode === "automatic" ? recommendations : selectedProducts;
+    mode === "automatic"
+      ? recommendations.length > 0
+        ? recommendations
+        : smartSuggestions
+      : selectedProducts;
 
   return (
     <div className="min-h-screen bg-white px-4 pt-6 pb-16 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
@@ -268,7 +341,7 @@ const StyleBuilder = () => {
 
                     <p className="mt-2 text-xs font-black text-black">
                       {currency}
-                      {item.price}
+                      {getFinalPrice(item).toLocaleString()}
                     </p>
                   </div>
                 </button>
@@ -386,7 +459,7 @@ const StyleBuilder = () => {
 
                           <p className="mt-1 text-sm font-black text-black">
                             {currency}
-                            {item.price}
+                            {getFinalPrice(item).toLocaleString()}
                           </p>
 
                           <button
@@ -417,7 +490,7 @@ const StyleBuilder = () => {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">
-                  {mode === "automatic" ? "Automatic Matches" : "Manual Picks"}
+                  {mode === "automatic" ? "Smart Matches" : "Manual Picks"}
                 </p>
 
                 <h2 className="mt-1 text-2xl font-black uppercase text-black">
