@@ -90,6 +90,7 @@ const scorePair = (top, bottom) => {
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 8;
 
   if (top.color && bottom.color && top.color === bottom.color) score += 3;
+
   if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
     score += 4;
   }
@@ -98,7 +99,9 @@ const scorePair = (top, bottom) => {
   const bottomTags = Array.isArray(bottom.styleTags) ? bottom.styleTags : [];
 
   const sharedTags = bottomTags.filter((tag) =>
-    topTags.map((t) => String(t).toLowerCase()).includes(String(tag).toLowerCase())
+    topTags
+      .map((t) => String(t).toLowerCase())
+      .includes(String(tag).toLowerCase())
   );
 
   score += sharedTags.length * 2;
@@ -302,7 +305,7 @@ const StyleBuilder = () => {
         </div>
       </div>
 
-      <div className="grid gap-7 lg:grid-cols-[390px_1fr]">
+      <div className="grid gap-7 lg:grid-cols-[520px_1fr]">
         <aside className="rounded-[30px] border border-gray-200 bg-gray-50 p-4 sm:p-5 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)]">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -402,8 +405,8 @@ const StyleBuilder = () => {
           </div>
         </aside>
 
-        <main className="rounded-[34px] border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <main className="bg-white p-0">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400">
                 Right Section
@@ -419,21 +422,21 @@ const StyleBuilder = () => {
             </p>
           </div>
 
-          <div className="relative flex min-h-[760px] items-center justify-center overflow-hidden rounded-[34px] bg-gray-50">
+          <div className="relative flex min-h-[680px] items-center justify-center overflow-visible bg-white">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="text-[150px] font-black uppercase tracking-tight text-black/[0.035] sm:text-[220px]">
+              <p className="text-[130px] font-black uppercase tracking-tight text-black/[0.025] sm:text-[190px]">
                 SAINT
               </p>
             </div>
 
-            <div className="relative h-[720px] w-[430px]">
-              <div className="absolute left-1/2 top-[20px] h-[82px] w-[82px] -translate-x-1/2 rounded-full border border-gray-300 bg-white shadow-sm" />
+            <div className="relative h-[660px] w-[360px]">
+              <div className="absolute left-1/2 top-[20px] h-[78px] w-[78px] -translate-x-1/2 rounded-full bg-gray-100" />
 
-              <div className="absolute left-1/2 top-[95px] h-[35px] w-[38px] -translate-x-1/2 rounded-b-2xl border-x border-b border-gray-300 bg-white" />
+              <div className="absolute left-1/2 top-[92px] h-[35px] w-[36px] -translate-x-1/2 rounded-b-2xl bg-gray-100" />
 
-              <div className="absolute left-1/2 top-[125px] h-[470px] w-[260px] -translate-x-1/2 rounded-[120px] border border-dashed border-gray-300 bg-white/40" />
+              <div className="absolute left-1/2 top-[125px] h-[450px] w-[220px] -translate-x-1/2 rounded-[120px] bg-gray-100/70" />
 
-              <div className="absolute left-1/2 top-[115px] h-[270px] w-[350px] -translate-x-1/2">
+              <div className="absolute left-1/2 top-[110px] h-[260px] w-[320px] -translate-x-1/2">
                 {selectedTop ? (
                   <img
                     src={getProductImage(selectedTop)}
@@ -442,15 +445,15 @@ const StyleBuilder = () => {
                     className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center rounded-[30px] border border-dashed border-gray-300 bg-white/80">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                  <div className="flex h-full w-full items-center justify-center">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-300">
                       Select Top
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="absolute left-1/2 top-[365px] h-[250px] w-[310px] -translate-x-1/2">
+              <div className="absolute left-1/2 top-[340px] h-[260px] w-[320px] -translate-x-1/2">
                 {selectedBottom ? (
                   <img
                     src={getProductImage(selectedBottom)}
@@ -459,15 +462,15 @@ const StyleBuilder = () => {
                     className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center rounded-[30px] border border-dashed border-gray-300 bg-white/80">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                  <div className="flex h-full w-full items-center justify-center">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-300">
                       Select Bottom
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="absolute left-1/2 top-[610px] h-[90px] w-[260px] -translate-x-1/2">
+              <div className="absolute left-1/2 top-[555px] h-[110px] w-[320px] -translate-x-1/2">
                 {selectedShoes ? (
                   <img
                     src={getProductImage(selectedShoes)}
@@ -476,8 +479,8 @@ const StyleBuilder = () => {
                     className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center rounded-[26px] border border-dashed border-gray-300 bg-white/80">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  <div className="flex h-full w-full items-center justify-center">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-300">
                       Shoes Slot
                     </span>
                   </div>
@@ -486,61 +489,38 @@ const StyleBuilder = () => {
             </div>
           </div>
 
-          <div className="mt-6 rounded-[28px] border border-gray-200 bg-gray-50 p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-black">
-                Picked Products
-              </h3>
-
-              <p className="text-xs font-black uppercase text-gray-400">
-                {selectedProducts.length} selected
-              </p>
-            </div>
-
+          <div className="mt-4">
             {selectedProducts.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-gray-300 bg-white p-5 text-center text-sm font-bold text-gray-500">
+              <p className="text-center text-sm font-bold text-gray-400">
                 No products picked yet.
               </p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="flex flex-wrap justify-center gap-2">
                 {selectedProducts.map((item) => (
                   <div
                     key={item._id}
-                    className="flex gap-3 rounded-[22px] border border-gray-200 bg-white p-3"
+                    className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-2"
                   >
-                    <img
-                      src={getProductImage(item)}
-                      alt={item.name}
-                      className="h-20 w-16 rounded-[16px] bg-gray-50 object-contain p-1 mix-blend-multiply"
-                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      {getProductType(item)}
+                    </span>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        {getProductType(item)}
-                      </p>
+                    <span className="max-w-[150px] truncate text-xs font-black uppercase text-black">
+                      {item.name}
+                    </span>
 
-                      <p className="mt-1 line-clamp-1 text-xs font-black uppercase text-black">
-                        {item.name}
-                      </p>
-
-                      <p className="mt-1 text-xs font-black text-black">
-                        {currency}
-                        {getFinalPrice(item).toLocaleString()}
-                      </p>
-
-                      {mode === "manual" && (
-                        <button
-                          onClick={() =>
-                            setSelectedProducts((prev) =>
-                              prev.filter((p) => p._id !== item._id)
-                            )
-                          }
-                          className="mt-1 text-[10px] font-black uppercase text-red-500"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
+                    {mode === "manual" && (
+                      <button
+                        onClick={() =>
+                          setSelectedProducts((prev) =>
+                            prev.filter((p) => p._id !== item._id)
+                          )
+                        }
+                        className="text-[10px] font-black uppercase text-red-500"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
