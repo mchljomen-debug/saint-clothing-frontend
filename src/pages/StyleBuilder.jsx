@@ -74,28 +74,28 @@ const getBottomKind = (product) => {
   return "bottom";
 };
 
-const getDynamicOutfitLayout = ({ selectedTop, selectedBottom, selectedShoes }) => {
+const getDynamicOutfitLayout = ({ selectedBottom, selectedShoes }) => {
   const bottomKind = getBottomKind(selectedBottom);
 
   const top = {
-    top: 70,
-    height: 340,
-    width: 430,
-    scale: 1,
+    top: 45,
+    height: 370,
+    width: 455,
+    scale: 1.1,
   };
 
   const bottom = {
-    top: bottomKind === "pants" ? 320 : 330,
-    height: bottomKind === "pants" ? 360 : 330,
-    width: bottomKind === "pants" ? 430 : 420,
-    scale: bottomKind === "pants" ? 1.02 : 1,
+    top: bottomKind === "pants" ? 260 : 275,
+    height: bottomKind === "pants" ? 395 : 365,
+    width: bottomKind === "pants" ? 445 : 435,
+    scale: bottomKind === "pants" ? 1.08 : 1.06,
   };
 
   const shoes = {
-    top: bottomKind === "pants" ? 650 : 620,
-    height: 110,
-    width: 340,
-    scale: selectedShoes ? 1 : 1,
+    top: bottomKind === "pants" ? 615 : 585,
+    height: 115,
+    width: 350,
+    scale: selectedShoes ? 1.05 : 1,
   };
 
   return { top, bottom, shoes };
@@ -194,7 +194,6 @@ const StyleBuilder = () => {
   });
 
   const outfitLayout = getDynamicOutfitLayout({
-    selectedTop,
     selectedBottom,
     selectedShoes,
   });
@@ -311,32 +310,20 @@ const StyleBuilder = () => {
         {`
           @keyframes saintFloat {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+            50% { transform: translateY(-6px); }
           }
 
           @keyframes saintFade {
-            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
           }
 
           .saint-float {
-            animation: saintFloat 4.5s ease-in-out infinite;
+            animation: saintFloat 5s ease-in-out infinite;
           }
 
           .saint-fade {
             animation: saintFade 0.45s ease both;
-          }
-
-          .saint-preview:hover .saint-parallax-top {
-            transform: translateY(-8px) scale(1.03);
-          }
-
-          .saint-preview:hover .saint-parallax-bottom {
-            transform: translateY(-4px) scale(1.02);
-          }
-
-          .saint-preview:hover .saint-parallax-shoes {
-            transform: translateY(3px) scale(1.02);
           }
 
           .saint-scroll::-webkit-scrollbar {
@@ -524,7 +511,7 @@ const StyleBuilder = () => {
             </p>
           </div>
 
-          <div className="saint-preview relative flex min-h-[760px] items-center justify-center bg-transparent">
+          <div className="relative flex min-h-[760px] items-center justify-center bg-transparent">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <p className="select-none text-[165px] font-black uppercase tracking-[-0.08em] text-black/[0.018]">
                 SAINT
@@ -533,7 +520,7 @@ const StyleBuilder = () => {
 
             <div className="saint-float relative h-[740px] w-[440px]">
               <div
-                className="saint-parallax-top absolute left-1/2 -translate-x-1/2 transition duration-500 ease-out"
+                className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
                 style={{
                   top: `${outfitLayout.top.top}px`,
                   height: `${outfitLayout.top.height}px`,
@@ -558,7 +545,7 @@ const StyleBuilder = () => {
               </div>
 
               <div
-                className="saint-parallax-bottom absolute left-1/2 -translate-x-1/2 transition duration-500 ease-out"
+                className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
                 style={{
                   top: `${outfitLayout.bottom.top}px`,
                   height: `${outfitLayout.bottom.height}px`,
@@ -588,7 +575,7 @@ const StyleBuilder = () => {
               />
 
               <div
-                className="saint-parallax-shoes absolute left-1/2 -translate-x-1/2 transition duration-500 ease-out"
+                className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
                 style={{
                   top: `${outfitLayout.shoes.top}px`,
                   height: `${outfitLayout.shoes.height}px`,
