@@ -24,16 +24,6 @@ const BOTTOM_KEYWORDS = [
   "bottom",
 ];
 
-const SHOES_KEYWORDS = [
-  "shoe",
-  "shoes",
-  "sneaker",
-  "sneakers",
-  "footwear",
-  "slides",
-  "sandals",
-];
-
 const PREVIEW_BACKGROUNDS = [
   { name: "White", color: "#ffffff" },
   { name: "Cream", color: "#F7F3EA" },
@@ -51,19 +41,19 @@ const getProductImage = (item) => {
 };
 
 const getProductText = (product) =>
-  `${product?.category || ""} ${product?.name || ""} ${product?.subCategory || ""
-    }`.toLowerCase();
+  `${product?.category || ""} ${product?.name || ""} ${
+    product?.subCategory || ""
+  }`.toLowerCase();
 
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
 
-  if (["top", "bottom", "both", "shoes"].includes(section)) return section;
+  if (["top", "bottom", "both"].includes(section)) return section;
 
   const text = getProductText(product);
 
   if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
   if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
-  if (SHOES_KEYWORDS.some((word) => text.includes(word))) return "shoes";
 
   return "other";
 };
@@ -85,7 +75,7 @@ const getBottomKind = (product) => {
   return "pants";
 };
 
-const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
+const getSmartLayout = ({ selectedBottom }) => {
   const bottomKind = getBottomKind(selectedBottom);
   const isPants = bottomKind === "pants";
 
@@ -98,21 +88,10 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
       snapX: 0,
       snapY: 0,
     },
-
-    // 🔥 FIXED SHORTS GAP HERE
     bottom: {
-      top: isPants ? 255 : 205,   // ⬅ moved UP for shorts
+      top: isPants ? 255 : 205,
       height: isPants ? 315 : 305,
       width: isPants ? 350 : 350,
-      scale: 1,
-      snapX: 0,
-      snapY: 0,
-    },
-
-    shoes: {
-      top: isPants ? 500 : 445, // 🔥 move shoes UP more for shorts
-      height: 78,
-      width: 255,
       scale: 1,
       snapX: 0,
       snapY: 0,
@@ -207,13 +186,8 @@ const StyleBuilder = () => {
     return type === "bottom" || type === "both";
   });
 
-  const selectedShoes = selectedProducts.find(
-    (item) => getProductType(item) === "shoes"
-  );
-
   const outfitLayout = getSmartLayout({
     selectedBottom,
-    selectedShoes,
   });
 
   const isDarkPreview = previewBg.toLowerCase() === "#050505";
@@ -252,18 +226,11 @@ const StyleBuilder = () => {
         ];
       }
 
-      if (productType === "shoes") {
-        return [
-          ...prev.filter((item) => getProductType(item) !== "shoes"),
-          product,
-        ];
-      }
-
       if (productType === "both") {
         return [product];
       }
 
-      return [...prev, product].slice(0, 4);
+      return prev;
     });
   };
 
@@ -278,11 +245,7 @@ const StyleBuilder = () => {
       return type === "bottom" || type === "both";
     });
 
-    const shoes = cleanProducts.filter(
-      (item) => getProductType(item) === "shoes"
-    );
-
-    if (tops.length === 0 && bottoms.length === 0 && shoes.length === 0) return;
+    if (tops.length === 0 && bottoms.length === 0) return;
 
     let pickedTop = null;
     let pickedBottom = null;
@@ -316,10 +279,7 @@ const StyleBuilder = () => {
       pickedBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
     }
 
-    const pickedShoes =
-      shoes.length > 0 ? shoes[Math.floor(Math.random() * shoes.length)] : null;
-
-    setSelectedProducts([pickedTop, pickedBottom, pickedShoes].filter(Boolean));
+    setSelectedProducts([pickedTop, pickedBottom].filter(Boolean));
   };
 
   const handleModeChange = (nextMode) => {
@@ -397,20 +357,22 @@ const StyleBuilder = () => {
             <div className="flex w-full rounded-[5px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
               <button
                 onClick={() => handleModeChange("manual")}
-                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${mode === "manual"
+                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  mode === "manual"
                     ? "bg-white text-black"
                     : "text-white hover:bg-white/10"
-                  }`}
+                }`}
               >
                 Manual
               </button>
 
               <button
                 onClick={() => handleModeChange("automatic")}
-                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${mode === "automatic"
+                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  mode === "automatic"
                     ? "bg-white text-black"
                     : "text-white hover:bg-white/10"
-                  }`}
+                }`}
               >
                 Automatic
               </button>
@@ -452,10 +414,11 @@ const StyleBuilder = () => {
                 <button
                   key={cat}
                   onClick={() => setCategory(cat)}
-                  className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${category === cat
+                  className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${
+                    category === cat
                       ? "border-black bg-black text-white"
                       : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
-                    }`}
+                  }`}
                 >
                   {cat}
                 </button>
@@ -482,16 +445,18 @@ const StyleBuilder = () => {
                       key={item._id}
                       onClick={() => addToFit(item)}
                       disabled={mode === "automatic"}
-                      className={`group text-left transition ${mode === "automatic"
+                      className={`group text-left transition ${
+                        mode === "automatic"
                           ? "cursor-default opacity-90"
                           : "cursor-pointer"
-                        }`}
+                      }`}
                     >
                       <div
-                        className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${active
+                        className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${
+                          active
                             ? "ring-2 ring-black ring-offset-2"
                             : "hover:bg-gray-100"
-                          }`}
+                        }`}
                       >
                         <div className="aspect-[3/4]">
                           <img
@@ -569,10 +534,11 @@ const StyleBuilder = () => {
                     key={bg.name}
                     onClick={() => setPreviewBg(bg.color)}
                     title={bg.name}
-                    className={`h-7 w-7 rounded-[5px] border transition ${previewBg.toLowerCase() === bg.color.toLowerCase()
+                    className={`h-7 w-7 rounded-[5px] border transition ${
+                      previewBg.toLowerCase() === bg.color.toLowerCase()
                         ? "border-black ring-2 ring-black ring-offset-2"
                         : "border-gray-300"
-                      }`}
+                    }`}
                     style={{ backgroundColor: bg.color }}
                   />
                 ))}
@@ -585,8 +551,9 @@ const StyleBuilder = () => {
             >
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <p
-                  className={`select-none text-[95px] font-black uppercase tracking-[-0.08em] ${isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
-                    }`}
+                  className={`select-none text-[95px] font-black uppercase tracking-[-0.08em] ${
+                    isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
+                  }`}
                 >
                   SAINT
                 </p>
@@ -650,41 +617,6 @@ const StyleBuilder = () => {
                     </div>
                   )}
                 </div>
-
-                <div
-                  className={`absolute left-1/2 z-0 h-5 w-[120px] -translate-x-1/2 rounded-[5px] blur-md ${isDarkPreview ? "bg-white/15" : "bg-black/10"
-                    }`}
-                  style={{ top: `${outfitLayout.shoes.top + 18}px` }}
-                />
-
-                <div
-                  className="absolute left-1/2 z-10 -translate-x-1/2 transition duration-300 ease-out"
-                  style={{
-                    top: `${outfitLayout.shoes.top}px`,
-                    height: `${outfitLayout.shoes.height}px`,
-                    width: `${outfitLayout.shoes.width}px`,
-                  }}
-                >
-                  {selectedShoes ? (
-                    <img
-                      key={selectedShoes._id}
-                      src={getProductImage(selectedShoes)}
-                      alt={selectedShoes.name}
-                      style={getOutfitStyle(
-                        selectedShoes,
-                        outfitLayout.shoes.scale,
-                        outfitLayout.shoes
-                      )}
-                      className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-300">
-                        Shoes
-                      </span>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -695,7 +627,7 @@ const StyleBuilder = () => {
                 </p>
 
                 <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                  {selectedProducts.length}/3
+                  {selectedProducts.length}/2
                 </p>
               </div>
 
