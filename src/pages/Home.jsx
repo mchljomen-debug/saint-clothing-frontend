@@ -1,317 +1,316 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
+import { Carousel } from "antd";
 import { useNavigate } from "react-router-dom";
+import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 
-import Hero from "../components/Hero";
-import LatestCollection from "../components/LatestCollection";
-import BestSeller from "../components/BestSeller";
-import OurPolicy from "../components/OurPolicy";
-import NewsletterBox from "../components/NewsletterBox";
-import { backendUrl } from "../App";
-import { assets } from "../assets/assets";
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const HERO_CACHE_KEY = "saint_home_hero";
 
-const CATEGORY_CACHE_KEY = "saint_home_categories";
+const resolveImage = (img) => {
+  if (!img) return "";
+  const value = String(img).trim();
 
-const Home = () => {
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  if (value.startsWith("/uploads/")) return `${backendUrl}${value}`;
+
+  return `${backendUrl}/uploads/${value.replace(/^\/+/, "")}`;
+};
+
+const Hero = () => {
   const navigate = useNavigate();
+  const { user, token } = useContext(ShopContext);
 
-  const [categories, setCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [greetingPrefix, setGreetingPrefix] = useState("");
 
-  const visibleCategories = useMemo(() => {
-    return categories.filter((cat) => cat?.name && cat?.isActive !== false);
-  }, [categories]);
+  const [heroData, setHeroData] = useState({
+    tickerEnabled: true,
+    newUserGreeting: "Welcome",
+    returningUserGreeting: "Welcome back",
+    tickerText:
+      "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
+    slides: [],
+  });
 
-  useEffect(() => {
-    const cached = sessionStorage.getItem(CATEGORY_CACHE_KEY);
+  /* ================= FETCH HERO ================= */
+  const fetchHero = useCallback(async (forceRefresh = false) => {
+    try {
+      if (!forceRefresh) {
+        const cachedHero = sessionStorage.getItem(HERO_CACHE_KEY);
 
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        setCategories(parsed);
-        setLoadingCategories(false);
-        return;
-      } catch {
-        sessionStorage.removeItem(CATEGORY_CACHE_KEY);
-      }
-    }
-
-    const fetchCategories = async () => {
-      try {
-        setLoadingCategories(true);
-
-        const res = await axios.get(`${backendUrl}/api/category/list`);
-
-        if (res.data?.success) {
-          const data = res.data.categories || [];
-          setCategories(data);
-          sessionStorage.setItem(CATEGORY_CACHE_KEY, JSON.stringify(data));
-        } else {
-          setCategories([]);
+        if (cachedHero) {
+          const parsedHero = JSON.parse(cachedHero);
+          setHeroData(parsedHero);
+          return;
         }
-      } catch (error) {
-        console.error("LOAD HOME CATEGORIES ERROR:", error);
-        setCategories([]);
-      } finally {
-        setLoadingCategories(false);
       }
-    };
 
-    fetchCategories();
+      const { data } = await axios.get(`${backendUrl}/api/hero`);
+
+      if (data.success && data.hero) {
+        const slides = (data.hero.slides || [])
+          .map((slide) => ({
+            title: slide.title || "",
+            subtitle: slide.subtitle || "",
+            description: slide.description || "",
+            cta: slide.cta || "Explore",
+            image: resolveImage(slide.image),
+            action: slide.action || "collection",
+          }))
+          .filter((slide) => slide.image);
+
+        const nextHeroData = {
+          tickerEnabled:
+            typeof data.hero.tickerEnabled === "boolean"
+              ? data.hero.tickerEnabled
+              : true,
+          newUserGreeting: data.hero.newUserGreeting || "Welcome",
+          returningUserGreeting:
+            data.hero.returningUserGreeting || "Welcome back",
+          tickerText:
+            data.hero.tickerText ||
+            "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
+          slides,
+        };
+
+        setHeroData(nextHeroData);
+        sessionStorage.setItem(HERO_CACHE_KEY, JSON.stringify(nextHeroData));
+      }
+    } catch (error) {
+      console.log("Hero fetch error:", error.message);
+    }
   }, []);
 
-  const goToCategory = (category) => {
-    navigate(`/collection?category=${encodeURIComponent(category)}`);
-    window.scrollTo(0, 0);
-  };
+  useEffect(() => {
+    fetchHero();
 
-  const goToBuildFit = () => {
-    const token = localStorage.getItem("token");
+    const handleRefresh = () => {
+      sessionStorage.removeItem(HERO_CACHE_KEY);
+      fetchHero(true);
+    };
 
-    if (!token) {
-      navigate("/login");
+    window.addEventListener("hero-refresh", handleRefresh);
+
+    return () => {
+      window.removeEventListener("hero-refresh", handleRefresh);
+    };
+  }, [fetchHero]);
+
+  /* ================= LOGIN STATE ================= */
+  const isLoggedInUser = Boolean(
+    token && (user?._id || user?.id || user?.email)
+  );
+
+  const resolvedUserName = useMemo(() => {
+    if (!isLoggedInUser) return "";
+
+    if (user?.firstName?.trim()) return user.firstName.trim();
+    if (user?.name?.trim()) return user.name.trim().split(" ")[0];
+    if (user?.email) return user.email.split("@")[0];
+
+    return "";
+  }, [isLoggedInUser, user]);
+
+  /* ================= FIXED LOGIN COUNT ================= */
+  useEffect(() => {
+    if (!isLoggedInUser || !user?._id || !token) {
+      setGreetingPrefix("");
       return;
     }
 
-    navigate("/style-builder");
-    window.scrollTo(0, 0);
+    const loginCountKey = `saint_login_count_${user._id}`;
+    const lastTokenKey = `saint_last_login_token_${user._id}`;
+
+    const lastToken = localStorage.getItem(lastTokenKey);
+    let count = Number(localStorage.getItem(loginCountKey) || 0);
+
+    if (lastToken !== token) {
+      count += 1;
+      localStorage.setItem(loginCountKey, String(count));
+      localStorage.setItem(lastTokenKey, token);
+    }
+
+    if (count <= 1) {
+      setGreetingPrefix(heroData.newUserGreeting || "Welcome");
+    } else {
+      setGreetingPrefix(heroData.returningUserGreeting || "Welcome back");
+    }
+  }, [
+    isLoggedInUser,
+    user?._id,
+    token,
+    heroData.newUserGreeting,
+    heroData.returningUserGreeting,
+  ]);
+
+  /* ================= TICKER ================= */
+  const tickerMessage = useMemo(() => {
+    if (!isLoggedInUser || !resolvedUserName || !heroData.tickerEnabled) {
+      return "";
+    }
+
+    return (heroData.tickerText || "{greeting}, {name}!")
+      .replaceAll("{greeting}", greetingPrefix || "Welcome")
+      .replaceAll("{name}", resolvedUserName);
+  }, [isLoggedInUser, resolvedUserName, heroData, greetingPrefix]);
+
+  /* ================= ACTION ================= */
+  const handleAction = (action) => {
+    if (action === "collection") {
+      navigate("/collection");
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    if (action === "bestseller") {
+      const el = document.getElementById("best-seller-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        navigate("/collection");
+      }
+      return;
+    }
+
+    if (action === "latest") {
+      const el = document.getElementById("latest-collection-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        navigate("/collection");
+      }
+    }
   };
 
+  if (!heroData.slides.length) return null;
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
-      {/* ================= HERO ================= */}
-      <section className="relative min-h-[calc(100vh-72px)] overflow-hidden md:min-h-[calc(100vh-80px)] [&>*]:min-h-[calc(100vh-72px)] md:[&>*]:min-h-[calc(100vh-80px)]">
-        <Hero />
-      </section>
-
-      {/* ================= BUILD FIT PREMIUM PROMO ================= */}
-      <section className="mt-6 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <div className="group relative overflow-hidden rounded-[5px] bg-[#050505] text-white shadow-[0_30px_80px_rgba(0,0,0,0.22)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_85%_30%,rgba(255,255,255,0.12),transparent_28%)]" />
-
-          <div className="absolute inset-0 opacity-[0.08]">
-            <div className="absolute left-[-8%] top-[-20%] text-[22vw] font-black uppercase tracking-[-0.12em] text-white">
-              SAINT
-            </div>
-            <div className="absolute bottom-[-18%] right-[-4%] text-[18vw] font-black uppercase tracking-[-0.12em] text-white">
-              FIT
-            </div>
-          </div>
-
-          <div className="relative z-10 grid min-h-[420px] grid-cols-1 items-center gap-10 px-6 py-14 sm:px-8 md:grid-cols-[1fr_0.85fr] md:px-12 lg:px-16">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.38em] text-white/50">
-                Saint Clothing Feature
-              </p>
-
-              <h2 className="mt-3 max-w-2xl text-5xl font-black uppercase leading-[0.9] tracking-[-0.07em] text-white sm:text-6xl lg:text-7xl">
-                Build Your Fit
-              </h2>
-
-              <p className="mt-5 max-w-xl text-sm font-medium leading-7 text-white/65 md:text-base">
-                Mix tops and bottoms in one visual outfit builder. Create your
-                look before checkout and discover better style combinations.
-              </p>
-
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={goToBuildFit}
-                  className="border border-white bg-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.28em] text-black transition hover:bg-transparent hover:text-white"
-                >
-                  Try Build Fit →
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate("/collection")}
-                  className="border border-white/20 bg-white/5 px-8 py-4 text-[10px] font-black uppercase tracking-[0.28em] text-white transition hover:border-white hover:bg-white hover:text-black"
-                >
-                  Shop Collection
-                </button>
-              </div>
-
-              <div className="mt-8 grid max-w-lg grid-cols-3 gap-3">
-                {["Pick Top", "Pick Bottom", "Build Look"].map((item, index) => (
-                  <div
-                    key={item}
-                    className="rounded-[5px] border border-white/10 bg-white/[0.04] px-4 py-4 backdrop-blur"
-                  >
-                    <p className="text-[10px] font-black text-white/40">
-                      0{index + 1}
-                    </p>
-                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-                      {item}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative mx-auto w-full max-w-[420px]">
-              <div className="absolute -inset-6 rounded-[5px] bg-white/10 blur-3xl transition duration-700 group-hover:bg-white/15" />
-
-              <div className="relative overflow-hidden rounded-[5px] border border-white/15 bg-white/[0.06] p-5 backdrop-blur-xl">
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/50">
-                    Outfit Preview
-                  </p>
-                  <span className="rounded-full bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-black">
-                    Mix & Match
+    <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden bg-black">
+      {/* ================= TICKER ================= */}
+      {isLoggedInUser && tickerMessage && (
+        <div className="ticker-wrap">
+          <div className="ticker-track">
+            <div className="ticker-text">
+              {Array(8)
+                .fill(tickerMessage)
+                .map((text, i) => (
+                  <span key={i} className="ticker-item">
+                    {text}
+                    <span className="ticker-separator"> ✦ </span>
                   </span>
-                </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-                <div className="grid grid-cols-[0.8fr_1.2fr] gap-4">
-                  <div className="space-y-3">
-                    <div className="h-24 rounded-[5px] border border-white/10 bg-white/10 p-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
-                        Top
-                      </p>
-                      <div className="mt-4 h-8 rounded-[5px] bg-white/30" />
-                    </div>
+      {/* ================= HERO ================= */}
+      <Carousel
+        arrows
+        infinite
+        autoplay
+        autoplaySpeed={3000}
+        speed={700}
+        effect="fade"
+        dots
+        pauseOnHover={false}
+      >
+        {heroData.slides.map((slide, index) => (
+          <div
+            key={index}
+            className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[720px]"
+          >
+            <img
+              className="w-full h-full object-cover"
+              src={slide.image}
+              alt={slide.title}
+            />
 
-                    <div className="h-24 rounded-[5px] border border-white/10 bg-white/10 p-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
-                        Bottom
-                      </p>
-                      <div className="mt-4 h-8 rounded-[5px] bg-white/20" />
-                    </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-                    <div className="h-20 rounded-[5px] border border-white/10 bg-white/10 p-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
-                        Look
-                      </p>
-                      <div className="mt-3 h-6 rounded-[5px] bg-white/25" />
-                    </div>
-                  </div>
+            <div className="absolute inset-0 flex items-center px-5 sm:px-6 md:px-14 lg:px-24 z-10 pt-12 sm:pt-14">
+              <div className="max-w-3xl">
+                <h1 className="text-white uppercase font-black text-3xl sm:text-5xl md:text-7xl leading-[0.95]">
+                  {slide.title}
+                </h1>
 
-                  <div className="relative min-h-[280px] overflow-hidden rounded-[5px] border border-white/10 bg-[#f8f7f4]">
-                    <p className="absolute inset-0 flex items-center justify-center select-none text-[5.5rem] font-black uppercase tracking-[-0.1em] text-black/[0.035]">
-                      SAINT
-                    </p>
+                <p className="mt-4 text-sm md:text-base text-white/70 max-w-lg">
+                  {slide.description}
+                </p>
 
-                    <img
-                      src={assets.build_fit_preview}
-                      alt="Build Fit Preview"
-                      className="relative z-10 h-full w-full object-contain p-5 transition duration-700 group-hover:scale-[1.03]"
-                    />
-
-                    <p className="absolute bottom-4 left-4 right-4 z-20 text-center text-[9px] font-black uppercase tracking-[0.22em] text-black/35">
-                      Top + Bottom Visual Styling
-                    </p>
-                  </div>
-                </div>
+                <button
+                  onClick={() => handleAction(slide.action)}
+                  className="mt-6 bg-white text-black px-8 py-3 uppercase tracking-[0.22em] text-xs font-bold border border-white hover:bg-transparent hover:text-white transition"
+                >
+                  {slide.cta}
+                </button>
               </div>
             </div>
           </div>
+        ))}
+      </Carousel>
 
-          <div className="absolute bottom-0 left-0 h-[3px] w-full bg-gradient-to-r from-white via-white/30 to-transparent" />
-        </div>
-      </section>
+      <style jsx="true">{`
+        .ticker-wrap {
+          position: absolute;
+          top: 0;
+          width: 100%;
+          overflow: hidden;
+          z-index: 40;
 
-      {/* ================= CATEGORY ================= */}
-      <section className="mt-6">
-        <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
-                Saint Clothing
-              </p>
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
 
-              <h2 className="mt-1 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
-                Categories
-              </h2>
-            </div>
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
 
-            <button
-              onClick={() => navigate("/collection")}
-              className="hidden bg-black px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white hover:text-black sm:block"
-            >
-              View All →
-            </button>
-          </div>
-        </div>
+        .ticker-track {
+          display: flex;
+          width: max-content;
+          animation: tickerLoop 25s linear infinite;
+        }
 
-        {loadingCategories ? (
-          <div className="flex h-[60vh] items-center justify-center">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
-              Loading categories...
-            </p>
-          </div>
-        ) : visibleCategories.length > 0 ? (
-          <div className="snap-y snap-mandatory">
-            {visibleCategories.map((cat, index) => (
-              <section
-                key={cat._id || cat.name}
-                className="relative flex min-h-[calc(100vh-72px)] snap-start items-end overflow-hidden bg-[#e8e2d7] md:min-h-[calc(100vh-80px)]"
-              >
-                {cat.image ? (
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#e8e2d7]">
-                    <p className="select-none text-[18vw] font-black uppercase tracking-[-0.08em] text-black/[0.04]">
-                      SAINT
-                    </p>
-                  </div>
-                )}
+        .ticker-text {
+          display: flex;
+          white-space: nowrap;
+          padding: 10px 0;
+        }
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        .ticker-item {
+          padding-right: 28px;
+          color: #0A0D17;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
 
-                <div className="relative z-10 w-full px-5 pb-10 sm:px-[7vw] sm:pb-14 lg:px-[8vw]">
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/70">
-                    {cat.section || "category"}
-                  </p>
+        .ticker-separator {
+          margin: 0 16px;
+          opacity: 0.35;
+          color: #0A0D17;
+        }
 
-                  <h2 className="mt-2 text-5xl font-black uppercase tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
-                    {cat.name}
-                  </h2>
-
-                  <button
-                    onClick={() => goToCategory(cat.name)}
-                    className="mt-6 bg-white px-7 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-black transition hover:bg-black hover:text-white"
-                  >
-                    Shop {cat.name} →
-                  </button>
-
-                  <p className="absolute bottom-5 right-5 text-[10px] font-black uppercase tracking-[0.25em] text-white/60 sm:right-[7vw] lg:right-[8vw]">
-                    {String(index + 1).padStart(2, "0")} /{" "}
-                    {String(visibleCategories.length).padStart(2, "0")}
-                  </p>
-                </div>
-              </section>
-            ))}
-          </div>
-        ) : (
-          <div className="flex h-[60vh] items-center justify-center text-center">
-            <p className="text-sm font-black uppercase tracking-widest text-gray-400">
-              No categories available
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* ================= OTHER SECTIONS ================= */}
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
-        <LatestCollection />
-      </div>
-
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
-        <BestSeller />
-      </div>
-
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
-        <OurPolicy />
-      </div>
-
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-6 pb-6">
-        <NewsletterBox />
-      </div>
+        @keyframes tickerLoop {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </div>
   );
 };
 
-export default Home;
+export default Hero;
