@@ -92,28 +92,28 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
 
   return {
     top: {
-      top: 24,
-      height: 315,
-      width: 365,
+      top: 20,
+      height: 300,
+      width: 350,
       scale: 1,
       snapX: 0,
       snapY: 0,
     },
     bottom: {
-      top: isPants ? 175 : 215,
-      height: isPants ? 390 : 295,
-      width: isPants ? 375 : 345,
-      scale: isPants ? 1.03 : 1,
+      top: isPants ? 255 : 245,
+      height: isPants ? 315 : 285,
+      width: isPants ? 350 : 335,
+      scale: 1,
       snapX: 0,
-      snapY: isPants ? 8 : -6,
+      snapY: 0,
     },
     shoes: {
-      top: isPants ? 515 : 470,
-      height: isPants ? 88 : 78,
-      width: isPants ? 275 : 260,
+      top: isPants ? 500 : 485,
+      height: 78,
+      width: 255,
       scale: selectedShoes ? 1 : 1,
       snapX: 0,
-      snapY: isPants ? -8 : 0,
+      snapY: 0,
     },
   };
 };
@@ -419,7 +419,7 @@ const StyleBuilder = () => {
         </div>
 
         <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
-          <section className="flex h-[735px] min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
+          <section className="flex h-[775px] min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
@@ -584,7 +584,7 @@ const StyleBuilder = () => {
             </div>
 
             <div
-              className="relative flex h-[560px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
+              className="relative flex h-[600px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
               style={{ backgroundColor: previewBg }}
             >
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -597,9 +597,9 @@ const StyleBuilder = () => {
                 </p>
               </div>
 
-              <div className="saint-float relative h-[545px] w-[320px]">
+              <div className="saint-float relative h-[580px] w-[340px]">
                 <div
-                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  className="absolute left-1/2 z-30 -translate-x-1/2 transition duration-300 ease-out"
                   style={{
                     top: `${outfitLayout.top.top}px`,
                     height: `${outfitLayout.top.height}px`,
@@ -628,7 +628,7 @@ const StyleBuilder = () => {
                 </div>
 
                 <div
-                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  className="absolute left-1/2 z-20 -translate-x-1/2 transition duration-300 ease-out"
                   style={{
                     top: `${outfitLayout.bottom.top}px`,
                     height: `${outfitLayout.bottom.height}px`,
@@ -657,14 +657,14 @@ const StyleBuilder = () => {
                 </div>
 
                 <div
-                  className={`absolute left-1/2 h-5 w-[120px] -translate-x-1/2 rounded-[5px] blur-md ${
+                  className={`absolute left-1/2 z-0 h-5 w-[120px] -translate-x-1/2 rounded-[5px] blur-md ${
                     isDarkPreview ? "bg-white/15" : "bg-black/10"
                   }`}
                   style={{ top: `${outfitLayout.shoes.top + 18}px` }}
                 />
 
                 <div
-                  className="absolute left-1/2 -translate-x-1/2 transition duration-300 ease-out"
+                  className="absolute left-1/2 z-10 -translate-x-1/2 transition duration-300 ease-out"
                   style={{
                     top: `${outfitLayout.shoes.top}px`,
                     height: `${outfitLayout.shoes.height}px`,
