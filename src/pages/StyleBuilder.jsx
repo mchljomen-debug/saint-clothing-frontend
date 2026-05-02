@@ -86,6 +86,7 @@ const getBottomKind = (product) => {
 
 const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
   const bottomKind = getBottomKind(selectedBottom);
+  const isPants = bottomKind === "pants";
 
   return {
     top: {
@@ -97,20 +98,32 @@ const getSmartLayout = ({ selectedBottom, selectedShoes }) => {
       snapY: 0,
     },
     bottom: {
-      top: bottomKind === "pants" ? 205 : 218,
-      height: bottomKind === "pants" ? 325 : 292,
-      width: bottomKind === "pants" ? 350 : 340,
-      scale: 1,
+      // 🔥 tighter connection to top
+      top: isPants ? 185 : 210,
+
+      // 🔥 pants slightly taller
+      height: isPants ? 360 : 292,
+      width: isPants ? 360 : 340,
+
+      // 🔥 subtle scale for realism
+      scale: isPants ? 1.05 : 1,
+
+      // 🔥 align overlap nicely
       snapX: 0,
-      snapY: -6,
+      snapY: isPants ? 4 : -6,
     },
     shoes: {
-      top: bottomKind === "pants" ? 490 : 465,
-      height: 78,
-      width: 260,
-      scale: selectedShoes ? 1 : 1,
+      // 🔥 pulled up closer (THIS FIXES GAP)
+      top: isPants ? 510 : 470,
+
+      height: isPants ? 85 : 78,
+      width: isPants ? 270 : 260,
+
+      scale: 1,
       snapX: 0,
-      snapY: 0,
+
+      // 🔥 slight upward nudge
+      snapY: isPants ? -10 : 0,
     },
   };
 };
