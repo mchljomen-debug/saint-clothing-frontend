@@ -1118,7 +1118,7 @@ const Product = () => {
                   )}
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto scrollbar-thin-hide pb-3">
+                <div className="flex gap-2 overflow-x-auto scrollbar-thin-hide pb-1">
                   {availableSizes.map((s) => {
                     const actualStock = Number(normalizedStock[s] || 0);
                     const preorderStock = Number(normalizedPreorderStock[s] || 0);
@@ -1146,12 +1146,6 @@ const Product = () => {
                           }`}
                       >
                         {s}
-
-                        {isPreOrder && !isOut && (
-                          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-orange-600 px-1.5 py-0.5 text-[7px] font-black uppercase text-white">
-                            Pre
-                          </span>
-                        )}
 
                         {isPreferred && !isOut && (
                           <span
