@@ -3,8 +3,8 @@ import { Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
-import LatestCollection from "./pages/LatestCollection";
-import BestSeller from "./pages/BestSeller";
+import LatestCollection from "./components/LatestCollection";
+import BestSeller from "./components/BestSeller";
 
 import About from "./pages/About";
 import Contact from "./pages/Contact";

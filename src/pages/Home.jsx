@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import Hero from "../components/Hero";
+import LatestCollection from "../components/LatestCollection";
+import BestSeller from "../components/BestSeller";
 import OurPolicy from "../components/OurPolicy";
 import NewsletterBox from "../components/NewsletterBox";
 import { backendUrl } from "../App";
@@ -45,120 +47,100 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
-      {/* HERO */}
-      <section className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <Hero />
-      </section>
+    <div className="min-h-screen bg-[#f8f7f4] overflow-x-hidden">
 
-      {/* TOP NAV BUTTONS */}
-      <section className="sticky top-[72px] z-30 border-y border-black/10 bg-[#f8f7f4]/90 px-3 py-3 backdrop-blur-md sm:px-[5vw] md:top-[80px] md:px-[7vw] lg:px-[8vw]">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">
-            Shop Categories
-          </p>
+      {/* HERO */}
+      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <Hero />
+      </div>
+
+      {/* CATEGORY SECTION (UNIQLO STYLE BUT CLEAN) */}
+      <section className="mt-6 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <div className="mb-6 flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
+              Saint Clothing
+            </p>
+            <h2 className="mt-1 text-3xl font-black uppercase tracking-tight text-black sm:text-5xl">
+              Categories
+            </h2>
+          </div>
 
           <div className="flex gap-2">
             <button
               onClick={() => navigate("/latest")}
-              className="rounded-full bg-black px-4 py-2 text-[9px] font-black uppercase tracking-widest text-white"
+              className="rounded-full bg-black px-4 py-2 text-[10px] font-black uppercase text-white"
             >
               Latest
             </button>
 
             <button
               onClick={() => navigate("/best-sellers")}
-              className="rounded-full border border-black/10 bg-white px-4 py-2 text-[9px] font-black uppercase tracking-widest text-black"
+              className="rounded-full border px-4 py-2 text-[10px] font-black uppercase"
             >
               Best
             </button>
           </div>
         </div>
-      </section>
 
-      {/* FULL SCREEN CATEGORY SECTIONS */}
-      {loadingCategories ? (
-        <div className="flex h-[70vh] items-center justify-center">
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
+        {loadingCategories ? (
+          <p className="text-center text-sm font-black text-gray-400">
             Loading categories...
           </p>
-        </div>
-      ) : visibleCategories.length > 0 ? (
-        <div>
-          {visibleCategories.map((cat, index) => (
-            <section
-              key={cat._id || cat.name}
-              className="relative flex min-h-[calc(100vh-72px)] items-end overflow-hidden bg-[#e8e2d7] md:min-h-[calc(100vh-80px)]"
-            >
-              {cat.image ? (
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-[#e8e2d7]">
-                  <p className="select-none text-[18vw] font-black uppercase tracking-[-0.08em] text-black/[0.04]">
-                    SAINT
-                  </p>
-                </div>
-              )}
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleCategories.map((cat) => (
+              <button
+                key={cat._id}
+                onClick={() => goToCategory(cat.name)}
+                className="group relative h-[420px] overflow-hidden bg-[#e8e2d7]"
+              >
+                {cat.image ? (
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-6xl font-black text-black/10">SAINT</p>
+                  </div>
+                )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-black/30" />
 
-              <div className="relative z-10 w-full px-5 pb-10 sm:px-[7vw] sm:pb-14 lg:px-[8vw]">
-                <div className="max-w-3xl">
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/70">
-                    {String(cat.section || "category")}
-                  </p>
-
-                  <h2 className="mt-2 text-5xl font-black uppercase tracking-[-0.06em] text-white sm:text-7xl lg:text-8xl">
+                <div className="absolute bottom-0 p-5 text-white">
+                  <h3 className="text-3xl font-black uppercase">
                     {cat.name}
-                  </h2>
-
-                  {Array.isArray(cat.matchWith) && cat.matchWith.length > 0 && (
-                    <p className="mt-3 max-w-xl text-sm font-semibold uppercase tracking-[0.18em] text-white/70">
-                      Pairs with {cat.matchWith.slice(0, 3).join(", ")}
-                    </p>
-                  )}
-
-                  <button
-                    onClick={() => goToCategory(cat.name)}
-                    className="mt-6 bg-white px-7 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-black transition hover:bg-black hover:text-white"
-                  >
-                    Shop {cat.name}
-                  </button>
+                  </h3>
+                  <p className="mt-2 text-xs uppercase tracking-widest">
+                    Shop Now →
+                  </p>
                 </div>
-
-                <p className="absolute bottom-5 right-5 text-[10px] font-black uppercase tracking-[0.25em] text-white/60 sm:right-[7vw] lg:right-[8vw]">
-                  {String(index + 1).padStart(2, "0")} /{" "}
-                  {String(visibleCategories.length).padStart(2, "0")}
-                </p>
-              </div>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <div className="flex h-[70vh] items-center justify-center px-4 text-center">
-          <div>
-            <p className="text-sm font-black uppercase tracking-widest text-gray-400">
-              No categories available
-            </p>
-            <p className="mt-2 text-sm text-gray-400">
-              Add category images in admin first.
-            </p>
+              </button>
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </section>
 
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <div className="mt-6">
-          <OurPolicy />
-        </div>
+      {/* 🔥 LATEST COLLECTION BACK */}
+      <div className="mt-10 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <LatestCollection />
+      </div>
 
-        <div className="mt-4 pb-6">
-          <NewsletterBox />
-        </div>
+      {/* 🔥 BEST SELLERS BACK */}
+      <div className="mt-10 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <BestSeller />
+      </div>
+
+      {/* POLICY */}
+      <div className="mt-10 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <OurPolicy />
+      </div>
+
+      {/* NEWSLETTER */}
+      <div className="mt-6 pb-6 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
+        <NewsletterBox />
       </div>
     </div>
   );
