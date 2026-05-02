@@ -432,59 +432,55 @@ const StyleBuilder = () => {
             </p>
           </div>
 
-          <div className="relative flex min-h-[700px] items-center justify-center overflow-visible bg-white">
+          <div className="relative flex min-h-[720px] items-center justify-center bg-transparent">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="select-none text-[130px] font-black uppercase tracking-[-0.08em] text-black/[0.025]">
+              <p className="select-none text-[150px] font-black uppercase tracking-[-0.08em] text-black/[0.02]">
                 SAINT
               </p>
             </div>
 
-            <div className="relative h-[680px] w-[370px]">
-              <div className="absolute left-1/2 top-[18px] h-[76px] w-[76px] -translate-x-1/2 rounded-full bg-gray-100" />
-              <div className="absolute left-1/2 top-[88px] h-[36px] w-[38px] -translate-x-1/2 rounded-b-2xl bg-gray-100" />
-              <div className="absolute left-1/2 top-[120px] h-[455px] w-[215px] -translate-x-1/2 rounded-[120px] bg-gray-100/70" />
-
-              <div className="absolute left-1/2 top-[100px] h-[265px] w-[340px] -translate-x-1/2">
+            <div className="relative h-[700px] w-[400px]">
+              <div className="absolute left-1/2 top-[40px] h-[320px] w-[360px] -translate-x-1/2">
                 {selectedTop ? (
                   <img
                     src={getProductImage(selectedTop)}
                     alt={selectedTop.name}
                     style={getOutfitStyle(selectedTop)}
-                    className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                    className="h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <span className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-300">
-                      Select Top
+                      Top
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="absolute left-1/2 top-[340px] h-[265px] w-[340px] -translate-x-1/2">
+              <div className="absolute left-1/2 top-[310px] h-[300px] w-[360px] -translate-x-1/2">
                 {selectedBottom ? (
                   <img
                     src={getProductImage(selectedBottom)}
                     alt={selectedBottom.name}
                     style={getOutfitStyle(selectedBottom)}
-                    className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                    className="h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <span className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-300">
-                      Select Bottom
+                      Bottom
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="absolute left-1/2 top-[580px] h-[100px] w-[340px] -translate-x-1/2">
+              <div className="absolute left-1/2 top-[590px] h-[120px] w-[320px] -translate-x-1/2">
                 {selectedShoes ? (
                   <img
                     src={getProductImage(selectedShoes)}
                     alt={selectedShoes.name}
                     style={getOutfitStyle(selectedShoes)}
-                    className="h-full w-full object-contain mix-blend-multiply transition-transform duration-300"
+                    className="h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
