@@ -24,6 +24,7 @@ import gcash_logo from './gcash_logo.png'
 import maya_logo from './maya_logo.png'
 import gotyme_logo from './gotyme_logo.png'
 import cod_logo from './gotyme_logo.png'
+import build_fit_preview from "./build_fit_preview.png";
 
 export const assets = {
   logo,
@@ -52,4 +53,5 @@ export const assets = {
   maya_logo,
   gotyme_logo,
   cod_logo,
+  build_fit_preview,
 }
