@@ -1,15 +1,44 @@
 import React, { useContext, useMemo, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 
-const TOP_KEYWORDS = ["tshirt", "t-shirt", "shirt", "long sleeve", "longsleeve", "crop", "jersey", "hoodie", "jacket", "polo"];
-const BOTTOM_KEYWORDS = ["jorts", "short", "shorts", "pants", "jeans", "trouser", "bottom"];
-const SHOES_KEYWORDS = ["shoe", "shoes", "sneaker", "sneakers", "footwear", "slides", "sandals"];
+const TOP_KEYWORDS = [
+  "tshirt",
+  "t-shirt",
+  "shirt",
+  "long sleeve",
+  "longsleeve",
+  "crop",
+  "jersey",
+  "hoodie",
+  "jacket",
+  "polo",
+];
+
+const BOTTOM_KEYWORDS = [
+  "jorts",
+  "short",
+  "shorts",
+  "pants",
+  "jeans",
+  "trouser",
+  "bottom",
+];
+
+const SHOES_KEYWORDS = [
+  "shoe",
+  "shoes",
+  "sneaker",
+  "sneakers",
+  "footwear",
+  "slides",
+  "sandals",
+];
 
 const PREVIEW_BACKGROUNDS = [
-  { name: "White", className: "bg-white", dot: "bg-white" },
-  { name: "Cream", className: "bg-[#F7F3EA]", dot: "bg-[#F7F3EA]" },
-  { name: "Grey", className: "bg-[#F3F4F6]", dot: "bg-[#F3F4F6]" },
-  { name: "Black", className: "bg-[#050505]", dot: "bg-[#050505]" },
+  { name: "White", color: "#ffffff" },
+  { name: "Cream", color: "#F7F3EA" },
+  { name: "Grey", color: "#F3F4F6" },
+  { name: "Black", color: "#050505" },
 ];
 
 const getProductImage = (item) => {
@@ -22,13 +51,17 @@ const getProductImage = (item) => {
 };
 
 const getProductText = (product) =>
-  `${product?.category || ""} ${product?.name || ""} ${product?.subCategory || ""}`.toLowerCase();
+  `${product?.category || ""} ${product?.name || ""} ${
+    product?.subCategory || ""
+  }`.toLowerCase();
 
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
+
   if (["top", "bottom", "both", "shoes"].includes(section)) return section;
 
   const text = getProductText(product);
+
   if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
   if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
   if (SHOES_KEYWORDS.some((word) => text.includes(word))) return "shoes";
@@ -38,8 +71,16 @@ const getProductType = (product) => {
 
 const getBottomKind = (product) => {
   const text = getProductText(product);
+
   if (text.includes("jorts") || text.includes("short")) return "shorts";
-  if (text.includes("pants") || text.includes("jeans") || text.includes("trouser")) return "pants";
+  if (
+    text.includes("pants") ||
+    text.includes("jeans") ||
+    text.includes("trouser")
+  ) {
+    return "pants";
+  }
+
   return "bottom";
 };
 
@@ -103,13 +144,17 @@ const scorePair = (top, bottom) => {
   if (top.category && bottom.matchWith?.includes(top.category)) score += 8;
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 8;
   if (top.color && bottom.color && top.color === bottom.color) score += 3;
-  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) score += 4;
+  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
+    score += 4;
+  }
 
   const topTags = Array.isArray(top.styleTags) ? top.styleTags : [];
   const bottomTags = Array.isArray(bottom.styleTags) ? bottom.styleTags : [];
 
   const sharedTags = bottomTags.filter((tag) =>
-    topTags.map((t) => String(t).toLowerCase()).includes(String(tag).toLowerCase())
+    topTags
+      .map((t) => String(t).toLowerCase())
+      .includes(String(tag).toLowerCase())
   );
 
   score += sharedTags.length * 2;
@@ -130,7 +175,7 @@ const StyleBuilder = () => {
   const [mode, setMode] = useState("manual");
   const [category, setCategory] = useState("All");
   const [selectedProducts, setSelectedProducts] = useState([]);
-  const [previewBg, setPreviewBg] = useState("bg-white");
+  const [previewBg, setPreviewBg] = useState("#ffffff");
 
   const CATEGORIES = useMemo(() => {
     return ["All", ...Array.from(new Set(categoryOptions.filter(Boolean)))];
@@ -166,7 +211,7 @@ const StyleBuilder = () => {
     selectedShoes,
   });
 
-  const isDarkPreview = previewBg === "bg-[#050505]";
+  const isDarkPreview = previewBg.toLowerCase() === "#050505";
 
   const clearFit = () => {
     setSelectedProducts([]);
@@ -492,24 +537,34 @@ const StyleBuilder = () => {
               Background Color
             </p>
 
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={previewBg}
+                onChange={(e) => setPreviewBg(e.target.value)}
+                title="Pick custom background"
+                className="h-8 w-8 cursor-pointer rounded-full border border-gray-300 bg-white p-0"
+              />
+
               {PREVIEW_BACKGROUNDS.map((bg) => (
                 <button
                   key={bg.name}
-                  onClick={() => setPreviewBg(bg.className)}
+                  onClick={() => setPreviewBg(bg.color)}
                   title={bg.name}
-                  className={`h-8 w-8 rounded-full border transition ${bg.dot} ${
-                    previewBg === bg.className
+                  className={`h-8 w-8 rounded-full border transition ${
+                    previewBg.toLowerCase() === bg.color.toLowerCase()
                       ? "border-black ring-2 ring-black ring-offset-2"
                       : "border-gray-300"
                   }`}
+                  style={{ backgroundColor: bg.color }}
                 />
               ))}
             </div>
           </div>
 
           <div
-            className={`relative flex min-h-[760px] items-center justify-center overflow-hidden rounded-[34px] transition-colors duration-500 ${previewBg}`}
+            className="relative flex min-h-[760px] items-center justify-center overflow-hidden rounded-[34px] transition-colors duration-500"
+            style={{ backgroundColor: previewBg }}
           >
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <p
