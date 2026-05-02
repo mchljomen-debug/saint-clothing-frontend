@@ -43,15 +43,10 @@ const getProductImage = (item) => {
   return "/placeholder.png";
 };
 
-const getOutfitStyle = (item) => {
-  const position = item?.outfitPosition || {};
-  const x = Number(position.x || 0);
-  const y = Number(position.y || 0);
-  const scale = Number(position.scale || 1);
-
-  return {
-    transform: `translate(${x}px, ${y}px) scale(${scale})`,
-  };
+const getProductText = (product) => {
+  return `${product?.category || ""} ${product?.name || ""} ${
+    product?.subCategory || ""
+  }`.toLowerCase();
 };
 
 const getProductType = (product) => {
@@ -59,15 +54,62 @@ const getProductType = (product) => {
 
   if (["top", "bottom", "both", "shoes"].includes(section)) return section;
 
-  const text = `${product?.category || ""} ${product?.name || ""} ${
-    product?.subCategory || ""
-  }`.toLowerCase();
+  const text = getProductText(product);
 
   if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
   if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
   if (SHOES_KEYWORDS.some((word) => text.includes(word))) return "shoes";
 
   return "other";
+};
+
+const getBottomKind = (product) => {
+  const text = getProductText(product);
+
+  if (text.includes("jorts") || text.includes("short")) return "shorts";
+  if (text.includes("pants") || text.includes("jeans") || text.includes("trouser")) {
+    return "pants";
+  }
+
+  return "bottom";
+};
+
+const getDynamicOutfitLayout = ({ selectedTop, selectedBottom, selectedShoes }) => {
+  const bottomKind = getBottomKind(selectedBottom);
+
+  const top = {
+    top: 70,
+    height: 340,
+    width: 430,
+    scale: 1,
+  };
+
+  const bottom = {
+    top: bottomKind === "pants" ? 320 : 330,
+    height: bottomKind === "pants" ? 360 : 330,
+    width: bottomKind === "pants" ? 430 : 420,
+    scale: bottomKind === "pants" ? 1.02 : 1,
+  };
+
+  const shoes = {
+    top: bottomKind === "pants" ? 650 : 620,
+    height: 110,
+    width: 340,
+    scale: selectedShoes ? 1 : 1,
+  };
+
+  return { top, bottom, shoes };
+};
+
+const getOutfitStyle = (item, dynamicScale = 1) => {
+  const position = item?.outfitPosition || {};
+  const x = Number(position.x || 0);
+  const y = Number(position.y || 0);
+  const scale = Number(position.scale || 1) * dynamicScale;
+
+  return {
+    transform: `translate(${x}px, ${y}px) scale(${scale})`,
+  };
 };
 
 const getFinalPrice = (item) => {
@@ -149,6 +191,12 @@ const StyleBuilder = () => {
 
   const selectedShoes = selectedProducts.find((item) => {
     return getProductType(item) === "shoes";
+  });
+
+  const outfitLayout = getDynamicOutfitLayout({
+    selectedTop,
+    selectedBottom,
+    selectedShoes,
   });
 
   const clearFit = () => {
@@ -263,7 +311,7 @@ const StyleBuilder = () => {
         {`
           @keyframes saintFloat {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            50% { transform: translateY(-8px); }
           }
 
           @keyframes saintFade {
@@ -484,13 +532,20 @@ const StyleBuilder = () => {
             </div>
 
             <div className="saint-float relative h-[740px] w-[440px]">
-              <div className="saint-parallax-top absolute left-1/2 top-[35px] h-[365px] w-[420px] -translate-x-1/2 transition duration-500 ease-out">
+              <div
+                className="saint-parallax-top absolute left-1/2 -translate-x-1/2 transition duration-500 ease-out"
+                style={{
+                  top: `${outfitLayout.top.top}px`,
+                  height: `${outfitLayout.top.height}px`,
+                  width: `${outfitLayout.top.width}px`,
+                }}
+              >
                 {selectedTop ? (
                   <img
                     key={selectedTop._id}
                     src={getProductImage(selectedTop)}
                     alt={selectedTop.name}
-                    style={getOutfitStyle(selectedTop)}
+                    style={getOutfitStyle(selectedTop, outfitLayout.top.scale)}
                     className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
@@ -502,13 +557,20 @@ const StyleBuilder = () => {
                 )}
               </div>
 
-              <div className="saint-parallax-bottom absolute left-1/2 top-[300px] h-[340px] w-[420px] -translate-x-1/2 transition duration-500 ease-out">
+              <div
+                className="saint-parallax-bottom absolute left-1/2 -translate-x-1/2 transition duration-500 ease-out"
+                style={{
+                  top: `${outfitLayout.bottom.top}px`,
+                  height: `${outfitLayout.bottom.height}px`,
+                  width: `${outfitLayout.bottom.width}px`,
+                }}
+              >
                 {selectedBottom ? (
                   <img
                     key={selectedBottom._id}
                     src={getProductImage(selectedBottom)}
                     alt={selectedBottom.name}
-                    style={getOutfitStyle(selectedBottom)}
+                    style={getOutfitStyle(selectedBottom, outfitLayout.bottom.scale)}
                     className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
@@ -520,15 +582,25 @@ const StyleBuilder = () => {
                 )}
               </div>
 
-              <div className="absolute left-1/2 top-[655px] h-5 w-[170px] -translate-x-1/2 rounded-full bg-black/10 blur-md" />
+              <div
+                className="absolute left-1/2 h-5 w-[170px] -translate-x-1/2 rounded-full bg-black/10 blur-md"
+                style={{ top: `${outfitLayout.shoes.top + 30}px` }}
+              />
 
-              <div className="saint-parallax-shoes absolute left-1/2 top-[625px] h-[120px] w-[360px] -translate-x-1/2 transition duration-500 ease-out">
+              <div
+                className="saint-parallax-shoes absolute left-1/2 -translate-x-1/2 transition duration-500 ease-out"
+                style={{
+                  top: `${outfitLayout.shoes.top}px`,
+                  height: `${outfitLayout.shoes.height}px`,
+                  width: `${outfitLayout.shoes.width}px`,
+                }}
+              >
                 {selectedShoes ? (
                   <img
                     key={selectedShoes._id}
                     src={getProductImage(selectedShoes)}
                     alt={selectedShoes.name}
-                    style={getOutfitStyle(selectedShoes)}
+                    style={getOutfitStyle(selectedShoes, outfitLayout.shoes.scale)}
                     className="saint-fade h-full w-full object-contain mix-blend-multiply transition duration-300"
                   />
                 ) : (
