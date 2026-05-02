@@ -13,19 +13,53 @@
     font-family: 'Outfit', sans-serif;
 }
 
+/* ================= GLOBAL CORNERS (SAFE) ================= */
+* {
+    border-radius: 5px;
+}
+
+/* KEEP circles */
+.rounded-full {
+    border-radius: 9999px !important;
+}
+
+/* ================= BODY ================= */
 body {
     overflow-x: hidden; 
     width: 100%;
-    /* Matching the minimalist theme background */
     background-color: #ffffff; 
 }
 
-/* Scrollbar - Hidden but still scrollable */
+/* ================= SCROLLBAR (VISIBLE RIGHT SIDE) ================= */
+
+/* Enable scrollbar */
 ::-webkit-scrollbar {
-    display: none;
+    width: 8px;
 }
 
-/* Typography Helpers */
+/* Track */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Thumb */
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 5px;
+}
+
+/* Hover */
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.3) transparent;
+}
+
+/* ================= TYPOGRAPHY ================= */
 .montserrat-black {
     font-family: 'Montserrat', sans-serif;
     font-weight: 900;
@@ -49,7 +83,7 @@ a.active hr {
     }
 }
 
-/* Ant Design Carousel Fixes */
+/* ================= ANT DESIGN FIX ================= */
 .ant-carousel .slick-slider,
 .ant-carousel .slick-list,
 .ant-carousel .slick-track,
@@ -69,9 +103,9 @@ a.active hr {
     z-index: 20;
 }
 
-/* --- ANIMATIONS --- */
+/* ================= ANIMATIONS ================= */
 
-/* Fade In Up Entrance */
+/* Fade In Up */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -95,5 +129,3 @@ a.active hr {
   98% { transform: translateX(-100px) scaleX(-1); }
   100% { transform: translateX(-100px) scaleX(1); }
 }
-
-
