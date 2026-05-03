@@ -20,8 +20,12 @@ const Login = () => {
   const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
 
   const termsScrollRef = useRef(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [showForgotConfirmPassword, setShowForgotConfirmPassword] =
+    useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -51,6 +55,55 @@ const Login = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const floatingInput =
+    "peer w-full rounded-xl border bg-white/80 px-4 pb-2.5 pt-5 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-transparent focus:border-black focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)] autofill:shadow-[inset_0_0_0_1000px_white] autofill:[-webkit-text-fill-color:#0A0D17]";
+
+  const floatingLabel =
+    "pointer-events-none absolute left-4 top-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-[12px] peer-placeholder-shown:tracking-[0.08em] peer-placeholder-shown:text-gray-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:tracking-[0.16em] peer-focus:text-black";
+
+  const PasswordToggle = ({ active, onClick }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-black"
+    >
+      {active ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+  );
+
+  const FloatingField = ({
+    label,
+    name,
+    value,
+    onChange,
+    type = "text",
+    required = true,
+    className = "",
+    inputMode,
+    maxLength,
+    onBlur,
+    rightElement = null,
+    autoComplete,
+  }) => (
+    <div className="relative">
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        placeholder={label}
+        required={required}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        autoComplete={autoComplete}
+        className={`${floatingInput} ${rightElement ? "pr-12" : ""} ${className}`}
+      />
+      <label className={floatingLabel}>{label}</label>
+      {rightElement}
+    </div>
+  );
 
   useEffect(() => {
     const fetchTerms = async () => {
@@ -133,6 +186,10 @@ const Login = () => {
     setShowTermsModal(false);
     setTermsScrolledToBottom(false);
     setEmailExists(false);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setShowForgotNewPassword(false);
+    setShowForgotConfirmPassword(false);
 
     setFormData({
       firstName: "",
@@ -266,7 +323,9 @@ const Login = () => {
         toast.error(response.data.message);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to send verification code");
+      toast.error(
+        error.response?.data?.message || "Failed to send verification code"
+      );
     }
   };
 
@@ -366,6 +425,8 @@ const Login = () => {
           newPassword: "",
           confirmPassword: "",
         });
+        setShowForgotNewPassword(false);
+        setShowForgotConfirmPassword(false);
       } else {
         toast.error(response.data.message);
       }
@@ -411,7 +472,6 @@ const Login = () => {
           localStorage.setItem("token", response.data.token);
           localStorage.setItem("user", JSON.stringify(response.data.user));
           toast.success("Welcome to Saint Clothing");
-
           navigate("/profile");
         } else {
           toast.error(response.data.message);
@@ -439,7 +499,9 @@ const Login = () => {
         }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "An error occurred. Please try again.");
+      toast.error(
+        error.response?.data?.message || "An error occurred. Please try again."
+      );
     }
   };
 
@@ -521,338 +583,408 @@ const Login = () => {
                     </h2>
 
                     <p className="mt-2 text-[10px] font-black text-gray-500 tracking-[0.22em] uppercase">
-                      {currentState === "Login" ? "Member Access" : "Register New Account"}
+                      {currentState === "Login"
+                        ? "Member Access"
+                        : "Register New Account"}
                     </p>
                   </div>
 
                   <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     {currentState === "Sign Up" && (
                       <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
+                        <FloatingField
+                          label="First Name"
                           name="firstName"
                           value={formData.firstName}
                           onChange={handleChange}
-                          placeholder="First Name"
-                          required
-                          className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                            "firstName"
-                          )}`}
+                          className={getBorderColor("firstName")}
+                          autoComplete="given-name"
                         />
 
-                        <input
-                          type="text"
+                        <FloatingField
+                          label="Last Name"
                           name="lastName"
                           value={formData.lastName}
                           onChange={handleChange}
-                          placeholder="Last Name"
-                          required
-                          className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                            "lastName"
-                          )}`}
+                          className={getBorderColor("lastName")}
+                          autoComplete="family-name"
                         />
                       </div>
                     )}
 
-                    <input
-                      type="email"
+                    <FloatingField
+                      label="Email Address"
                       name="email"
+                      type="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="Email Address"
-                      required
-                      className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                        "email"
-                      )}`}
+                      className={getBorderColor("email")}
+                      autoComplete={
+                        currentState === "Login" ? "email" : "new-email"
+                      }
                     />
+
                     <div className="space-y-2">
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
+                      <FloatingField
+                        label="Password"
                         name="password"
+                        type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleChange}
-                        placeholder="Password"
-                        required
-                        className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                          "password"
-                        )}`}
+                        className={getBorderColor("password")}
+                        autoComplete={
+                          currentState === "Login"
+                            ? "current-password"
+                            : "new-password"
+                        }
+                        rightElement={
+                          <PasswordToggle
+                            active={showPassword}
+                            onClick={() => setShowPassword((prev) => !prev)}
+                          />
+                        }
                       />
 
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
+                      {currentState === "Sign Up" &&
+                        formData.password.length > 0 && (
+                          <p
+                            className={`px-1 text-[11px] font-semibold leading-5 ${
+                              passwordStrength === "weak"
+                                ? "text-rose-500"
+                                : passwordStrength === "medium"
+                                ? "text-amber-500"
+                                : passwordStrength === "strong"
+                                ? "text-emerald-600"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            Your password must be at least 8 characters long and
+                            include an uppercase letter, a number, and a symbol.
+                          </p>
+                        )}
                     </div>
 
-                    {currentState === "Sign Up" && formData.password.length > 0 && (
-                      <p
-                        className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
-                          ? "text-rose-500"
-                          : passwordStrength === "medium"
-                            ? "text-amber-500"
-                            : passwordStrength === "strong"
-                              ? "text-emerald-600"
-                              : "text-gray-400"
-                          }`}
+                    {currentState === "Login" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotMode(true);
+                          setForgotPasswordData((prev) => ({
+                            ...prev,
+                            email: formData.email || "",
+                          }));
+                        }}
+                        className="self-end text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 transition hover:text-black"
                       >
-                        Your password must be at least 8 characters long and include an uppercase
-                        letter, a number, and a symbol.
-                      </p>
+                        Forgot Password?
+                      </button>
                     )}
-                  </div>
 
-                  {currentState === "Login" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setForgotMode(true);
-                        setForgotPasswordData((prev) => ({
-                          ...prev,
-                          email: formData.email || "",
-                        }));
-                      }}
-                      className="self-end text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 transition hover:text-black"
-                    >
-                      Forgot Password?
-                    </button>
-                  )}
-
-                  {currentState === "Sign Up" && (
-                    <>
-                      <div className="space-y-2">
-                        <div className="relative">
-                          <input
-                            type={showConfirmPassword ? "text" : "password"}
+                    {currentState === "Sign Up" && (
+                      <>
+                        <div className="space-y-2">
+                          <FloatingField
+                            label="Confirm Password"
                             name="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
                             value={formData.confirmPassword}
                             onChange={handleChange}
                             onBlur={() => setConfirmTouched(true)}
-                            placeholder="Confirm Password"
-                            required
-                            className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                              "confirmPassword"
-                            )}`}
+                            className={getBorderColor("confirmPassword")}
+                            autoComplete="new-password"
+                            rightElement={
+                              <PasswordToggle
+                                active={showConfirmPassword}
+                                onClick={() =>
+                                  setShowConfirmPassword((prev) => !prev)
+                                }
+                              />
+                            }
                           />
 
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword((prev) => !prev)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
-                          >
-                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-
-                        {confirmTouched &&
-                          formData.confirmPassword.length > 0 &&
-                          errors.confirmPassword && (
-                            <p className="px-1 text-[10px] font-black uppercase tracking-[0.14em] text-rose-500">
-                              {errors.confirmPassword}
-                            </p>
-                          )}
-                      </div>
-
-                      <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={acceptedTerms}
-                            readOnly
-                            className="mt-1 h-4 w-4 accent-black"
-                          />
-
-                          <span className="text-[11px] font-semibold leading-5 text-gray-600">
-                            I agree to the{" "}
-                            <button
-                              type="button"
-                              onClick={openTermsModal}
-                              className="font-black text-[#0A0D17] underline"
-                            >
-                              Terms & Conditions
-                            </button>
-                            {termsVersion ? (
-                              <span className="ml-2 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400">
-                                Version {termsVersion}
-                              </span>
-                            ) : null}
-                          </span>
-                        </div>
-
-                        {!acceptedTerms && (
-                          <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
-                            Open the terms, scroll to the bottom, then accept before sending OTP.
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="mt-1">
-                        {otpSent && !emailVerified ? (
-                          <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
-                                OTP Verification
+                          {confirmTouched &&
+                            formData.confirmPassword.length > 0 &&
+                            errors.confirmPassword && (
+                              <p className="px-1 text-[10px] font-black uppercase tracking-[0.14em] text-rose-500">
+                                {errors.confirmPassword}
                               </p>
+                            )}
+                        </div>
 
-                              <span
-                                className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
-                                  ? "bg-black text-white"
-                                  : "bg-rose-50 text-rose-600"
-                                  }`}
-                              >
-                                {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
-                              </span>
-                            </div>
-
+                        <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
+                          <div className="flex items-start gap-3">
                             <input
-                              type="text"
-                              value={otp}
-                              onChange={(e) =>
-                                setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                              }
-                              placeholder="Enter OTP"
-                              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none transition focus:border-black"
+                              type="checkbox"
+                              checked={acceptedTerms}
+                              readOnly
+                              className="mt-1 h-4 w-4 accent-black"
                             />
 
-                            <div className="grid grid-cols-2 gap-2">
+                            <span className="text-[11px] font-semibold leading-5 text-gray-600">
+                              I agree to the{" "}
                               <button
                                 type="button"
-                                onClick={verifyOtp}
-                                disabled={!otp || otp.length < 6 || otpTimer <= 0 || otpVerified}
-                                className="rounded-xl bg-black py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                                onClick={openTermsModal}
+                                className="font-black text-[#0A0D17] underline"
                               >
-                                Verify
+                                Terms & Conditions
                               </button>
-
-                              <button
-                                type="button"
-                                onClick={sendOtp}
-                                disabled={otpTimer > 0}
-                                className="rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                              >
-                                Resend OTP
-                              </button>
-                            </div>
+                              {termsVersion ? (
+                                <span className="ml-2 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400">
+                                  Version {termsVersion}
+                                </span>
+                              ) : null}
+                            </span>
                           </div>
-                        ) : !otpSent ? (
-                          <button
-                            type="button"
-                            onClick={sendOtp}
-                            disabled={
-                              !!errors.email ||
-                              !formData.email ||
-                              emailExists ||
-                              !formData.firstName.trim() ||
-                              !formData.lastName.trim() ||
-                              !acceptedTerms ||
-                              otpTimer > 0
-                            }
-                            className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            {emailExists
-                              ? "Account Already Exists"
-                              : !acceptedTerms
+
+                          {!acceptedTerms && (
+                            <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
+                              Open the terms, scroll to the bottom, then accept
+                              before sending OTP.
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="mt-1">
+                          {otpSent && !emailVerified ? (
+                            <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
+                                  OTP Verification
+                                </p>
+
+                                <span
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                    otpTimer > 0
+                                      ? "bg-black text-white"
+                                      : "bg-rose-50 text-rose-600"
+                                  }`}
+                                >
+                                  {otpTimer > 0
+                                    ? `${otpTimer}s left`
+                                    : "Expired"}
+                                </span>
+                              </div>
+
+                              <input
+                                type="text"
+                                value={otp}
+                                onChange={(e) =>
+                                  setOtp(
+                                    e.target.value.replace(/\D/g, "").slice(0, 6)
+                                  )
+                                }
+                                placeholder="Enter OTP"
+                                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none transition focus:border-black focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)]"
+                              />
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={verifyOtp}
+                                  disabled={
+                                    !otp ||
+                                    otp.length < 6 ||
+                                    otpTimer <= 0 ||
+                                    otpVerified
+                                  }
+                                  className="rounded-xl bg-black py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  Verify
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={sendOtp}
+                                  disabled={otpTimer > 0}
+                                  className="rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  Resend OTP
+                                </button>
+                              </div>
+                            </div>
+                          ) : !otpSent ? (
+                            <button
+                              type="button"
+                              onClick={sendOtp}
+                              disabled={
+                                !!errors.email ||
+                                !formData.email ||
+                                emailExists ||
+                                !formData.firstName.trim() ||
+                                !formData.lastName.trim() ||
+                                !acceptedTerms ||
+                                otpTimer > 0
+                              }
+                              className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black hover:shadow-[0_0_0_4px_rgba(0,0,0,0.06)] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {emailExists
+                                ? "Account Already Exists"
+                                : !acceptedTerms
                                 ? "Accept Terms First"
                                 : "Send OTP"}
-                          </button>
-                        ) : (
-                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-                              Email Verified
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
-                  >
-                    {currentState === "Login" ? "Login" : "Create Account"}
-                  </button>
-                </form>
-
-              <div className="mt-8 border-t border-black/10 pt-6 text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
-                  {currentState === "Login" ? "No account?" : "Already have an account?"}
-                  <span
-                    className="ml-2 cursor-pointer text-black transition hover:text-gray-600"
-                    onClick={() => {
-                      setCurrentState(currentState === "Login" ? "Sign Up" : "Login");
-                      resetAllStates();
-                    }}
-                  >
-                    {currentState === "Login" ? "Sign Up" : "Log In"}
-                  </span>
-                </p>
-              </div>
-            </>
-            ) : (
-            <>
-              <div className="mb-8">
-                <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
-                  Forgot Password
-                </h2>
-              </div>
-
-              <form onSubmit={submitForgotPassword} className="flex flex-col gap-4">
-                <input
-                  type="email"
-                  value={forgotPasswordData.email}
-                  onChange={(e) =>
-                    setForgotPasswordData((prev) => ({
-                      ...prev,
-                      email: e.target.value,
-                    }))
-                  }
-                  placeholder="Email Address"
-                  required
-                  className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
-                />
-
-                {!forgotOtpSent ? (
-                  <button
-                    type="button"
-                    onClick={sendForgotPasswordOtp}
-                    className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
-                  >
-                    Send Reset Code
-                  </button>
-                ) : (
-                  <>
-                    <input
-                      type="text"
-                      value={forgotOtp}
-                      onChange={(e) =>
-                        setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                      }
-                      placeholder="Reset Code"
-                      required
-                      className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none text-center font-black tracking-[0.35em] text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
-                    />
+                            </button>
+                          ) : (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
+                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                Email Verified
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
 
                     <button
                       type="submit"
-                      className="h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
+                      className="mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 hover:shadow-[0_12px_30px_rgba(0,0,0,0.22)]"
                     >
-                      Reset Password
+                      {currentState === "Login" ? "Login" : "Create Account"}
                     </button>
-                  </>
-                )}
-              </form>
-            </>
+                  </form>
+
+                  <div className="mt-8 border-t border-black/10 pt-6 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
+                      {currentState === "Login"
+                        ? "No account?"
+                        : "Already have an account?"}
+                      <span
+                        className="ml-2 cursor-pointer text-black transition hover:text-gray-600"
+                        onClick={() => {
+                          setCurrentState(
+                            currentState === "Login" ? "Sign Up" : "Login"
+                          );
+                          resetAllStates();
+                        }}
+                      >
+                        {currentState === "Login" ? "Sign Up" : "Log In"}
+                      </span>
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mb-8">
+                    <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
+                      Forgot Password
+                    </h2>
+                    <p className="mt-2 text-[10px] font-black text-gray-500 tracking-[0.22em] uppercase">
+                      Account Recovery
+                    </p>
+                  </div>
+
+                  <form
+                    onSubmit={submitForgotPassword}
+                    className="flex flex-col gap-4"
+                  >
+                    <FloatingField
+                      label="Email Address"
+                      type="email"
+                      value={forgotPasswordData.email}
+                      onChange={(e) =>
+                        setForgotPasswordData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      autoComplete="email"
+                    />
+
+                    {!forgotOtpSent ? (
+                      <button
+                        type="button"
+                        onClick={sendForgotPasswordOtp}
+                        className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black hover:shadow-[0_0_0_4px_rgba(0,0,0,0.06)]"
+                      >
+                        Send Reset Code
+                      </button>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          value={forgotOtp}
+                          onChange={(e) =>
+                            setForgotOtp(
+                              e.target.value.replace(/\D/g, "").slice(0, 6)
+                            )
+                          }
+                          placeholder="Reset Code"
+                          required
+                          className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none transition placeholder:text-gray-400 focus:border-black focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)]"
+                        />
+
+                        <FloatingField
+                          label="New Password"
+                          type={showForgotNewPassword ? "text" : "password"}
+                          value={forgotPasswordData.newPassword}
+                          onChange={(e) =>
+                            setForgotPasswordData((prev) => ({
+                              ...prev,
+                              newPassword: e.target.value,
+                            }))
+                          }
+                          autoComplete="new-password"
+                          rightElement={
+                            <PasswordToggle
+                              active={showForgotNewPassword}
+                              onClick={() =>
+                                setShowForgotNewPassword((prev) => !prev)
+                              }
+                            />
+                          }
+                        />
+
+                        <FloatingField
+                          label="Confirm New Password"
+                          type={showForgotConfirmPassword ? "text" : "password"}
+                          value={forgotPasswordData.confirmPassword}
+                          onChange={(e) =>
+                            setForgotPasswordData((prev) => ({
+                              ...prev,
+                              confirmPassword: e.target.value,
+                            }))
+                          }
+                          autoComplete="new-password"
+                          rightElement={
+                            <PasswordToggle
+                              active={showForgotConfirmPassword}
+                              onClick={() =>
+                                setShowForgotConfirmPassword((prev) => !prev)
+                              }
+                            />
+                          }
+                        />
+
+                        <button
+                          type="submit"
+                          className="h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 hover:shadow-[0_12px_30px_rgba(0,0,0,0.22)]"
+                        >
+                          Reset Password
+                        </button>
+                      </>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForgotMode(false);
+                        setForgotOtpSent(false);
+                        setForgotOtp("");
+                        setForgotTimer(0);
+                      }}
+                      className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 transition hover:text-black"
+                    >
+                      Back to Login
+                    </button>
+                  </form>
+                </>
               )}
+            </div>
           </div>
         </div>
       </div>
-    </div >
 
-      { showTermsModal && (
+      {showTermsModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4">
           <div className="w-full max-w-2xl rounded-[28px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
             <div className="border-b border-black/10 px-6 py-5">
@@ -906,7 +1038,8 @@ const Login = () => {
                 ) : (
                   <div className="rounded-2xl border border-black/10 bg-[#FAFAF8] p-4">
                     <p className="text-sm font-semibold leading-6 text-gray-600">
-                      Terms and Conditions are currently unavailable. Please try again later.
+                      Terms and Conditions are currently unavailable. Please try
+                      again later.
                     </p>
                   </div>
                 )}
@@ -941,8 +1074,7 @@ const Login = () => {
             </div>
           </div>
         </div>
-      )
-}
+      )}
     </>
   );
 };
