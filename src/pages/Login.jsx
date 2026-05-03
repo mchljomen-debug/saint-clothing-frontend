@@ -19,6 +19,8 @@ const Login = () => {
   const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
 
   const termsScrollRef = useRef(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -564,29 +566,38 @@ const Login = () => {
                     />
 
                     <div className="space-y-2">
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="Password"
-                        required
-                        className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                          "password"
-                        )}`}
-                      />
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          placeholder="Password"
+                          required
+                          className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                            "password"
+                          )}`}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black text-sm font-black"
+                        >
+                          {showPassword ? "🙈" : "👁"}
+                        </button>
+                      </div>
 
                       {currentState === "Sign Up" && formData.password.length > 0 && (
                         <p
-                          className={`px-1 text-[11px] font-semibold leading-5 ${
-                            passwordStrength === "weak"
-                              ? "text-rose-500"
-                              : passwordStrength === "medium"
+                          className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
+                            ? "text-rose-500"
+                            : passwordStrength === "medium"
                               ? "text-amber-500"
                               : passwordStrength === "strong"
-                              ? "text-emerald-600"
-                              : "text-gray-400"
-                          }`}
+                                ? "text-emerald-600"
+                                : "text-gray-400"
+                            }`}
                         >
                           Your password must be at least 8 characters long and include an uppercase
                           letter, a number, and a symbol.
@@ -613,19 +624,28 @@ const Login = () => {
                     {currentState === "Sign Up" && (
                       <>
                         <div className="space-y-2">
-                          <input
-                            type="password"
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            onBlur={() => setConfirmTouched(true)}
-                            placeholder="Confirm Password"
-                            required
-                            className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                              "confirmPassword"
-                            )}`}
-                          />
+                          <div className="relative">
+                            <input
+                              type={showConfirmPassword ? "text" : "password"}
+                              name="confirmPassword"
+                              value={formData.confirmPassword}
+                              onChange={handleChange}
+                              onBlur={() => setConfirmTouched(true)}
+                              placeholder="Confirm Password"
+                              required
+                              className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                                "confirmPassword"
+                              )}`}
+                            />
 
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword((prev) => !prev)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black text-sm font-black"
+                            >
+                              {showConfirmPassword ? "🙈" : "👁"}
+                            </button>
+                          </div>
                           {confirmTouched &&
                             formData.confirmPassword.length > 0 &&
                             errors.confirmPassword && (
@@ -677,11 +697,10 @@ const Login = () => {
                                 </p>
 
                                 <span
-                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
-                                    otpTimer > 0
-                                      ? "bg-black text-white"
-                                      : "bg-rose-50 text-rose-600"
-                                  }`}
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
+                                    ? "bg-black text-white"
+                                    : "bg-rose-50 text-rose-600"
+                                    }`}
                                 >
                                   {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
                                 </span>
@@ -735,8 +754,8 @@ const Login = () => {
                               {emailExists
                                 ? "Account Already Exists"
                                 : !acceptedTerms
-                                ? "Accept Terms First"
-                                : "Send OTP"}
+                                  ? "Accept Terms First"
+                                  : "Send OTP"}
                             </button>
                           ) : (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
