@@ -295,11 +295,11 @@ const Home = () => {
       </section>
 
       {/* ================= OTHER SECTIONS ================= */}
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
+      <div className="mt-10">
         <LatestCollection />
       </div>
 
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
+      <div className="mt-10">
         <BestSeller />
       </div>
 
