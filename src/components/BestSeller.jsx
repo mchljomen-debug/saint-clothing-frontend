@@ -73,7 +73,7 @@ const BestSeller = () => {
       className="py-8 md:py-6 border-t border-gray-200"
     >
       <div className="px-0 md:px-0">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 mb-8 md:mb-10">
+        <div className="px-[6px] sm:px-[8px] flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 mb-8 md:mb-10">
           <div className="text-left max-w-2xl">
             <Title text1={"TOP"} text2={"SPEED"} />
 
