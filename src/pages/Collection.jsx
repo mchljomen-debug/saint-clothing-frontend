@@ -140,27 +140,46 @@ const Collection = () => {
   };
 
   return (
-    <div className="pt-[20px] px-4 sm:px-5 md:px-8 lg:px-12 xl:px-16 pb-12 min-h-screen bg-gradient-to-b from-white via-gray-50 to-white font-['Outfit']">
-      <div className="flex flex-col gap-6 md:flex-row md:justify-between md:items-end mb-8 pb-5 border-b">
-        <div>
-          <Title text1="THE" text2="ARCHIVE" />
-          <p className="text-[10px] text-gray-400 mt-3 uppercase tracking-[0.4em]">
-            Essential Silhouettes & Modern Uniforms
-          </p>
-
-          {category && (
-            <p className="mt-3 text-[11px] font-black uppercase tracking-[0.2em] text-black">
-              Showing: {category}
+    <div className="min-h-screen bg-[#F7F7F4] px-3 pb-10 pt-4 font-['Outfit'] sm:px-5 md:px-8 lg:px-10 xl:px-12">
+      {/* ================= HEADER ================= */}
+      <div className="mb-5 border border-black/10 bg-white px-4 py-5 shadow-sm sm:px-5 md:px-6 rounded-[5px]">
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
+              Saint Clothing Store
             </p>
-          )}
-        </div>
 
-        <div className="w-full sm:w-auto flex justify-start md:justify-end">
-          <div className="w-[170px] sm:w-auto md:min-w-[220px]">
+            <Title text1="THE" text2="ARCHIVE" />
+
+            <p className="mt-3 max-w-xl text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
+              Essential Silhouettes & Modern Uniforms
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="rounded-[5px] border border-black/10 bg-[#F7F7F4] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-black">
+                {filteredProducts.length} Items
+              </span>
+
+              {category && (
+                <span className="rounded-[5px] bg-black px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-white">
+                  Showing: {category}
+                </span>
+              )}
+
+              {colorFilter.length > 0 && (
+                <span className="rounded-[5px] border border-black/10 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
+                  {colorFilter.length} Color Filter
+                  {colorFilter.length > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full sm:w-auto">
             <select
               value={sortType}
               onChange={(e) => setSortType(e.target.value)}
-              className="w-full sm:w-auto sm:min-w-[220px] bg-black text-white h-[40px] sm:h-[46px] px-3 sm:px-5 text-[9px] sm:text-[10px] uppercase font-bold tracking-[0.12em] sm:tracking-[0.2em] cursor-pointer hover:bg-gray-800 transition-all rounded-[10px]"
+              className="h-11 w-full cursor-pointer rounded-[5px] border border-black bg-black px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white outline-none transition-all hover:bg-white hover:text-black sm:min-w-[230px]"
             >
               <option value="relavent">
                 {favoriteCategories.length > 0
@@ -174,14 +193,25 @@ const Collection = () => {
         </div>
       </div>
 
+      {/* ================= RECOMMENDATIONS ================= */}
       {styleRecommendations.length > 0 && (
-        <div className="mb-10 border rounded-[18px] p-4 sm:p-6 bg-white">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">
-            Style Recommendations
-          </p>
-          <h2 className="text-lg font-black mt-2 uppercase">Wear It With</h2>
+        <div className="mb-5 rounded-[5px] border border-black/10 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-3 border-b border-black/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+                Style Recommendations
+              </p>
+              <h2 className="mt-1 text-lg font-black uppercase tracking-[-0.03em] text-black">
+                Wear It With
+              </h2>
+            </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+              Curated For This Archive
+            </p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {styleRecommendations.map((item) => (
               <ProductItem key={item._id} {...item} badgeMode="none" />
             ))}
@@ -189,18 +219,22 @@ const Collection = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="w-full lg:w-[180px] xl:w-[200px] shrink-0 lg:self-start">
+      {/* ================= MAIN CONTENT ================= */}
+      <div className="flex flex-col gap-5 lg:flex-row lg:gap-6">
+        {/* ================= FILTERS ================= */}
+        <div className="w-full shrink-0 lg:w-[210px] xl:w-[230px]">
           <div
             onClick={() => setShowFilter(!showFilter)}
-            className="flex justify-between border-b pb-2 cursor-pointer lg:cursor-default"
+            className="flex cursor-pointer items-center justify-between rounded-[5px] border border-black/10 bg-white px-4 py-3 shadow-sm lg:cursor-default"
           >
-            <p className="text-[10px] font-black tracking-[0.25em] uppercase">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-black">
               Filters
             </p>
 
             <img
-              className={`h-2 lg:hidden ${showFilter ? "rotate-180" : ""}`}
+              className={`h-2 transition lg:hidden ${
+                showFilter ? "rotate-180" : ""
+              }`}
               src={assets.dropdown_icon}
               alt=""
             />
@@ -209,62 +243,81 @@ const Collection = () => {
           <div
             className={`${
               showFilter ? "block" : "hidden"
-            } lg:block mt-6 lg:sticky lg:top-[96px]`}
+            } mt-3 lg:sticky lg:top-[96px] lg:block`}
           >
-            <div className="rounded-[16px] border border-black/10 bg-[#FAFAF8] p-3 space-y-5">
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase mb-3 tracking-[0.2em]">
+            <div className="rounded-[5px] border border-black/10 bg-white p-4 shadow-sm">
+              <div className="border-b border-black/10 pb-4">
+                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-gray-400">
                   Category
                 </p>
 
-                <label className="flex items-center gap-2 mb-2">
+                <label className="mb-2 flex cursor-pointer items-center gap-2 rounded-[5px] px-2 py-2 transition hover:bg-[#F7F7F4]">
                   <input
                     type="radio"
                     checked={category === ""}
                     onChange={() => updateCategory("")}
                     className="accent-black"
                   />
-                  <span className="text-[10px] uppercase">All</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-black">
+                    All
+                  </span>
                 </label>
 
                 {categories.length > 0 ? (
                   categories.map((cat) => (
-                    <label key={cat} className="flex items-center gap-2 mb-2">
+                    <label
+                      key={cat}
+                      className="mb-2 flex cursor-pointer items-center gap-2 rounded-[5px] px-2 py-2 transition hover:bg-[#F7F7F4]"
+                    >
                       <input
                         type="radio"
                         checked={category === cat}
                         onChange={() => updateCategory(cat)}
                         className="accent-black"
                       />
-                      <span className="text-[10px] uppercase">{cat}</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.12em] text-black">
+                        {cat}
+                      </span>
                     </label>
                   ))
                 ) : (
-                  <p className="text-[10px] text-gray-400 uppercase">
+                  <p className="rounded-[5px] bg-[#F7F7F4] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
                     No categories found
                   </p>
                 )}
               </div>
 
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase mb-3 tracking-[0.2em]">
+              <div className="border-b border-black/10 py-4">
+                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-gray-400">
                   Color
                 </p>
 
                 {availableColors.length > 0 ? (
                   availableColors.map((c) => (
-                    <label key={c} className="flex items-center gap-2 mb-2">
-                      <input
-                        type="checkbox"
-                        checked={colorFilter.includes(c)}
-                        onChange={() => toggleColor(c)}
-                        className="accent-black"
+                    <label
+                      key={c}
+                      className="mb-2 flex cursor-pointer items-center justify-between gap-2 rounded-[5px] px-2 py-2 transition hover:bg-[#F7F7F4]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={colorFilter.includes(c)}
+                          onChange={() => toggleColor(c)}
+                          className="accent-black"
+                        />
+                        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-black">
+                          {c}
+                        </span>
+                      </div>
+
+                      <span
+                        className="h-4 w-4 rounded-[5px] border border-black/20"
+                        style={{ backgroundColor: c }}
                       />
-                      <span className="text-[10px] uppercase">{c}</span>
                     </label>
                   ))
                 ) : (
-                  <p className="text-[10px] text-gray-400 uppercase">
+                  <p className="rounded-[5px] bg-[#F7F7F4] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
                     No colors found
                   </p>
                 )}
@@ -273,41 +326,59 @@ const Collection = () => {
               {(category || colorFilter.length > 0) && (
                 <button
                   onClick={clearFilters}
-                  className="w-full py-2 text-[10px] uppercase bg-black text-white rounded"
+                  className="mt-4 h-10 w-full rounded-[5px] bg-black text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-black border border-black"
                 >
-                  Clear
+                  Clear Filters
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex-1">
+        {/* ================= PRODUCTS ================= */}
+        <div className="min-w-0 flex-1">
+          <div className="mb-3 flex flex-col gap-2 rounded-[5px] border border-black/10 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-400">
+              Collection Grid
+            </p>
+
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
+              Page {currentPage} of {totalPages || 1}
+            </p>
+          </div>
+
           {currentProducts.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
               {currentProducts.map((item) => (
                 <ProductItem key={item._id} {...item} />
               ))}
             </div>
           ) : (
-            <div className="min-h-[300px] flex items-center justify-center border border-black/10 rounded-[18px] bg-white">
-              <div className="text-center">
-                <p className="text-sm font-black uppercase tracking-[0.2em]">
+            <div className="flex min-h-[340px] items-center justify-center rounded-[5px] border border-black/10 bg-white shadow-sm">
+              <div className="px-5 text-center">
+                <p className="text-sm font-black uppercase tracking-[0.2em] text-black">
                   No products found
                 </p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="mt-2 text-xs font-semibold text-gray-400">
                   Try clearing the filters.
                 </p>
+
+                <button
+                  onClick={clearFilters}
+                  className="mt-5 rounded-[5px] border border-black bg-black px-6 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-black"
+                >
+                  Clear Filters
+                </button>
               </div>
             </div>
           )}
 
           {totalPages > 1 && (
-            <div className="mt-10 flex justify-center gap-2 flex-wrap">
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-4 py-2 border rounded disabled:opacity-40"
+                className="h-10 rounded-[5px] border border-black/10 bg-white px-4 text-[10px] font-black uppercase tracking-[0.16em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Prev
               </button>
@@ -316,10 +387,10 @@ const Collection = () => {
                 <button
                   key={i}
                   onClick={() => goToPage(i + 1)}
-                  className={`px-4 py-2 border rounded ${
+                  className={`h-10 rounded-[5px] border px-4 text-[10px] font-black uppercase tracking-[0.16em] transition ${
                     currentPage === i + 1
-                      ? "bg-black text-white"
-                      : "bg-white text-black"
+                      ? "border-black bg-black text-white"
+                      : "border-black/10 bg-white text-black hover:border-black"
                   }`}
                 >
                   {i + 1}
@@ -329,7 +400,7 @@ const Collection = () => {
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 border rounded disabled:opacity-40"
+                className="h-10 rounded-[5px] border border-black/10 bg-white px-4 text-[10px] font-black uppercase tracking-[0.16em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
               </button>
