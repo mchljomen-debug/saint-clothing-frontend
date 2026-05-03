@@ -842,7 +842,7 @@ const Product = () => {
           <button
             type="button"
             onClick={() => navigate("/collection")}
-            className="mt-4 px-5 py-3 bg-black text-white text-sm font-black uppercase rounded-[5px]"
+            className="mt-4 px-5 py-3 bg-black text-white text-sm font-black uppercase rounded-xl"
           >
             Back to Collection
           </button>
@@ -883,13 +883,13 @@ const Product = () => {
         }
       `}</style>
 
-      <div className="min-h-screen overflow-x-hidden bg-[#F6F6F3] pt-3 sm:pt-4 pb-5">
-        <div className="max-w-[1380px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6">
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.05fr)_minmax(430px,0.72fr)] gap-3 lg:gap-4 items-start">
-            <div className="bg-white border border-black/10 rounded-[5px] shadow-[0_8px_22px_rgba(0,0,0,0.045)] overflow-hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-[74px_1fr] md:grid-cols-[80px_1fr] gap-0">
+      <div className="min-h-screen bg-transparent pt-[8px] sm:pt-[16px] pb-6 sm:pb-10">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.92fr] gap-3 sm:gap-4 lg:gap-5 xl:gap-6 items-start">
+            <div className="bg-white border border-black/10 rounded-[18px] sm:rounded-[20px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] overflow-hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-[76px_1fr] md:grid-cols-[82px_1fr] gap-0">
                 <div className="order-2 sm:order-1 border-t sm:border-t-0 sm:border-r border-black/5 p-2">
-                  <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:max-h-[540px] scrollbar-thin-hide pb-1 sm:pb-0">
+                  <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:max-h-[470px] scrollbar-thin-hide pb-1 sm:pb-0">
                     {Array.isArray(productData.images) &&
                       productData.images.length > 0 ? (
                       productData.images.map((img, idx) => {
@@ -901,7 +901,7 @@ const Product = () => {
                             key={idx}
                             type="button"
                             onClick={() => setSelectedImage(imageUrl)}
-                            className={`group relative shrink-0 w-14 h-14 sm:w-full sm:h-[68px] md:h-[74px] rounded-[5px] overflow-hidden transition-all duration-300 ${isActive
+                            className={`group relative shrink-0 w-14 h-14 sm:w-full sm:h-[68px] md:h-[74px] rounded-[12px] sm:rounded-[14px] overflow-hidden transition-all duration-300 ${isActive
                                 ? "ring-2 ring-black scale-[1.02]"
                                 : "ring-1 ring-black/10 hover:ring-black/30"
                               }`}
@@ -923,30 +923,28 @@ const Product = () => {
                 </div>
 
                 <div className="order-1 sm:order-2 p-0">
-                  <div className="group relative w-full h-[430px] sm:h-[540px] xl:h-[650px] overflow-hidden bg-[#F8F8F5]">
+                  <div className="group relative w-full aspect-square overflow-hidden bg-white">
                     {productData.onSale && Number(productData.salePercent) > 0 && (
-                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 bg-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-1.5 rounded-[5px] shadow-lg">
+                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 bg-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-1.5 rounded-full shadow-lg">
                         {productData.salePercent}% Off
                       </div>
                     )}
 
                     {previewVideoUrl ? (
                       <video
-                        key={previewVideoUrl}
                         src={previewVideoUrl}
                         muted
                         loop
                         autoPlay
                         playsInline
                         preload="metadata"
-                        className="absolute inset-0 w-full h-full object-cover bg-white transition-transform duration-700 ease-out group-hover:scale-110"
+                        className="absolute inset-0 w-full h-full object-cover bg-white"
                       />
                     ) : selectedImage ? (
                       <img
-                        key={selectedImage}
                         src={selectedImage}
                         alt={productData.name}
-                        className="absolute inset-0 w-full h-full object-cover bg-white transition-transform duration-700 ease-out group-hover:scale-110"
+                        className="absolute inset-0 w-full h-full object-cover bg-white transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -957,15 +955,12 @@ const Product = () => {
                     )}
 
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/5"></div>
-                    <div className="pointer-events-none absolute left-3 bottom-3 z-20 hidden sm:block rounded-[5px] bg-white/85 px-3 py-2 backdrop-blur-md border border-black/10">
-                      <p className="text-[9px] font-black uppercase tracking-[0.22em] text-gray-500">Hover to Zoom</p>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[5px] shadow-[0_8px_22px_rgba(0,0,0,0.045)] p-3 sm:p-4 xl:p-5 xl:sticky xl:top-24">
+            <div className="bg-white border border-black/10 rounded-[18px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-3.5 sm:p-5 xl:p-6">
               <div>
                 <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] sm:tracking-[0.28em] text-gray-500">
                   Streetwear Archive
@@ -977,21 +972,21 @@ const Product = () => {
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   {isProductOutOfStock && (
-                    <span className="inline-flex items-center gap-2 rounded-[5px] bg-red-600 text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
-                      <span className="h-2 w-2 rounded-[5px] bg-white animate-pulse"></span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-red-600 text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
+                      <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
                       Out of Stock
                     </span>
                   )}
 
                   {!isProductOutOfStock && isProductPreOrder && (
-                    <span className="inline-flex items-center gap-2 rounded-[5px] bg-orange-600 text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
-                      <span className="h-2 w-2 rounded-[5px] bg-white animate-pulse"></span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-orange-600 text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
+                      <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
                       Pre-order
                     </span>
                   )}
 
                   {!isProductOutOfStock && isProductSellingFast && (
-                    <span className="inline-flex items-center gap-2 rounded-[5px] bg-amber-500 text-black px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-amber-500 text-black px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] shadow-sm">
                       Selling Fast
                     </span>
                   )}
@@ -999,22 +994,22 @@ const Product = () => {
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1.5 rounded-[5px] bg-black text-white text-[10px] font-black uppercase tracking-[0.16em]">
+                <span className="px-3 py-1.5 rounded-full bg-black text-white text-[10px] font-black uppercase tracking-[0.16em]">
                   {productData.category || "Product"}
                 </span>
 
-                <span className="px-3 py-1.5 rounded-[5px] border border-black/10 bg-[#F5F5F2] text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
+                <span className="px-3 py-1.5 rounded-full border border-black/10 bg-[#F5F5F2] text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
                   Color: {displayColor}
                 </span>
 
                 {productData.fitType && (
-                  <span className="px-3 py-1.5 rounded-[5px] border border-black/10 bg-[#F5F5F2] text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
+                  <span className="px-3 py-1.5 rounded-full border border-black/10 bg-[#F5F5F2] text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
                     Fit: {productData.fitType}
                   </span>
                 )}
 
                 {productData.onSale && Number(productData.salePercent) > 0 && (
-                  <span className="px-3 py-1.5 rounded-[5px] bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.16em]">
+                  <span className="px-3 py-1.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.16em]">
                     {productData.salePercent}% Off
                   </span>
                 )}
@@ -1060,7 +1055,7 @@ const Product = () => {
               </div>
 
               {isLoggedIn ? (
-                <div className="mt-3 rounded-[5px] border border-black/10 bg-[#FAFAF8] p-3 sm:p-3.5">
+                <div className="mt-4 rounded-[18px] border border-black/8 bg-[#FAFAF8] p-3.5 sm:p-4">
                   {productData.onSale && Number(productData.salePercent) > 0 ? (
                     <div className="flex flex-col gap-1.5">
                       <p className="text-xs sm:text-sm md:text-base font-black text-gray-400 line-through italic leading-none">
@@ -1085,7 +1080,7 @@ const Product = () => {
                   )}
                 </div>
               ) : (
-                <div className="mt-3 rounded-[5px] border border-black/10 bg-[#FAFAF8] p-3 sm:p-3.5">
+                <div className="mt-4 rounded-[18px] border border-black/8 bg-[#FAFAF8] p-3.5 sm:p-4">
                   <p className="text-sm font-black uppercase tracking-[0.14em] italic text-gray-400">
                     Login to see price
                   </p>
@@ -1093,7 +1088,7 @@ const Product = () => {
               )}
 
               {isProductPreOrder && (
-                <div className="mt-3 rounded-[5px] border border-orange-200 bg-orange-50 p-3">
+                <div className="mt-4 rounded-[18px] border border-orange-200 bg-orange-50 p-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-700">
                     Pre-order information
                   </p>
@@ -1109,7 +1104,7 @@ const Product = () => {
                 </div>
               )}
 
-              <div className="mt-4">
+              <div className="mt-5">
                 <div className="mb-2.5 flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-500">
                     Select Size
@@ -1142,7 +1137,7 @@ const Product = () => {
                         type="button"
                         onClick={() => !isOut && setSize(s)}
                         disabled={isOut}
-                        className={`relative shrink-0 min-w-[50px] sm:min-w-[54px] px-3 py-2.5 rounded-[5px] border text-[13px] sm:text-sm font-black uppercase tracking-[0.08em] transition-all ${size === s
+                        className={`relative shrink-0 min-w-[50px] sm:min-w-[54px] px-3 py-2.5 rounded-xl border text-[13px] sm:text-sm font-black uppercase tracking-[0.08em] transition-all ${size === s
                             ? "bg-black text-white border-black"
                             : "bg-white border-black/10 text-[#0A0D17]"
                           } ${isOut
@@ -1154,7 +1149,7 @@ const Product = () => {
 
                         {isPreferred && !isOut && (
                           <span
-                            className={`absolute -top-2 -right-2 px-1.5 py-0.5 rounded-[5px] text-[8px] font-black uppercase tracking-[0.08em] ${size === s
+                            className={`absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-[0.08em] ${size === s
                                 ? "bg-white text-black"
                                 : "bg-black text-white"
                               }`}
@@ -1168,7 +1163,7 @@ const Product = () => {
                 </div>
 
                 {isSelectedSizePreOrder && (
-                  <div className="mt-3 rounded-[5px] border border-orange-200 bg-orange-50 p-3">
+                  <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-3">
                     <p className="text-xs font-black uppercase tracking-[0.12em] text-orange-700">
                       Pre-order size selected
                     </p>
@@ -1181,7 +1176,7 @@ const Product = () => {
                 )}
               </div>
 
-              <div className="mt-4">
+              <div className="mt-5">
                 <div className="flex items-center justify-between gap-3 mb-2.5">
                   <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-500">
                     Quantity
@@ -1196,7 +1191,7 @@ const Product = () => {
                   )}
                 </div>
 
-                <div className="inline-flex items-center rounded-[5px] overflow-hidden border border-black/10 bg-[#F6F6F3]">
+                <div className="inline-flex items-center rounded-xl overflow-hidden border border-black/10 bg-[#F6F6F3]">
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => (q > 1 ? q - 1 : 1))}
@@ -1234,7 +1229,7 @@ const Product = () => {
                   ref={addToCartBtnRef}
                   onClick={handleAddToCart}
                   disabled={isProductOutOfStock}
-                  className={`h-10 rounded-[5px] font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
+                  className={`h-11 rounded-xl font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-black text-white hover:translate-y-[-1px] shadow-lg"
                     }`}
@@ -1249,7 +1244,7 @@ const Product = () => {
                 <button
                   onClick={handleBuyNow}
                   disabled={isProductOutOfStock}
-                  className={`h-10 rounded-[5px] border-2 font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
+                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition text-sm ${isProductOutOfStock
                       ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "border-black bg-white text-black hover:bg-black hover:text-white"
                     }`}
@@ -1266,7 +1261,7 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={handleTryItOn}
-                  className="h-10 rounded-[5px] bg-black text-white font-black uppercase tracking-[0.14em] hover:opacity-95 transition text-sm"
+                  className="h-11 rounded-xl bg-black text-white font-black uppercase tracking-[0.14em] hover:opacity-95 transition text-sm"
                 >
                   Try It On
                 </button>
@@ -1274,7 +1269,7 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={handleShow3D}
-                  className={`h-10 rounded-[5px] border-2 font-black uppercase tracking-[0.14em] transition text-sm ${has3DModel
+                  className={`h-11 rounded-xl border-2 font-black uppercase tracking-[0.14em] transition text-sm ${has3DModel
                       ? "border-black bg-white text-black hover:bg-black hover:text-white"
                       : "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
                     }`}
@@ -1287,14 +1282,14 @@ const Product = () => {
 
           <div
             id="reviews-section"
-            className="mt-4 bg-white border border-black/10 rounded-[5px] shadow-sm p-3 sm:p-4"
+            className="mt-6 sm:mt-8 bg-white border border-black/10 rounded-[18px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-3.5 sm:p-5"
           >
             <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3 mb-4 sm:mb-5 flex-wrap">
               <div className="flex gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setActiveTab("description")}
-                  className={`px-3 py-2 rounded-[5px] text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "description"
+                  className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "description"
                       ? "bg-black text-white"
                       : "bg-[#F5F5F2] text-gray-500 hover:text-black"
                     }`}
@@ -1305,7 +1300,7 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("branches")}
-                  className={`px-3 py-2 rounded-[5px] text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "branches"
+                  className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "branches"
                       ? "bg-black text-white"
                       : "bg-[#F5F5F2] text-gray-500 hover:text-black"
                     }`}
@@ -1316,7 +1311,7 @@ const Product = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab("reviews")}
-                  className={`px-3 py-2 rounded-[5px] text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "reviews"
+                  className={`px-3 py-2 rounded-full text-[11px] sm:text-sm font-black uppercase tracking-[0.08em] transition ${activeTab === "reviews"
                       ? "bg-black text-white"
                       : "bg-[#F5F5F2] text-gray-500 hover:text-black"
                     }`}
@@ -1344,7 +1339,7 @@ const Product = () => {
                     availableBranches.map((item) => (
                       <div
                         key={item.branch}
-                        className="border border-black/10 rounded-[5px] p-4 bg-[#FAFAF8]"
+                        className="border border-black/10 rounded-2xl p-4 bg-[#FAFAF8]"
                       >
                         <div className="flex items-center justify-between gap-3 mb-3">
                           <h3 className="text-base font-black uppercase text-[#0A0D17]">
@@ -1352,7 +1347,7 @@ const Product = () => {
                           </h3>
 
                           <span
-                            className={`px-3 py-1 rounded-[5px] text-[10px] font-black uppercase tracking-[0.14em] ${item.available
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] ${item.available
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
                               }`}
@@ -1396,7 +1391,7 @@ const Product = () => {
             )}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-6 sm:mt-8">
             <RelatedProducts
               category={productData.category}
               currentProductId={productData._id}
@@ -1404,8 +1399,8 @@ const Product = () => {
           </div>
 
           {styleRecommendations.length > 0 && (
-            <div className="mt-4 bg-white border border-black/10 rounded-[5px] shadow-sm p-3 sm:p-4">
-              <div className="text-center mb-4">
+            <div className="mt-6 sm:mt-8 bg-white border border-black/10 rounded-[18px] sm:rounded-[22px] shadow-[0_10px_28px_rgba(0,0,0,0.05)] p-3.5 sm:p-5 md:p-6">
+              <div className="text-center mb-5 sm:mb-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
                   Saint Styling
                 </p>
@@ -1417,7 +1412,7 @@ const Product = () => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
                 {styleRecommendations.map((item) => (
                   <ProductItem
                     key={item._id}
@@ -1468,14 +1463,14 @@ const Product = () => {
               <button
                 type="button"
                 onClick={() => setShowSizeChart(false)}
-                className="w-10 h-10 rounded-[5px] border border-black/10 bg-white text-sm font-black text-black hover:bg-black hover:text-white transition"
+                className="w-10 h-10 rounded-full border border-black/10 bg-white text-sm font-black text-black hover:bg-black hover:text-white transition"
               >
                 ✕
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="overflow-hidden rounded-[5px] border border-black/10 bg-[#FAFAF8]">
+              <div className="overflow-hidden rounded-[18px] border border-black/10 bg-[#FAFAF8]">
                 <img
                   src={getMediaUrl(productData.sizeChartImage, backendUrl)}
                   alt="Size chart"
@@ -1483,8 +1478,8 @@ const Product = () => {
                 />
               </div>
 
-              <div className="mt-4 rounded-[5px] border border-black/10 bg-[#FCFCFA] p-4">
-                <span className="inline-flex items-center rounded-[5px] bg-black text-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
+              <div className="mt-4 rounded-[18px] border border-black/10 bg-[#FCFCFA] p-4">
+                <span className="inline-flex items-center rounded-full bg-black text-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
                   Fit Guide
                 </span>
                 <p className="mt-3 text-sm text-gray-600 leading-6">
@@ -1499,7 +1494,7 @@ const Product = () => {
               <button
                 type="button"
                 onClick={() => setShowSizeChart(false)}
-                className="w-full h-11 rounded-[5px] bg-black text-white font-black uppercase tracking-[0.14em] hover:opacity-90 transition"
+                className="w-full h-11 rounded-xl bg-black text-white font-black uppercase tracking-[0.14em] hover:opacity-90 transition"
               >
                 Done
               </button>
@@ -1510,7 +1505,7 @@ const Product = () => {
 
       {tryOnModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-          <div className="w-full max-w-3xl bg-[#0D0D0D] text-white rounded-[5px] shadow-[0_35px_120px_rgba(0,0,0,0.55)] overflow-hidden border border-white/10">
+          <div className="w-full max-w-3xl bg-[#0D0D0D] text-white rounded-[20px] shadow-[0_35px_120px_rgba(0,0,0,0.55)] overflow-hidden border border-white/10">
             <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#111111] to-[#1A1A1A]">
               <div>
                 <p className="text-base font-black uppercase tracking-[0.12em]">
@@ -1524,7 +1519,7 @@ const Product = () => {
               <button
                 type="button"
                 onClick={() => setTryOnModalOpen(false)}
-                className="w-8 h-8 rounded-[5px] border border-white/10 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition"
+                className="w-8 h-8 rounded-full border border-white/10 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition"
               >
                 ✕
               </button>
@@ -1548,14 +1543,14 @@ const Product = () => {
                       href="https://your-app-download-link.com"
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-[5px] bg-white text-black text-sm font-black uppercase tracking-[0.1em]"
+                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white text-black text-sm font-black uppercase tracking-[0.1em]"
                     >
                       Download App
                     </a>
 
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-[5px] border border-white/10 bg-white/[0.03] text-white text-sm font-black uppercase tracking-[0.1em]"
+                      className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-white text-sm font-black uppercase tracking-[0.1em]"
                     >
                       App Link
                     </button>
@@ -1583,36 +1578,37 @@ const Product = () => {
       )}
 
       {show3DModalOpen && (
-        <div className="fixed inset-0 z-[80] bg-black">
-          <div className="absolute inset-0 bg-gradient-to-br from-black via-[#090909] to-[#111111]" />
-
-          <div className="relative z-10 h-full w-full flex flex-col">
-            <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/10 bg-black/30 backdrop-blur-md">
+        <div className="fixed inset-0 z-[80] bg-[#F6F6F3]">
+          <div className="flex h-full w-full flex-col">
+            {/* TOP BAR */}
+            <div className="flex items-center justify-between border-b border-black/10 bg-white px-4 py-3 md:px-6">
               <div>
-                <p className="text-white text-lg md:text-xl font-black uppercase tracking-[0.14em]">
-                  3D Product View
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+                  Saint Clothing
                 </p>
-                <p className="text-white/45 text-[10px] md:text-xs font-bold uppercase tracking-[0.28em] mt-1">
-                  Drag to rotate • Scroll to zoom
-                </p>
+                <h2 className="mt-1 text-base font-black uppercase tracking-tight text-black md:text-xl">
+                  3D Product Preview
+                </h2>
               </div>
 
               <button
                 type="button"
                 onClick={() => setShow3DModalOpen(false)}
-                className="w-10 h-10 rounded-[5px] border border-white/15 bg-white/5 text-white text-sm font-bold hover:bg-white/10 transition"
+                className="h-10 w-10 rounded-[5px] border border-black/10 bg-white text-sm font-black text-black transition hover:bg-black hover:text-white"
               >
                 ✕
               </button>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_300px] overflow-hidden">
-              <div className="relative flex items-center justify-center p-3 sm:p-4 md:p-8">
-                <div className="absolute top-3 left-3 md:top-6 md:left-6 flex flex-wrap gap-2 z-20 max-w-[calc(100%-24px)] md:max-w-none">
+            {/* BODY */}
+            <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1fr_360px]">
+              {/* VIEWER */}
+              <div className="relative flex items-center justify-center bg-[#F6F6F3] p-3 md:p-6">
+                <div className="absolute left-3 top-3 z-20 flex flex-wrap gap-2 md:left-6 md:top-6">
                   <button
                     type="button"
                     onClick={zoomInModel}
-                    className="px-3 py-2 rounded-[5px] bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+                    className="rounded-[5px] border border-black/10 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-black shadow-sm transition hover:bg-black hover:text-white"
                   >
                     Zoom In
                   </button>
@@ -1620,7 +1616,7 @@ const Product = () => {
                   <button
                     type="button"
                     onClick={zoomOutModel}
-                    className="px-3 py-2 rounded-[5px] bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+                    className="rounded-[5px] border border-black/10 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-black shadow-sm transition hover:bg-black hover:text-white"
                   >
                     Zoom Out
                   </button>
@@ -1628,7 +1624,7 @@ const Product = () => {
                   <button
                     type="button"
                     onClick={resetModelView}
-                    className="px-3 py-2 rounded-[5px] bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+                    className="rounded-[5px] border border-black/10 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-black shadow-sm transition hover:bg-black hover:text-white"
                   >
                     Reset
                   </button>
@@ -1637,14 +1633,16 @@ const Product = () => {
                     <button
                       type="button"
                       onClick={toggleAutoRotate}
-                      className="px-3 py-2 rounded-[5px] bg-white/10 backdrop-blur border border-white/10 text-white text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] hover:bg-white/15 transition"
+                      className="rounded-[5px] border border-black/10 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-black shadow-sm transition hover:bg-black hover:text-white"
                     >
                       {isAutoRotating ? "Stop Rotate" : "Auto Rotate"}
                     </button>
                   )}
                 </div>
 
-                <div className="w-full h-[48vh] sm:h-[58vh] lg:h-[70vh] max-h-[680px] rounded-[5px] sm:rounded-[5px] border border-white/10 bg-[#111111] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                <div className="relative h-[62vh] w-full max-w-5xl overflow-hidden rounded-[5px] border border-black/10 bg-white shadow-sm lg:h-[78vh]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#ffffff_0%,#f5f5f1_48%,#ecece8_100%)]" />
+
                   {has3DModel ? (
                     isVideoFile ? (
                       <video
@@ -1653,7 +1651,7 @@ const Product = () => {
                         autoPlay
                         loop
                         playsInline
-                        className="w-full h-full object-contain bg-black"
+                        className="relative z-10 h-full w-full bg-white object-contain"
                       />
                     ) : isModelViewerFile ? (
                       <model-viewer
@@ -1668,43 +1666,35 @@ const Product = () => {
                         style={{
                           width: "100%",
                           height: "100%",
-                          background: "#0b0b0b",
+                          background: "transparent",
                         }}
                       />
                     ) : productData.images?.[0] ? (
                       <img
                         src={getMediaUrl(productData.images[0], backendUrl)}
                         alt={productData.name}
-                        className="w-full h-full object-contain bg-black"
+                        className="relative z-10 h-full w-full object-contain p-6"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-center p-6">
+                      <div className="relative z-10 flex h-full w-full items-center justify-center text-center">
                         <div>
-                          <p className="text-white text-lg font-black uppercase tracking-[0.12em]">
+                          <p className="text-lg font-black uppercase tracking-[0.14em] text-black">
                             Preview Not Supported
                           </p>
-                          <p className="text-white/45 text-sm mt-2">
-                            This file type cannot be previewed in the 3D viewer
-                            yet.
+                          <p className="mt-2 text-sm font-semibold text-gray-400">
+                            This file type cannot be previewed yet.
                           </p>
                         </div>
                       </div>
                     )
-                  ) : productData.images?.[0] ? (
-                    <img
-                      src={getMediaUrl(productData.images[0], backendUrl)}
-                      alt={productData.name}
-                      className="w-full h-full object-contain bg-black"
-                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-center p-6">
+                    <div className="relative z-10 flex h-full w-full items-center justify-center text-center">
                       <div>
-                        <p className="text-white text-lg font-black uppercase tracking-[0.12em]">
-                          3D Preview Area
+                        <p className="text-lg font-black uppercase tracking-[0.14em] text-black">
+                          No 3D Model
                         </p>
-                        <p className="text-white/45 text-sm mt-2">
-                          Put your GLB, GLTF, video, or other supported preview
-                          file here.
+                        <p className="mt-2 text-sm font-semibold text-gray-400">
+                          Add a GLB, GLTF, or video file in admin.
                         </p>
                       </div>
                     </div>
@@ -1712,79 +1702,73 @@ const Product = () => {
                 </div>
               </div>
 
-              <div className="border-t lg:border-t-0 lg:border-l border-white/10 bg-white/[0.03] backdrop-blur-md p-4 md:p-6 overflow-y-auto">
-                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.28em]">
-                  Saint Clothing
+              {/* SIDE PRODUCT INFO */}
+              <div className="overflow-y-auto border-t border-black/10 bg-white p-4 md:p-6 lg:border-l lg:border-t-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+                  Product Details
                 </p>
 
-                <h3 className="mt-2 text-white text-2xl font-black uppercase leading-tight">
+                <h3 className="mt-2 text-2xl font-black uppercase leading-tight text-black">
                   {productData.name}
                 </h3>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 rounded-[5px] bg-white text-black text-[10px] font-black uppercase tracking-[0.16em]">
+                  <span className="rounded-[5px] bg-black px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                     {productData.category || "Product"}
                   </span>
 
-                  <span className="px-3 py-1.5 rounded-[5px] border border-white/10 text-white/70 text-[10px] font-black uppercase tracking-[0.16em]">
+                  <span className="rounded-[5px] border border-black/10 bg-[#F6F6F3] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
                     Color: {displayColor}
                   </span>
 
-                  {has3DModel && (
-                    <span className="px-3 py-1.5 rounded-[5px] border border-white/10 text-white/70 text-[10px] font-black uppercase tracking-[0.16em]">
-                      3D Ready
-                    </span>
-                  )}
+                  <span className="rounded-[5px] border border-black/10 bg-[#F6F6F3] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
+                    {isModelViewerFile
+                      ? "3D Model"
+                      : isVideoFile
+                        ? "Video Preview"
+                        : "Preview"}
+                  </span>
                 </div>
 
-                <div className="mt-6 space-y-3">
-                  <div className="rounded-[5px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
-                      Controls
-                    </p>
-                    <p className="text-white/60 text-sm mt-2 leading-6">
-                      Drag to rotate the model. Use your mouse wheel or touchpad
-                      to zoom in and out. Use the buttons on the left for faster
-                      control.
-                    </p>
-                  </div>
+                <div className="mt-6 rounded-[5px] border border-black/10 bg-[#F8F8F6] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">
+                    How to View
+                  </p>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-gray-600">
+                    Drag the item to rotate. Use zoom controls to inspect the
+                    shape, silhouette, and details before adding it to your bag.
+                  </p>
+                </div>
 
-                  <div className="rounded-[5px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
-                      File Type
-                    </p>
-                    <p className="text-white/60 text-sm mt-2 leading-6">
-                      {isModelViewerFile
-                        ? "Interactive 3D model"
-                        : isVideoFile
-                          ? "Video preview"
-                          : "Image fallback preview"}
-                    </p>
-                  </div>
+                <div className="mt-4 rounded-[5px] border border-black/10 bg-white p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-400">
+                    File Type
+                  </p>
+                  <p className="mt-3 text-sm font-black uppercase tracking-[0.12em] text-black">
+                    {isModelViewerFile
+                      ? "Interactive 3D Model"
+                      : isVideoFile
+                        ? "Video Preview"
+                        : "Image Preview"}
+                  </p>
+                </div>
 
-                  <div className="rounded-[5px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-white text-sm font-black uppercase tracking-[0.12em]">
-                      Quick Actions
-                    </p>
+                <div className="mt-6 grid gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="h-11 rounded-[5px] border border-black bg-black text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-black"
+                  >
+                    Add to Cart
+                  </button>
 
-                    <div className="mt-3 grid gap-2">
-                      <button
-                        type="button"
-                        onClick={handleAddToCart}
-                        className="h-11 rounded-[5px] bg-white text-black font-black uppercase tracking-[0.12em] hover:opacity-90 transition"
-                      >
-                        Add to Cart
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShow3DModalOpen(false)}
-                        className="h-11 rounded-[5px] border border-white/15 text-white font-black uppercase tracking-[0.12em] hover:bg-white/5 transition"
-                      >
-                        Back to Product
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShow3DModalOpen(false)}
+                    className="h-11 rounded-[5px] border border-black/10 bg-white text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
+                  >
+                    Back to Product
+                  </button>
                 </div>
               </div>
             </div>
