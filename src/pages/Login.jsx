@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Eye, EyeOff } from "lucide-react";
 
 const OTP_SECONDS = 60;
 const FORGOT_OTP_SECONDS = 300;
@@ -564,294 +565,294 @@ const Login = () => {
                         "email"
                       )}`}
                     />
-
                     <div className="space-y-2">
-                      <div className="relative">
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          name="password"
-                          value={formData.password}
-                          onChange={handleChange}
-                          placeholder="Password"
-                          required
-                          className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                            "password"
-                          )}`}
-                        />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="Password"
+                        required
+                        className={`w-full rounded-xl border bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                          "password"
+                        )}`}
+                      />
 
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black text-sm font-black"
-                        >
-                          {showPassword ? "🙈" : "👁"}
-                        </button>
-                      </div>
-
-                      {currentState === "Sign Up" && formData.password.length > 0 && (
-                        <p
-                          className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
-                            ? "text-rose-500"
-                            : passwordStrength === "medium"
-                              ? "text-amber-500"
-                              : passwordStrength === "strong"
-                                ? "text-emerald-600"
-                                : "text-gray-400"
-                            }`}
-                        >
-                          Your password must be at least 8 characters long and include an uppercase
-                          letter, a number, and a symbol.
-                        </p>
-                      )}
-                    </div>
-
-                    {currentState === "Login" && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setForgotMode(true);
-                          setForgotPasswordData((prev) => ({
-                            ...prev,
-                            email: formData.email || "",
-                          }));
-                        }}
-                        className="self-end text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 transition hover:text-black"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
                       >
-                        Forgot Password?
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
+                    </div>
+
+                    {currentState === "Sign Up" && formData.password.length > 0 && (
+                      <p
+                        className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
+                          ? "text-rose-500"
+                          : passwordStrength === "medium"
+                            ? "text-amber-500"
+                            : passwordStrength === "strong"
+                              ? "text-emerald-600"
+                              : "text-gray-400"
+                          }`}
+                      >
+                        Your password must be at least 8 characters long and include an uppercase
+                        letter, a number, and a symbol.
+                      </p>
                     )}
+                  </div>
 
-                    {currentState === "Sign Up" && (
-                      <>
-                        <div className="space-y-2">
-                          <div className="relative">
-                            <input
-                              type={showConfirmPassword ? "text" : "password"}
-                              name="confirmPassword"
-                              value={formData.confirmPassword}
-                              onChange={handleChange}
-                              onBlur={() => setConfirmTouched(true)}
-                              placeholder="Confirm Password"
-                              required
-                              className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
-                                "confirmPassword"
-                              )}`}
-                            />
+                  {currentState === "Login" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForgotMode(true);
+                        setForgotPasswordData((prev) => ({
+                          ...prev,
+                          email: formData.email || "",
+                        }));
+                      }}
+                      className="self-end text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 transition hover:text-black"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
 
-                            <button
-                              type="button"
-                              onClick={() => setShowConfirmPassword((prev) => !prev)}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black text-sm font-black"
-                            >
-                              {showConfirmPassword ? "🙈" : "👁"}
-                            </button>
-                          </div>
-                          {confirmTouched &&
-                            formData.confirmPassword.length > 0 &&
-                            errors.confirmPassword && (
-                              <p className="px-1 text-[10px] font-black uppercase tracking-[0.14em] text-rose-500">
-                                {errors.confirmPassword}
-                              </p>
-                            )}
+                  {currentState === "Sign Up" && (
+                    <>
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            onBlur={() => setConfirmTouched(true)}
+                            placeholder="Confirm Password"
+                            required
+                            className={`w-full rounded-xl border-2 bg-white/70 px-4 py-3.5 pr-12 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition ${getBorderColor(
+                              "confirmPassword"
+                            )}`}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                          >
+                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
                         </div>
 
-                        <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={acceptedTerms}
-                              readOnly
-                              className="mt-1 h-4 w-4 accent-black"
-                            />
-
-                            <span className="text-[11px] font-semibold leading-5 text-gray-600">
-                              I agree to the{" "}
-                              <button
-                                type="button"
-                                onClick={openTermsModal}
-                                className="font-black text-[#0A0D17] underline"
-                              >
-                                Terms & Conditions
-                              </button>
-                              {termsVersion ? (
-                                <span className="ml-2 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400">
-                                  Version {termsVersion}
-                                </span>
-                              ) : null}
-                            </span>
-                          </div>
-
-                          {!acceptedTerms && (
-                            <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
-                              Open the terms, scroll to the bottom, then accept before sending OTP.
+                        {confirmTouched &&
+                          formData.confirmPassword.length > 0 &&
+                          errors.confirmPassword && (
+                            <p className="px-1 text-[10px] font-black uppercase tracking-[0.14em] text-rose-500">
+                              {errors.confirmPassword}
                             </p>
                           )}
-                        </div>
+                      </div>
 
-                        <div className="mt-1">
-                          {otpSent && !emailVerified ? (
-                            <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
-                                  OTP Verification
-                                </p>
+                      <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={acceptedTerms}
+                            readOnly
+                            className="mt-1 h-4 w-4 accent-black"
+                          />
 
-                                <span
-                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
-                                    ? "bg-black text-white"
-                                    : "bg-rose-50 text-rose-600"
-                                    }`}
-                                >
-                                  {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
-                                </span>
-                              </div>
-
-                              <input
-                                type="text"
-                                value={otp}
-                                onChange={(e) =>
-                                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                                }
-                                placeholder="Enter OTP"
-                                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none transition focus:border-black"
-                              />
-
-                              <div className="grid grid-cols-2 gap-2">
-                                <button
-                                  type="button"
-                                  onClick={verifyOtp}
-                                  disabled={!otp || otp.length < 6 || otpTimer <= 0 || otpVerified}
-                                  className="rounded-xl bg-black py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  Verify
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={sendOtp}
-                                  disabled={otpTimer > 0}
-                                  className="rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  Resend OTP
-                                </button>
-                              </div>
-                            </div>
-                          ) : !otpSent ? (
+                          <span className="text-[11px] font-semibold leading-5 text-gray-600">
+                            I agree to the{" "}
                             <button
                               type="button"
-                              onClick={sendOtp}
-                              disabled={
-                                !!errors.email ||
-                                !formData.email ||
-                                emailExists ||
-                                !formData.firstName.trim() ||
-                                !formData.lastName.trim() ||
-                                !acceptedTerms ||
-                                otpTimer > 0
-                              }
-                              className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+                              onClick={openTermsModal}
+                              className="font-black text-[#0A0D17] underline"
                             >
-                              {emailExists
-                                ? "Account Already Exists"
-                                : !acceptedTerms
-                                  ? "Accept Terms First"
-                                  : "Send OTP"}
+                              Terms & Conditions
                             </button>
-                          ) : (
-                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
-                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-                                Email Verified
-                              </p>
-                            </div>
-                          )}
+                            {termsVersion ? (
+                              <span className="ml-2 text-[10px] font-black uppercase tracking-[0.14em] text-gray-400">
+                                Version {termsVersion}
+                              </span>
+                            ) : null}
+                          </span>
                         </div>
-                      </>
-                    )}
+
+                        {!acceptedTerms && (
+                          <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
+                            Open the terms, scroll to the bottom, then accept before sending OTP.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="mt-1">
+                        {otpSent && !emailVerified ? (
+                          <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
+                                OTP Verification
+                              </p>
+
+                              <span
+                                className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
+                                  ? "bg-black text-white"
+                                  : "bg-rose-50 text-rose-600"
+                                  }`}
+                              >
+                                {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
+                              </span>
+                            </div>
+
+                            <input
+                              type="text"
+                              value={otp}
+                              onChange={(e) =>
+                                setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                              }
+                              placeholder="Enter OTP"
+                              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-center font-black tracking-[0.35em] text-[#0A0D17] outline-none transition focus:border-black"
+                            />
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={verifyOtp}
+                                disabled={!otp || otp.length < 6 || otpTimer <= 0 || otpVerified}
+                                className="rounded-xl bg-black py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                Verify
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={sendOtp}
+                                disabled={otpTimer > 0}
+                                className="rounded-xl border border-black bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                Resend OTP
+                              </button>
+                            </div>
+                          </div>
+                        ) : !otpSent ? (
+                          <button
+                            type="button"
+                            onClick={sendOtp}
+                            disabled={
+                              !!errors.email ||
+                              !formData.email ||
+                              emailExists ||
+                              !formData.firstName.trim() ||
+                              !formData.lastName.trim() ||
+                              !acceptedTerms ||
+                              otpTimer > 0
+                            }
+                            className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {emailExists
+                              ? "Account Already Exists"
+                              : !acceptedTerms
+                                ? "Accept Terms First"
+                                : "Send OTP"}
+                          </button>
+                        ) : (
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                              Email Verified
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
+                  >
+                    {currentState === "Login" ? "Login" : "Create Account"}
+                  </button>
+                </form>
+
+              <div className="mt-8 border-t border-black/10 pt-6 text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
+                  {currentState === "Login" ? "No account?" : "Already have an account?"}
+                  <span
+                    className="ml-2 cursor-pointer text-black transition hover:text-gray-600"
+                    onClick={() => {
+                      setCurrentState(currentState === "Login" ? "Sign Up" : "Login");
+                      resetAllStates();
+                    }}
+                  >
+                    {currentState === "Login" ? "Sign Up" : "Log In"}
+                  </span>
+                </p>
+              </div>
+            </>
+            ) : (
+            <>
+              <div className="mb-8">
+                <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
+                  Forgot Password
+                </h2>
+              </div>
+
+              <form onSubmit={submitForgotPassword} className="flex flex-col gap-4">
+                <input
+                  type="email"
+                  value={forgotPasswordData.email}
+                  onChange={(e) =>
+                    setForgotPasswordData((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
+                  placeholder="Email Address"
+                  required
+                  className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
+                />
+
+                {!forgotOtpSent ? (
+                  <button
+                    type="button"
+                    onClick={sendForgotPasswordOtp}
+                    className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
+                  >
+                    Send Reset Code
+                  </button>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={forgotOtp}
+                      onChange={(e) =>
+                        setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                      }
+                      placeholder="Reset Code"
+                      required
+                      className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none text-center font-black tracking-[0.35em] text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
+                    />
 
                     <button
                       type="submit"
-                      className="mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
+                      className="h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
                     >
-                      {currentState === "Login" ? "Login" : "Create Account"}
+                      Reset Password
                     </button>
-                  </form>
-
-                  <div className="mt-8 border-t border-black/10 pt-6 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
-                      {currentState === "Login" ? "No account?" : "Already have an account?"}
-                      <span
-                        className="ml-2 cursor-pointer text-black transition hover:text-gray-600"
-                        onClick={() => {
-                          setCurrentState(currentState === "Login" ? "Sign Up" : "Login");
-                          resetAllStates();
-                        }}
-                      >
-                        {currentState === "Login" ? "Sign Up" : "Log In"}
-                      </span>
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mb-8">
-                    <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
-                      Forgot Password
-                    </h2>
-                  </div>
-
-                  <form onSubmit={submitForgotPassword} className="flex flex-col gap-4">
-                    <input
-                      type="email"
-                      value={forgotPasswordData.email}
-                      onChange={(e) =>
-                        setForgotPasswordData((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                      placeholder="Email Address"
-                      required
-                      className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none font-semibold text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
-                    />
-
-                    {!forgotOtpSent ? (
-                      <button
-                        type="button"
-                        onClick={sendForgotPasswordOtp}
-                        className="w-full rounded-xl border border-black/10 bg-white/70 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
-                      >
-                        Send Reset Code
-                      </button>
-                    ) : (
-                      <>
-                        <input
-                          type="text"
-                          value={forgotOtp}
-                          onChange={(e) =>
-                            setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                          }
-                          placeholder="Reset Code"
-                          required
-                          className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3.5 outline-none text-center font-black tracking-[0.35em] text-[#0A0D17] placeholder:text-gray-400 transition focus:border-black"
-                        />
-
-                        <button
-                          type="submit"
-                          className="h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
-                        >
-                          Reset Password
-                        </button>
-                      </>
-                    )}
-                  </form>
-                </>
+                  </>
+                )}
+              </form>
+            </>
               )}
-            </div>
           </div>
         </div>
       </div>
+    </div >
 
-      {showTermsModal && (
+      { showTermsModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4">
           <div className="w-full max-w-2xl rounded-[28px] border border-black/10 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
             <div className="border-b border-black/10 px-6 py-5">
@@ -940,7 +941,8 @@ const Login = () => {
             </div>
           </div>
         </div>
-      )}
+      )
+}
     </>
   );
 };
