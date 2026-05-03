@@ -55,6 +55,18 @@ const formatDeliveryRange = (minDays, maxDays) => {
   return `${start} - ${end}`;
 };
 
+const formatShipDate = (dateValue) => {
+  if (!dateValue) return "After restock confirmation";
+
+  const date = addDays(new Date(dateValue), 2);
+
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
+
 const getEstimatedDelivery = (address) => {
   const region = String(address?.region || "").toLowerCase();
   const province = String(address?.province || "").toLowerCase();
@@ -118,6 +130,7 @@ const PAYMENT_OPTIONS = [
     key: "COD",
     title: "Cash on Delivery",
     subtitle: "Pay when your order arrives",
+    preorderSubtitle: "Not available for pre-order items",
     badge: "Pay on Arrival",
     logo: codIcon,
     cardClass:
@@ -204,6 +217,9 @@ const PlaceOrder = () => {
 
     setCartData(savedCart);
 
+    const containsPreorder = savedCart.some((item) => item.isPreorder);
+    if (containsPreorder) setMethod("GCash");
+
     if (user) {
       const mainAddress = {
         firstName: getFirstName(user),
@@ -274,6 +290,28 @@ const PlaceOrder = () => {
 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const hasPreorderItems = useMemo(() => {
+    return cartData.some((item) => item.isPreorder);
+  }, [cartData]);
+
+  const latestPreorderRestockDate = useMemo(() => {
+    const dates = cartData
+      .filter((item) => item.isPreorder)
+      .map((item) => item.expectedRestockDate || item.preorderRestockDate)
+      .filter(Boolean)
+      .map((date) => new Date(date))
+      .filter((date) => !Number.isNaN(date.getTime()))
+      .sort((a, b) => b - a);
+
+    return dates[0] || null;
+  }, [cartData]);
+
+  const preorderShipsOn = useMemo(() => {
+    return latestPreorderRestockDate
+      ? formatShipDate(latestPreorderRestockDate)
+      : "After restock confirmation";
+  }, [latestPreorderRestockDate]);
 
   const hasSavedMainAddress = Boolean(
     savedAddress.street ||
@@ -368,22 +406,32 @@ const PlaceOrder = () => {
       psgcBarangayCode: finalAddress.psgcBarangayCode || "",
     },
     items: cartData.map((item) => ({
-      productId: item._id,
+      productId: item._id || item.productId,
       name: item.name,
-      image: item.images?.[0] || null,
+      image: item.images?.[0] || item.image || null,
       price: Number(item.price),
       quantity: Number(item.quantity),
       size: (item.size || "S").toUpperCase(),
       onSale: item.onSale || false,
       salePercent: Number(item.salePercent || 0),
+      category: item.category || "",
+      sku: item.sku || "",
+      groupCode: item.groupCode || "",
+      isPreorder: !!item.isPreorder,
+      expectedRestockDate:
+        item.expectedRestockDate || item.preorderRestockDate || null,
+      preorderNote: item.preorderNote || "",
     })),
     amount: subtotal + delivery_fee,
     paymentMethod: normalizePaymentMethod(selectedMethod),
     deliveryEstimate: {
       minDays: deliveryEstimate.minDays,
       maxDays: deliveryEstimate.maxDays,
-      label: deliveryEstimate.label,
+      label: hasPreorderItems ? "Pre-order delivery" : deliveryEstimate.label,
       range: deliveryEstimate.range,
+      shipsOn: latestPreorderRestockDate
+        ? addDays(latestPreorderRestockDate, 2)
+        : null,
     },
   });
 
@@ -407,6 +455,14 @@ const PlaceOrder = () => {
     if (!cartData.length) return toast.error("Cart is empty");
 
     const selectedMethod = normalizePaymentMethod(method);
+
+    if (hasPreorderItems && selectedMethod === "COD") {
+      toast.error(
+        "Cash on Delivery is not available for pre-order items. Please choose GCash, Maya, or GoTyme."
+      );
+      return;
+    }
+
     const activeAddress = addressMode === "saved" ? savedAddress : formData;
 
     const finalAddress = {
@@ -504,6 +560,17 @@ const PlaceOrder = () => {
                     {totalQuantity}
                   </p>
                 </div>
+
+                {hasPreorderItems && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">
+                      Type
+                    </p>
+                    <p className="mt-1 text-sm font-black text-amber-700">
+                      Pre-order
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -678,15 +745,37 @@ const PlaceOrder = () => {
               </p>
             </div>
 
-            <div className="mb-4 rounded-2xl border border-black/10 bg-white px-4 py-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
-                Estimated Delivery
+            <div
+              className={`mb-4 rounded-2xl border px-4 py-4 ${
+                hasPreorderItems
+                  ? "border-amber-200 bg-amber-50"
+                  : "border-black/10 bg-white"
+              }`}
+            >
+              <p
+                className={`text-[10px] font-black uppercase tracking-[0.22em] ${
+                  hasPreorderItems ? "text-amber-600" : "text-gray-500"
+                }`}
+              >
+                {hasPreorderItems ? "Pre-order Shipping" : "Estimated Delivery"}
               </p>
-              <p className="mt-2 text-lg font-black text-[#0A0D17]">
-                {deliveryEstimate.label}
+
+              <p
+                className={`mt-2 text-lg font-black ${
+                  hasPreorderItems ? "text-amber-700" : "text-[#0A0D17]"
+                }`}
+              >
+                {hasPreorderItems ? `Ships on ${preorderShipsOn}` : deliveryEstimate.label}
               </p>
-              <p className="mt-1 text-xs font-semibold text-gray-500">
-                Expected arrival: {deliveryEstimate.range}
+
+              <p
+                className={`mt-1 text-xs font-semibold ${
+                  hasPreorderItems ? "text-amber-700/80" : "text-gray-500"
+                }`}
+              >
+                {hasPreorderItems
+                  ? "COD is disabled for pre-order items. Please pay using GCash, Maya, or GoTyme."
+                  : `Expected arrival: ${deliveryEstimate.range}`}
               </p>
             </div>
 
@@ -705,12 +794,30 @@ const PlaceOrder = () => {
                     className="flex items-start justify-between gap-3 rounded-2xl border border-black/5 bg-white px-4 py-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-black uppercase text-[#0A0D17] truncate">
-                        {item.name}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-black uppercase text-[#0A0D17] truncate">
+                          {item.name}
+                        </p>
+
+                        {item.isPreorder && (
+                          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-amber-700">
+                            Pre-order
+                          </span>
+                        )}
+                      </div>
+
                       <p className="mt-1 text-[11px] font-semibold text-gray-500 uppercase tracking-[0.08em]">
                         Size {item.size} · Qty {item.quantity}
                       </p>
+
+                      {item.isPreorder && (
+                        <p className="mt-1 text-[10px] font-bold text-amber-700">
+                          Ships on{" "}
+                          {formatShipDate(
+                            item.expectedRestockDate || item.preorderRestockDate
+                          )}
+                        </p>
+                      )}
                     </div>
 
                     <p className="text-sm font-black text-[#0A0D17] whitespace-nowrap">
@@ -740,15 +847,26 @@ const PlaceOrder = () => {
             <div className="grid gap-4">
               {PAYMENT_OPTIONS.map((option) => {
                 const isActive = method === option.key;
+                const isDisabled = hasPreorderItems && option.key === "COD";
 
                 return (
                   <button
                     key={option.key}
                     type="button"
-                    onClick={() => setMethod(option.key)}
+                    disabled={isDisabled}
+                    onClick={() => {
+                      if (isDisabled) {
+                        toast.error("COD is not available for pre-order items.");
+                        return;
+                      }
+
+                      setMethod(option.key);
+                    }}
                     className={`group relative overflow-hidden rounded-[22px] border p-4 text-left transition-all duration-300 ${
                       option.cardClass
-                    } ${isActive ? option.activeClass : "shadow-sm"}`}
+                    } ${isActive ? option.activeClass : "shadow-sm"} ${
+                      isDisabled ? "opacity-45 cursor-not-allowed grayscale" : ""
+                    }`}
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-black/5">
@@ -767,14 +885,18 @@ const PlaceOrder = () => {
                           <span
                             className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${option.badgeClass}`}
                           >
-                            {option.badge}
+                            {isDisabled ? "Disabled" : option.badge}
                           </span>
                         </div>
 
                         <p
-                          className={`mt-2 text-xs font-semibold ${option.subtitleClass}`}
+                          className={`mt-2 text-xs font-semibold ${
+                            isDisabled ? "text-red-500" : option.subtitleClass
+                          }`}
                         >
-                          {option.subtitle}
+                          {isDisabled
+                            ? option.preorderSubtitle
+                            : option.subtitle}
                         </p>
                       </div>
 
@@ -812,7 +934,7 @@ const PlaceOrder = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (hasPreorderItems && method === "COD")}
               className="mt-6 h-12 w-full rounded-2xl bg-black text-white text-[11px] font-black uppercase tracking-[0.22em] transition hover:opacity-90 disabled:opacity-50"
             >
               {loading

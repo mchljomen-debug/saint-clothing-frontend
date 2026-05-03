@@ -573,6 +573,7 @@ const ShopContextProvider = ({ children }) => {
     getCategoriesData,
     clearAuthData,
     getAuthHeaders,
+    getAvailableStockForSize,
   };
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;

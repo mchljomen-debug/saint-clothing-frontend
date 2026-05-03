@@ -27,6 +27,29 @@ const addDays = (date, days) => {
   return d;
 };
 
+const formatDateLong = (dateValue) => {
+  if (!dateValue) return "Waiting for restock date";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return "Waiting for restock date";
+
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
+
+const getPreorderShipDate = (order, item) => {
+  return (
+    order?.preorderShipDate ||
+    order?.deliveryEstimate?.shipsOn ||
+    item?.preorderShipDate ||
+    (item?.expectedRestockDate ? addDays(item.expectedRestockDate, 2) : null)
+  );
+};
+
 const formatEstimateFromOrder = (order) => {
   if (order?.deliveryEstimate?.range) return order.deliveryEstimate.range;
   if (order?.estimatedDelivery?.range) return order.estimatedDelivery.range;
@@ -503,6 +526,9 @@ const Orders = () => {
                 const paymentState = normalizePaymentStatus(order);
                 const currentStep = getStepIndex(order.status);
 
+                const isPreorder = Boolean(order.isPreorder || item.isPreorder);
+                const shipDate = getPreorderShipDate(order, item);
+
                 const isOutForDelivery = normalizedStatus === "Out for Delivery";
                 const isDelivered = normalizedStatus === "Delivered";
                 const isPendingPayment = normalizedStatus === "Pending Payment";
@@ -538,9 +564,17 @@ const Orders = () => {
                           </div>
 
                           <div className="flex-1 text-center md:text-left">
-                            <p className="text-2xl font-black italic uppercase tracking-tight text-[#0A0D17] leading-none">
-                              {item.name}
-                            </p>
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                              <p className="text-2xl font-black italic uppercase tracking-tight text-[#0A0D17] leading-none">
+                                {item.name}
+                              </p>
+
+                              {isPreorder && (
+                                <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700">
+                                  Pre-order
+                                </span>
+                              )}
+                            </div>
 
                             <p className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                               Order Ref: {order._id.slice(-8).toUpperCase()}
@@ -561,6 +595,22 @@ const Orders = () => {
                               </span>
                             </div>
 
+                            {isPreorder && (
+                              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left">
+                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">
+                                  Ships On
+                                </p>
+                                <p className="mt-1 text-sm font-black text-amber-700">
+                                  {formatDateLong(shipDate)}
+                                </p>
+                                {item.preorderNote && (
+                                  <p className="mt-1 text-xs font-semibold text-amber-700/80">
+                                    {item.preorderNote}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
                             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                               <div>
                                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
@@ -579,10 +629,16 @@ const Orders = () => {
 
                               <div>
                                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
-                                  Est. Delivery
+                                  {isPreorder ? "Ships On" : "Est. Delivery"}
                                 </p>
-                                <p className="mt-1 text-[12px] font-bold text-gray-700">
-                                  {formatEstimateFromOrder(order)}
+                                <p
+                                  className={`mt-1 text-[12px] font-bold ${
+                                    isPreorder ? "text-amber-700" : "text-gray-700"
+                                  }`}
+                                >
+                                  {isPreorder
+                                    ? formatDateLong(shipDate)
+                                    : formatEstimateFromOrder(order)}
                                 </p>
                               </div>
 
@@ -657,6 +713,12 @@ const Orders = () => {
                           >
                             {normalizedStatus}
                           </div>
+
+                          {isPreorder && (
+                            <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                              Ships {formatDateLong(shipDate)}
+                            </div>
+                          )}
 
                           <button
                             onClick={() =>
