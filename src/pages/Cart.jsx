@@ -251,7 +251,7 @@ const Cart = () => {
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="rounded-[5px] border border-black bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
+                className="w-[150px] text-center rounded-[5px] border border-black bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
               >
                 {allSelected ? "Unselect All" : "Select All"}
               </button>
@@ -287,16 +287,15 @@ const Cart = () => {
                 const imageSrc = item.images?.length
                   ? getMediaUrl(item.images[0], backendUrl)
                   : item.image
-                  ? getMediaUrl(item.image, backendUrl)
-                  : "";
+                    ? getMediaUrl(item.image, backendUrl)
+                    : "";
                 const finalPrice = getFinalPrice(item);
 
                 return (
                   <div
                     key={key}
-                    className={`border-b border-black/10 last:border-b-0 transition ${
-                      isSelected ? "bg-[#FCFCFA]" : "bg-white opacity-80"
-                    }`}
+                    className={`border-b border-black/10 last:border-b-0 transition ${isSelected ? "bg-[#FCFCFA]" : "bg-white opacity-80"
+                      }`}
                   >
                     <div className="grid gap-4 px-4 py-4 md:grid-cols-[0.45fr_3fr_1fr_1fr_0.65fr] md:items-center md:px-5">
                       <div className="flex md:justify-center">
