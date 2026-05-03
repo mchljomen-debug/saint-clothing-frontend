@@ -7,6 +7,56 @@ import { Eye, EyeOff } from "lucide-react";
 const OTP_SECONDS = 60;
 const FORGOT_OTP_SECONDS = 300;
 
+const floatingInput =
+  "peer w-full rounded-xl border bg-white/80 px-4 pb-2.5 pt-5 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-transparent focus:border-black focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)] autofill:shadow-[inset_0_0_0_1000px_white] autofill:[-webkit-text-fill-color:#0A0D17]";
+
+const floatingLabel =
+  "pointer-events-none absolute left-4 top-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-[12px] peer-placeholder-shown:tracking-[0.08em] peer-placeholder-shown:text-gray-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:tracking-[0.16em] peer-focus:text-black";
+
+const PasswordToggle = ({ active, onClick }) => (
+  <button
+    type="button"
+    onMouseDown={(e) => e.preventDefault()}
+    onClick={onClick}
+    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-black"
+  >
+    {active ? <EyeOff size={18} /> : <Eye size={18} />}
+  </button>
+);
+
+const FloatingField = ({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  required = true,
+  className = "",
+  inputMode,
+  maxLength,
+  onBlur,
+  rightElement = null,
+  autoComplete,
+}) => (
+  <div className="relative">
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      onBlur={onBlur}
+      placeholder={label}
+      required={required}
+      inputMode={inputMode}
+      maxLength={maxLength}
+      autoComplete={autoComplete}
+      className={`${floatingInput} ${rightElement ? "pr-12" : ""} ${className}`}
+    />
+    <label className={floatingLabel}>{label}</label>
+    {rightElement}
+  </div>
+);
+
 const Login = () => {
   const { backendUrl, token, setToken, setUser, navigate, fetchCart } =
     useContext(ShopContext);
@@ -55,55 +105,6 @@ const Login = () => {
     newPassword: "",
     confirmPassword: "",
   });
-
-  const floatingInput =
-    "peer w-full rounded-xl border bg-white/80 px-4 pb-2.5 pt-5 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-transparent focus:border-black focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)] autofill:shadow-[inset_0_0_0_1000px_white] autofill:[-webkit-text-fill-color:#0A0D17]";
-
-  const floatingLabel =
-    "pointer-events-none absolute left-4 top-2 text-[10px] font-black uppercase tracking-[0.16em] text-gray-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-[12px] peer-placeholder-shown:tracking-[0.08em] peer-placeholder-shown:text-gray-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:tracking-[0.16em] peer-focus:text-black";
-
-  const PasswordToggle = ({ active, onClick }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-black"
-    >
-      {active ? <EyeOff size={18} /> : <Eye size={18} />}
-    </button>
-  );
-
-  const FloatingField = ({
-    label,
-    name,
-    value,
-    onChange,
-    type = "text",
-    required = true,
-    className = "",
-    inputMode,
-    maxLength,
-    onBlur,
-    rightElement = null,
-    autoComplete,
-  }) => (
-    <div className="relative">
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        placeholder={label}
-        required={required}
-        inputMode={inputMode}
-        maxLength={maxLength}
-        autoComplete={autoComplete}
-        className={`${floatingInput} ${rightElement ? "pr-12" : ""} ${className}`}
-      />
-      <label className={floatingLabel}>{label}</label>
-      {rightElement}
-    </div>
-  );
 
   useEffect(() => {
     const fetchTerms = async () => {
