@@ -27,6 +27,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SearchBar from "./components/SearchBar";
 import ScrollToTop from "./components/ScrollToTop";
+import SocialFeed from "./components/SocialFeed";
 
 import { ShopContext } from "./context/ShopContext";
 
@@ -66,6 +67,7 @@ const App = () => {
         <Route path="/latest" element={<LatestCollection />} />
         <Route path="/best-sellers" element={<BestSeller />} />
         <Route path="/style-builder" element={<StyleBuilder />} />
+        <Route path="/social-feed" element={<SocialFeed />} />
 
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
