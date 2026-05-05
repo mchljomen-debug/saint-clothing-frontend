@@ -34,7 +34,7 @@ const Hero = () => {
     newUserGreeting: "Welcome",
     returningUserGreeting: "Welcome back",
     tickerText:
-      "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
+      "{greeting}, {name}! Try our mobile AR fitting experience and explore the latest from Saint Clothing.",
     slides: [],
   });
 
@@ -75,7 +75,7 @@ const Hero = () => {
             data.hero.returningUserGreeting || "Welcome back",
           tickerText:
             data.hero.tickerText ||
-            "{greeting}, {name}! Ready to explore the latest from Saint Clothing?",
+            "{greeting}, {name}! Try our mobile AR fitting experience and explore the latest from Saint Clothing.",
           slides,
         };
 
@@ -162,6 +162,12 @@ const Hero = () => {
 
   /* ================= ACTION ================= */
   const handleAction = (action) => {
+    if (action === "ar") {
+      navigate("/collection");
+      window.scrollTo(0, 0);
+      return;
+    }
+
     if (action === "collection") {
       navigate("/collection");
       window.scrollTo(0, 0);
@@ -237,9 +243,24 @@ const Hero = () => {
 
             <div className="absolute inset-0 flex items-center px-5 sm:px-6 md:px-14 lg:px-24 z-10 pt-12 sm:pt-14">
               <div className="max-w-3xl">
+                {slide.action === "ar" && (
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-md">
+                    <span className="h-2 w-2 rounded-full bg-white" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white">
+                      Mobile AR Feature
+                    </span>
+                  </div>
+                )}
+
                 <h1 className="text-white uppercase font-black text-3xl sm:text-5xl md:text-7xl leading-[0.95]">
                   {slide.title}
                 </h1>
+
+                {slide.subtitle && (
+                  <p className="mt-4 text-xs sm:text-sm md:text-base font-bold uppercase tracking-[0.22em] text-white/80">
+                    {slide.subtitle}
+                  </p>
+                )}
 
                 <p className="mt-4 text-sm md:text-base text-white/70 max-w-lg">
                   {slide.description}
