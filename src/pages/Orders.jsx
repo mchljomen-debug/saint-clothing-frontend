@@ -720,15 +720,6 @@ const Orders = () => {
                             </div>
                           )}
 
-                          <button
-                            onClick={() =>
-                              toast.info(`Current order stage: ${normalizedStatus}`)
-                            }
-                            className="h-11 w-full xl:w-auto rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90"
-                          >
-                            Track Order
-                          </button>
-
                           {isOutForDelivery && (
                             <button
                               onClick={() => markAsReceived(order._id)}
