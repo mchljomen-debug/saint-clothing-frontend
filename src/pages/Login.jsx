@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
 
+
 const OTP_SECONDS = 60;
 const FORGOT_OTP_SECONDS = 300;
 
@@ -70,7 +71,7 @@ const Login = () => {
   const [termsScrolledToBottom, setTermsScrolledToBottom] = useState(false);
 
   const termsScrollRef = useRef(null);
-
+  const secretCommandRef = useRef("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
@@ -552,6 +553,43 @@ const Login = () => {
     setErrors((prev) => ({ ...prev, terms: "" }));
     setShowTermsModal(false);
   };
+  useEffect(() => {
+    const ADMIN_URL = "https://admin.saintclothingbrandph.com";
+    const SECRET_COMMAND = "saintadmin";
+
+    const handleSecretCommand = (e) => {
+      if (
+        e.ctrlKey ||
+        e.altKey ||
+        e.metaKey ||
+        e.key.length !== 1
+      ) {
+        return;
+      }
+
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+
+      if (activeTag === "input" || activeTag === "textarea") {
+        return;
+      }
+
+      secretCommandRef.current =
+        (secretCommandRef.current + e.key.toLowerCase()).slice(
+          -SECRET_COMMAND.length
+        );
+
+      if (secretCommandRef.current === SECRET_COMMAND) {
+        secretCommandRef.current = "";
+        window.open(ADMIN_URL, "_blank", "noopener,noreferrer");
+      }
+    };
+
+    window.addEventListener("keydown", handleSecretCommand);
+
+    return () => {
+      window.removeEventListener("keydown", handleSecretCommand);
+    };
+  }, []);
 
   return (
     <>
@@ -649,15 +687,14 @@ const Login = () => {
                       {currentState === "Sign Up" &&
                         formData.password.length > 0 && (
                           <p
-                            className={`px-1 text-[11px] font-semibold leading-5 ${
-                              passwordStrength === "weak"
+                            className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
                                 ? "text-rose-500"
                                 : passwordStrength === "medium"
-                                ? "text-amber-500"
-                                : passwordStrength === "strong"
-                                ? "text-emerald-600"
-                                : "text-gray-400"
-                            }`}
+                                  ? "text-amber-500"
+                                  : passwordStrength === "strong"
+                                    ? "text-emerald-600"
+                                    : "text-gray-400"
+                              }`}
                           >
                             Your password must be at least 8 characters long and
                             include an uppercase letter, a number, and a symbol.
@@ -755,11 +792,10 @@ const Login = () => {
                                 </p>
 
                                 <span
-                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
-                                    otpTimer > 0
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
                                       ? "bg-black text-white"
                                       : "bg-rose-50 text-rose-600"
-                                  }`}
+                                    }`}
                                 >
                                   {otpTimer > 0
                                     ? `${otpTimer}s left`
@@ -822,8 +858,8 @@ const Login = () => {
                               {emailExists
                                 ? "Account Already Exists"
                                 : !acceptedTerms
-                                ? "Accept Terms First"
-                                : "Send OTP"}
+                                  ? "Accept Terms First"
+                                  : "Send OTP"}
                             </button>
                           ) : (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
@@ -1080,4 +1116,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login; 
