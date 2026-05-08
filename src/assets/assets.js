@@ -25,6 +25,7 @@ import maya_logo from './maya_logo.png'
 import gotyme_logo from './gotyme_logo.png'
 import cod_logo from './gotyme_logo.png'
 import build_fit_preview from "./build_fit_preview.png";
+import mannequin from "./mannequin.png";
 
 export const assets = {
   logo,
@@ -54,4 +55,6 @@ export const assets = {
   gotyme_logo,
   cod_logo,
   build_fit_preview,
+  mannequin,
+  
 }
