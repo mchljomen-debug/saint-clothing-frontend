@@ -1,7 +1,7 @@
 import React, { useContext, useMemo, useState } from "react";
 import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
-import { assets } from "../assets";
+import { assets } from "../assets/assets";
 
 const TOP_KEYWORDS = [
   "tshirt",
