@@ -1,7 +1,7 @@
 import React, { useContext, useMemo, useState } from "react";
 import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
-import { assets } from "../assets/assets";
+import { assets } from "../assets";
 
 const TOP_KEYWORDS = [
   "tshirt",
@@ -11,7 +11,7 @@ const TOP_KEYWORDS = [
   "longsleeve",
   "crop",
   "jersey",
-  "hoodie", 
+  "hoodie",
   "jacket",
   "polo",
 ];
@@ -26,6 +26,13 @@ const BOTTOM_KEYWORDS = [
   "bottom",
 ];
 
+const PREVIEW_BACKGROUNDS = [
+  { name: "White", color: "#ffffff" },
+  { name: "Cream", color: "#f6efe6" },
+  { name: "Grey", color: "#d9d6cf" },
+  { name: "Black", color: "#2f3030" },
+];
+
 const DEFAULT_POSITIONS = {
   top: { x: 0, y: 0, scale: 1 },
   bottom: { x: 0, y: 0, scale: 1 },
@@ -38,6 +45,8 @@ const SKIN_TONES = [
     label: "Very Fair",
     description: "Always burns, never tans.",
     color: "#F6D8C8",
+    hue: 0,
+    brightness: 1.12,
   },
   {
     type: "II",
@@ -45,6 +54,8 @@ const SKIN_TONES = [
     label: "Fair",
     description: "Usually burns, tans minimally.",
     color: "#EFC0A4",
+    hue: -4,
+    brightness: 1.04,
   },
   {
     type: "III",
@@ -52,6 +63,8 @@ const SKIN_TONES = [
     label: "Medium",
     description: "Sometimes mild burn, tans uniformly.",
     color: "#C6865A",
+    hue: -8,
+    brightness: 0.98,
   },
   {
     type: "IV",
@@ -59,6 +72,8 @@ const SKIN_TONES = [
     label: "Olive",
     description: "Rarely burns, tans well.",
     color: "#A86F45",
+    hue: -10,
+    brightness: 0.92,
   },
   {
     type: "V",
@@ -66,6 +81,8 @@ const SKIN_TONES = [
     label: "Brown",
     description: "Very rarely burns, tans easily.",
     color: "#7A4A2E",
+    hue: -15,
+    brightness: 0.76,
   },
   {
     type: "VI",
@@ -73,6 +90,8 @@ const SKIN_TONES = [
     label: "Deep",
     description: "Never burns, tans very darkly.",
     color: "#4A2A1A",
+    hue: -18,
+    brightness: 0.62,
   },
 ];
 
@@ -110,13 +129,8 @@ const getBottomKind = (product) => {
     return "pants";
   }
 
-  if (text.includes("jorts")) {
-    return "jorts";
-  }
-
-  if (text.includes("shorts") || text.includes("short")) {
-    return "shorts";
-  }
+  if (text.includes("jorts")) return "jorts";
+  if (text.includes("shorts") || text.includes("short")) return "shorts";
 
   return "bottom";
 };
@@ -126,27 +140,17 @@ const getSmartLayout = ({ selectedBottom }) => {
 
   return {
     top: {
-      top: 20,
-      height: 300,
-      width: 350,
+      top: 92,
+      height: 190,
+      width: 250,
       scale: 1,
       snapX: 0,
       snapY: 0,
     },
     bottom: {
-      top:
-        bottomKind === "pants"
-          ? 255
-          : bottomKind === "jorts"
-          ? 215
-          : 205,
-      height:
-        bottomKind === "pants"
-          ? 315
-          : bottomKind === "jorts"
-          ? 305
-          : 300,
-      width: 350,
+      top: bottomKind === "pants" ? 278 : bottomKind === "jorts" ? 250 : 245,
+      height: bottomKind === "pants" ? 285 : bottomKind === "jorts" ? 230 : 220,
+      width: 245,
       scale: 1,
       snapX: 0,
       snapY: 0,
@@ -207,10 +211,7 @@ const scorePair = (top, bottom) => {
 
   if (top.category && bottom.matchWith?.includes(top.category)) score += 10;
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 10;
-
-  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) {
-    score += 6;
-  }
+  if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) score += 6;
 
   score += sharedTags.length * 3;
 
@@ -222,10 +223,7 @@ const scorePair = (top, bottom) => {
 
   if (topColor && bottomColor && topColor !== bottomColor) score += 4;
   if (topNeutral || bottomNeutral) score += 2;
-
-  if (topColor.includes("black") && bottomColor.includes("black")) {
-    score -= 6;
-  }
+  if (topColor.includes("black") && bottomColor.includes("black")) score -= 6;
 
   if (top.bestseller) score += 3;
   if (bottom.bestseller) score += 3;
@@ -251,6 +249,7 @@ const StyleBuilder = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [positions, setPositions] = useState(DEFAULT_POSITIONS);
   const [skinTone, setSkinTone] = useState(SKIN_TONES[3]);
+  const [previewBg, setPreviewBg] = useState(PREVIEW_BACKGROUNDS[1].color);
 
   const [aiSuggestion, setAiSuggestion] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -281,9 +280,12 @@ const StyleBuilder = () => {
     return type === "bottom" || type === "both";
   });
 
-  const outfitLayout = getSmartLayout({
-    selectedBottom,
-  });
+  const outfitLayout = getSmartLayout({ selectedBottom });
+
+  const totalPrice = selectedProducts.reduce(
+    (sum, item) => sum + getFinalPrice(item),
+    0
+  );
 
   const clearFit = () => {
     setSelectedProducts([]);
@@ -368,18 +370,14 @@ const StyleBuilder = () => {
 
       if (productType === "top") {
         return [
-          ...prev.filter(
-            (item) => !["top", "both"].includes(getProductType(item))
-          ),
+          ...prev.filter((item) => !["top", "both"].includes(getProductType(item))),
           product,
         ];
       }
 
       if (productType === "bottom") {
         return [
-          ...prev.filter(
-            (item) => !["bottom", "both"].includes(getProductType(item))
-          ),
+          ...prev.filter((item) => !["bottom", "both"].includes(getProductType(item))),
           product,
         ];
       }
@@ -424,7 +422,6 @@ const StyleBuilder = () => {
       });
 
       const sortedPairs = rankedPairs.sort((a, b) => b.score - a.score);
-
       const poolSize = Math.max(5, Math.ceil(sortedPairs.length * 0.3));
       const smartPool = sortedPairs.slice(0, poolSize);
 
@@ -514,17 +511,17 @@ const StyleBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] px-2 py-2 sm:px-3 lg:px-4">
+    <div className="min-h-screen bg-[#f8f5ef] px-3 py-4 lg:px-5">
       <style>
         {`
           @keyframes saintFloat {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
+            50% { transform: translateY(-3px); }
           }
 
           @keyframes saintFade {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: scale(.98); }
+            to { opacity: 1; transform: scale(1); }
           }
 
           .saint-float {
@@ -532,7 +529,7 @@ const StyleBuilder = () => {
           }
 
           .saint-fade {
-            animation: saintFade 0.4s ease both;
+            animation: saintFade 0.25s ease both;
           }
 
           .saint-scroll::-webkit-scrollbar {
@@ -550,206 +547,67 @@ const StyleBuilder = () => {
         `}
       </style>
 
-      <div className="mx-auto max-w-[1950px]">
-        <div className="mb-2 rounded-[5px] border border-black/10 bg-white px-5 py-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:px-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
-                Saint Clothing
-              </p>
-
-              <h1 className="mt-0.5 text-3xl font-black uppercase tracking-[-0.05em] text-black sm:text-5xl">
-                Style Builder
-              </h1>
-
-              <p className="mt-1 max-w-2xl text-sm font-medium leading-5 text-gray-500">
-                Build a fit manually or generate a smart outfit from your product
-                collection with AI style analysis.
-              </p>
-            </div>
-
-            <div className="flex w-full rounded-[5px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
-              <button
-                onClick={() => handleModeChange("manual")}
-                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
-                  mode === "manual"
-                    ? "bg-white text-black"
-                    : "text-white hover:bg-white/10"
-                }`}
-              >
-                Manual
-              </button>
-
-              <button
-                onClick={() => handleModeChange("automatic")}
-                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
-                  mode === "automatic"
-                    ? "bg-white text-black"
-                    : "text-white hover:bg-white/10"
-                }`}
-              >
-                Automatic
-              </button>
-            </div>
+      <div className="mx-auto grid max-w-[1550px] gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+        <aside className="rounded-[5px] bg-[#fbf7ef] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.08)]">
+          <div className="mb-4">
+            <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-black">
+              Style Builder
+            </h1>
+            <p className="mt-1 text-sm font-medium text-black/70">
+              Build your perfect fit
+            </p>
           </div>
-        </div>
 
-        <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
-          <section className="flex h-[775px] min-w-0 flex-col rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] sm:p-4">
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-                  Collection
-                </p>
-
-                <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
-                  Pick Your Pieces
-                </h2>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                  {filteredProducts.length} items
-                </p>
-
-                {selectedProducts.length > 0 && (
-                  <button
-                    onClick={clearFit}
-                    className="rounded-[5px] bg-red-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 transition hover:bg-red-100"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="mb-3 flex gap-2 overflow-x-auto border-b border-gray-100 pb-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${
-                    category === cat
-                      ? "border-black bg-black text-white"
-                      : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {mode === "automatic" && (
-              <button
-                onClick={generateAutomaticFit}
-                className="mb-3 w-full rounded-[5px] bg-black px-5 py-2.5 text-xs font-black uppercase tracking-[0.2em] text-white transition hover:bg-gray-800"
-              >
-                Generate New Automatic Fit
-              </button>
-            )}
-
-            <div className="saint-scroll min-h-0 flex-1 overflow-y-auto pr-2">
-              <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-                {filteredProducts.map((item) => {
-                  const active = selectedProducts.some((p) => p._id === item._id);
-                  const type = getProductType(item);
-
-                  return (
-                    <button
-                      key={item._id}
-                      onClick={() => addToFit(item)}
-                      disabled={mode === "automatic"}
-                      className={`group text-left transition ${
-                        mode === "automatic"
-                          ? "cursor-default opacity-90"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <div
-                        className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${
-                          active
-                            ? "ring-2 ring-black ring-offset-2"
-                            : "hover:bg-gray-100"
-                        }`}
-                      >
-                        <div className="aspect-[3/4]">
-                          <img
-                            src={getProductImage(item)}
-                            alt={item.name}
-                            className="h-full w-full object-contain p-2.5 mix-blend-multiply transition duration-500 group-hover:scale-105"
-                          />
-                        </div>
-
-                        <span className="absolute left-2 top-2 rounded-[5px] bg-white/90 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-gray-600 shadow-sm">
-                          {type}
-                        </span>
-
-                        {active && (
-                          <span className="absolute right-2 top-2 rounded-[5px] bg-black px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white">
-                            Picked
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="pt-2">
-                        <p className="line-clamp-1 text-xs font-black uppercase tracking-tight text-black">
-                          {item.name}
-                        </p>
-
-                        <p className="mt-0.5 line-clamp-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                          {item.category}
-                        </p>
-
-                        <p className="mt-1 text-xs font-black text-black">
-                          {currency}
-                          {getFinalPrice(item).toLocaleString()}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          <aside className="rounded-[5px] border border-black/10 bg-white p-3 shadow-[0_14px_35px_rgba(0,0,0,0.05)] xl:sticky xl:top-2 xl:h-fit">
-            <div className="mb-2 flex items-end justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-400">
-                  Live Preview
-                </p>
-
-                <h2 className="mt-0.5 text-xl font-black uppercase tracking-tight text-black">
-                  2D Fit
-                </h2>
-              </div>
-
-              <p className="rounded-[5px] bg-gray-100 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500">
-                {mode}
-              </p>
-            </div>
-
-            <div
-              className="mb-2 rounded-[5px] border border-black/10 p-3"
-              style={{
-                backgroundColor: `${skinTone.color}20`,
-              }}
+          <div className="mb-4 grid grid-cols-2 overflow-hidden rounded-[5px] border border-black/10 bg-white">
+            <button
+              onClick={() => handleModeChange("manual")}
+              className={`py-3 text-xs font-black uppercase tracking-widest ${
+                mode === "manual" ? "bg-black text-white" : "bg-white text-black"
+              }`}
             >
-              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-500">
-                Selected Mannequin
-              </p>
+              Manual
+            </button>
 
-              <div className="mt-2 flex items-center gap-3">
-                <div
-                  className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-black/10"
+            <button
+              onClick={() => handleModeChange("automatic")}
+              className={`py-3 text-xs font-black uppercase tracking-widest ${
+                mode === "automatic" ? "bg-black text-white" : "bg-white text-black"
+              }`}
+            >
+              AI Assist
+            </button>
+          </div>
+
+          <div className="border-t border-black/10 pt-4">
+            <h2 className="text-base font-black uppercase tracking-tight text-black">
+              1. Select Mannequin
+            </h2>
+
+            <p className="mt-3 text-sm font-semibold text-black/70">Skin Tone</p>
+
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {SKIN_TONES.map((tone) => (
+                <button
+                  key={tone.type}
+                  onClick={() => setSkinTone(tone)}
+                  className={`relative overflow-hidden rounded-[5px] border p-2 text-left transition ${
+                    skinTone.type === tone.type
+                      ? "border-black bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.08)]"
+                      : "border-black/10 bg-white/70 hover:border-black"
+                  }`}
                   style={{
-                    backgroundColor: skinTone.color,
+                    background: `linear-gradient(135deg, ${tone.color}35, #fffaf4)`,
                   }}
                 >
+                  <p className="text-xl font-black text-black">{tone.type}</p>
+                  <p className="mt-1 text-[10px] font-bold text-black/70">
+                    {tone.label}
+                  </p>
+
                   <div
-                    className="h-10 w-8"
+                    className="absolute -bottom-2 right-1 h-16 w-10 opacity-80"
                     style={{
-                      backgroundColor: "#ffffff",
+                      backgroundColor: tone.color,
                       WebkitMaskImage: `url(${assets.mannequin})`,
                       WebkitMaskRepeat: "no-repeat",
                       WebkitMaskPosition: "center",
@@ -760,76 +618,25 @@ const StyleBuilder = () => {
                       maskSize: "contain",
                     }}
                   />
-                </div>
 
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                    Mannequin Name
-                  </p>
-
-                  <h3 className="text-lg font-black uppercase tracking-tight text-black">
-                    {skinTone.name}
-                  </h3>
-
-                  <p className="text-[11px] font-medium text-gray-500">
-                    {skinTone.type} — {skinTone.label}
-                  </p>
-                </div>
-              </div>
-
-              <p className="mt-2 text-[11px] font-medium leading-4 text-gray-500">
-                {skinTone.description}
-              </p>
-            </div>
-
-            <div className="mb-2 grid grid-cols-3 gap-2">
-              {SKIN_TONES.map((tone) => (
-                <button
-                  key={tone.type}
-                  onClick={() => setSkinTone(tone)}
-                  className={`rounded-[5px] border p-2 text-left transition ${
-                    skinTone.type === tone.type
-                      ? "border-black bg-black text-white"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-black"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-8 w-8 rounded-full border border-black/10"
-                      style={{
-                        backgroundColor: tone.color,
-                      }}
-                    />
-
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-widest">
-                        {tone.type}
-                      </p>
-
-                      <p className="truncate text-[10px] font-medium">
-                        {tone.label}
-                      </p>
-                    </div>
-                  </div>
+                  {skinTone.type === tone.type && (
+                    <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black text-[10px] font-black text-white">
+                      ✓
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
 
             <div
-              className="relative flex h-[600px] items-center justify-center overflow-hidden rounded-[5px] transition-colors duration-500"
+              className="mt-4 rounded-[5px] border border-black/10 p-4"
               style={{
-                background: `linear-gradient(180deg, ${skinTone.color}90 0%, ${skinTone.color}55 100%)`,
+                background: `linear-gradient(135deg, ${skinTone.color}22, #fffaf4)`,
               }}
             >
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <p className="select-none text-[95px] font-black uppercase tracking-[-0.08em] text-white/[0.08]">
-                  SAINT
-                </p>
-              </div>
-
-              <div className="saint-float relative h-[580px] w-[340px]">
+              <div className="flex items-center gap-4">
                 <div
-                  className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[560px] w-[320px] -translate-x-1/2 -translate-y-1/2 opacity-95"
+                  className="h-16 w-12"
                   style={{
                     backgroundColor: skinTone.color,
                     WebkitMaskImage: `url(${assets.mannequin})`,
@@ -843,238 +650,323 @@ const StyleBuilder = () => {
                   }}
                 />
 
-                <div
-                  onMouseDown={(event) => startDrag(event, "top")}
-                  onTouchStart={(event) => startDrag(event, "top")}
-                  className="absolute left-1/2 z-30 -translate-x-1/2 cursor-grab touch-none select-none transition duration-300 ease-out active:cursor-grabbing"
-                  style={{
-                    top: `${outfitLayout.top.top}px`,
-                    height: `${outfitLayout.top.height}px`,
-                    width: `${outfitLayout.top.width}px`,
-                  }}
-                >
-                  {selectedTop ? (
-                    <img
-                      key={selectedTop._id}
-                      src={getProductImage(selectedTop)}
-                      alt={selectedTop.name}
-                      draggable={false}
-                      style={getOutfitStyle(
-                        selectedTop,
-                        outfitLayout.top.scale,
-                        outfitLayout.top,
-                        positions.top
-                      )}
-                      className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.20)] transition duration-300"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <span className="rounded-[5px] bg-white/70 px-3 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
-                        Top
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  onMouseDown={(event) => startDrag(event, "bottom")}
-                  onTouchStart={(event) => startDrag(event, "bottom")}
-                  className="absolute left-1/2 z-20 -translate-x-1/2 cursor-grab touch-none select-none transition duration-300 ease-out active:cursor-grabbing"
-                  style={{
-                    top: `${outfitLayout.bottom.top}px`,
-                    height: `${outfitLayout.bottom.height}px`,
-                    width: `${outfitLayout.bottom.width}px`,
-                  }}
-                >
-                  {selectedBottom ? (
-                    <img
-                      key={selectedBottom._id}
-                      src={getProductImage(selectedBottom)}
-                      alt={selectedBottom.name}
-                      draggable={false}
-                      style={getOutfitStyle(
-                        selectedBottom,
-                        outfitLayout.bottom.scale,
-                        outfitLayout.bottom,
-                        positions.bottom
-                      )}
-                      className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.18)] transition duration-300"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <span className="rounded-[5px] bg-white/70 px-3 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
-                        Bottom
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-2 rounded-[5px] bg-gray-50 p-2.5">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
-                  Picked Items
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={resetPositions}
-                    className="rounded-[5px] bg-white px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-gray-500"
-                  >
-                    Reset Fit
-                  </button>
-
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                    {selectedProducts.length}/2
-                  </p>
-                </div>
-              </div>
-
-              {selectedProducts.length > 0 && (
-                <div className="mb-2 grid grid-cols-2 gap-2">
-                  <div className="rounded-[5px] bg-white p-2">
-                    <p className="mb-1 text-[8px] font-black uppercase tracking-widest text-gray-400">
-                      Top Scale
-                    </p>
-                    <input
-                      type="range"
-                      min="0.7"
-                      max="1.35"
-                      step="0.01"
-                      value={positions.top.scale}
-                      onChange={(event) => updateScale("top", event.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div className="rounded-[5px] bg-white p-2">
-                    <p className="mb-1 text-[8px] font-black uppercase tracking-widest text-gray-400">
-                      Bottom Scale
-                    </p>
-                    <input
-                      type="range"
-                      min="0.7"
-                      max="1.35"
-                      step="0.01"
-                      value={positions.bottom.scale}
-                      onChange={(event) =>
-                        updateScale("bottom", event.target.value)
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {selectedProducts.length === 0 ? (
-                <div className="rounded-[5px] bg-white px-4 py-3 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    No products picked
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {selectedProducts.map((item) => {
-                    const type = getProductType(item);
-
-                    return (
-                      <div
-                        key={item._id}
-                        className="flex w-full items-center gap-2.5 rounded-[5px] bg-white p-2 text-left transition hover:bg-gray-100"
-                      >
-                        <img
-                          src={getProductImage(item)}
-                          alt={item.name}
-                          className="h-11 w-10 rounded-[5px] bg-gray-50 object-contain p-1 mix-blend-multiply"
-                        />
-
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-400">
-                            {type}
-                          </p>
-
-                          <p className="line-clamp-1 text-[11px] font-black uppercase text-black">
-                            {item.name}
-                          </p>
-
-                          <p className="text-[10px] font-black text-gray-500">
-                            {currency}
-                            {getFinalPrice(item).toLocaleString()}
-                          </p>
-                        </div>
-
-                        {mode === "manual" && (
-                          <button
-                            onClick={() => {
-                              setSelectedProducts((prev) =>
-                                prev.filter((p) => p._id !== item._id)
-                              );
-                              setAiSuggestion("");
-                              setAiError("");
-                            }}
-                            className="rounded-[5px] bg-red-50 px-2.5 py-1.5 text-[8px] font-black uppercase tracking-widest text-red-500"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-2 rounded-[5px] border border-black/10 bg-black p-3 text-white">
-              <div className="mb-2 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-white/40">
+                  <h3 className="text-base font-black uppercase text-black">
+                    {skinTone.type} — {skinTone.label}
+                  </h3>
+                  <p className="mt-1 text-xs font-medium text-black/70">
+                    {skinTone.description}
+                  </p>
+                  <p className="mt-3 text-[9px] font-black uppercase tracking-widest text-black/40">
+                    Mannequin Name
+                  </p>
+                  <p className="text-xl font-black uppercase tracking-tight text-black">
+                    {skinTone.name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-black/10 pt-4">
+            <h2 className="text-base font-black uppercase tracking-tight text-black">
+              2. Build Your Outfit
+            </h2>
+
+            <div className="mt-3">
+              <p className="mb-1 text-sm font-semibold text-black/70">Top</p>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedTop?._id || ""}
+                  onChange={(e) => {
+                    const product = cleanProducts.find((p) => p._id === e.target.value);
+                    if (product) addToFit(product);
+                  }}
+                  className="w-full rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-bold outline-none"
+                >
+                  <option value="">Select top</option>
+                  {cleanProducts
+                    .filter((item) => {
+                      const type = getProductType(item);
+                      return type === "top" || type === "both";
+                    })
+                    .map((item) => (
+                      <option key={item._id} value={item._id}>
+                        {item.name} — {currency}
+                        {getFinalPrice(item).toLocaleString()}
+                      </option>
+                    ))}
+                </select>
+
+                {selectedTop && (
+                  <button
+                    onClick={() =>
+                      setSelectedProducts((prev) =>
+                        prev.filter((p) => p._id !== selectedTop._id)
+                      )
+                    }
+                    className="rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-black"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <p className="mb-1 text-sm font-semibold text-black/70">Bottom</p>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedBottom?._id || ""}
+                  onChange={(e) => {
+                    const product = cleanProducts.find((p) => p._id === e.target.value);
+                    if (product) addToFit(product);
+                  }}
+                  className="w-full rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-bold outline-none"
+                >
+                  <option value="">Select bottom</option>
+                  {cleanProducts
+                    .filter((item) => {
+                      const type = getProductType(item);
+                      return type === "bottom" || type === "both";
+                    })
+                    .map((item) => (
+                      <option key={item._id} value={item._id}>
+                        {item.name} — {currency}
+                        {getFinalPrice(item).toLocaleString()}
+                      </option>
+                    ))}
+                </select>
+
+                {selectedBottom && (
+                  <button
+                    onClick={() =>
+                      setSelectedProducts((prev) =>
+                        prev.filter((p) => p._id !== selectedBottom._id)
+                      )
+                    }
+                    className="rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-black"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-black/10 pt-4">
+            <h2 className="text-base font-black uppercase tracking-tight text-black">
+              3. Preview Background
+            </h2>
+
+            <div className="mt-3 flex gap-3">
+              {PREVIEW_BACKGROUNDS.map((bg) => (
+                <button
+                  key={bg.name}
+                  onClick={() => setPreviewBg(bg.color)}
+                  title={bg.name}
+                  className={`h-12 w-12 rounded-full border transition ${
+                    previewBg === bg.color
+                      ? "border-black ring-2 ring-black ring-offset-2"
+                      : "border-black/10"
+                  }`}
+                  style={{
+                    backgroundColor: bg.color,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <main className="min-w-0">
+          <section
+            className="relative h-[640px] overflow-hidden rounded-[5px]"
+            style={{
+              background: `linear-gradient(180deg, ${previewBg} 0%, ${skinTone.color}55 100%)`,
+            }}
+          >
+            <div className="absolute left-5 top-5 z-40 flex items-center gap-3 rounded-[5px] bg-white/80 px-4 py-3 backdrop-blur">
+              <div
+                className="h-10 w-8"
+                style={{
+                  backgroundColor: skinTone.color,
+                  WebkitMaskImage: `url(${assets.mannequin})`,
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                  WebkitMaskSize: "contain",
+                  maskImage: `url(${assets.mannequin})`,
+                  maskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  maskSize: "contain",
+                }}
+              />
+
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-black/50">
+                  Mannequin Name
+                </p>
+                <p className="text-2xl font-black uppercase text-black">
+                  {skinTone.name}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="absolute right-5 top-5 z-40 rounded-[5px] bg-white/80 px-5 py-3 text-xs font-black uppercase tracking-widest text-black backdrop-blur"
+            >
+              Download Outfit
+            </button>
+
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <p className="select-none text-[150px] font-black uppercase tracking-[-0.08em] text-white/[0.08]">
+                SAINT
+              </p>
+            </div>
+
+            <div className="saint-float absolute left-1/2 top-1/2 h-[610px] w-[360px] -translate-x-1/2 -translate-y-1/2">
+              <img
+                src={assets.mannequin}
+                alt="Mannequin"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[595px] w-[340px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
+                style={{
+                  filter: `sepia(0.35) saturate(1.1) hue-rotate(${skinTone.hue}deg) brightness(${skinTone.brightness})`,
+                }}
+              />
+
+              <div
+                onMouseDown={(event) => startDrag(event, "top")}
+                onTouchStart={(event) => startDrag(event, "top")}
+                className="absolute left-1/2 z-30 -translate-x-1/2 cursor-grab touch-none select-none active:cursor-grabbing"
+                style={{
+                  top: `${outfitLayout.top.top}px`,
+                  height: `${outfitLayout.top.height}px`,
+                  width: `${outfitLayout.top.width}px`,
+                }}
+              >
+                {selectedTop ? (
+                  <img
+                    key={selectedTop._id}
+                    src={getProductImage(selectedTop)}
+                    alt={selectedTop.name}
+                    draggable={false}
+                    style={getOutfitStyle(
+                      selectedTop,
+                      outfitLayout.top.scale,
+                      outfitLayout.top,
+                      positions.top
+                    )}
+                    className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.20)]"
+                  />
+                ) : null}
+              </div>
+
+              <div
+                onMouseDown={(event) => startDrag(event, "bottom")}
+                onTouchStart={(event) => startDrag(event, "bottom")}
+                className="absolute left-1/2 z-20 -translate-x-1/2 cursor-grab touch-none select-none active:cursor-grabbing"
+                style={{
+                  top: `${outfitLayout.bottom.top}px`,
+                  height: `${outfitLayout.bottom.height}px`,
+                  width: `${outfitLayout.bottom.width}px`,
+                }}
+              >
+                {selectedBottom ? (
+                  <img
+                    key={selectedBottom._id}
+                    src={getProductImage(selectedBottom)}
+                    alt={selectedBottom.name}
+                    draggable={false}
+                    style={getOutfitStyle(
+                      selectedBottom,
+                      outfitLayout.bottom.scale,
+                      outfitLayout.bottom,
+                      positions.bottom
+                    )}
+                    className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.18)]"
+                  />
+                ) : null}
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="rounded-[5px] border border-black/10 bg-white/80 p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-black/40">
                     Gemini AI
                   </p>
-
-                  <h3 className="text-sm font-black uppercase tracking-tight">
-                    Style Analysis
+                  <h3 className="text-sm font-black uppercase tracking-tight text-black">
+                    AI Style Analysis
                   </h3>
                 </div>
 
                 <button
                   onClick={generateAISuggestion}
                   disabled={aiLoading || (!selectedTop && !selectedBottom)}
-                  className={`rounded-[5px] px-3 py-2 text-[9px] font-black uppercase tracking-widest transition ${
+                  className={`rounded-[5px] px-4 py-2 text-[10px] font-black uppercase tracking-widest transition ${
                     aiLoading || (!selectedTop && !selectedBottom)
-                      ? "cursor-not-allowed bg-white/10 text-white/40"
-                      : "bg-white text-black hover:bg-gray-200"
+                      ? "cursor-not-allowed bg-black/10 text-black/40"
+                      : "bg-black text-white hover:bg-gray-800"
                   }`}
                 >
-                  {aiLoading ? "Analyzing..." : "Analyze Fit"}
+                  {aiLoading ? "Analyzing..." : "Analyze"}
                 </button>
               </div>
 
               {aiError && (
-                <div className="rounded-[5px] bg-red-500/10 px-3 py-2 text-[10px] font-bold leading-4 text-red-200">
-                  {aiError}
-                </div>
+                <p className="text-sm font-bold text-red-500">{aiError}</p>
               )}
 
               {!aiError && !aiSuggestion && (
-                <div className="rounded-[5px] bg-white/5 px-3 py-2">
-                  <p className="text-[10px] font-medium leading-4 text-white/50">
-                    Pick an outfit, then let Gemini explain why the pieces work
-                    together in a modern Saint Clothing streetwear style.
-                  </p>
-                </div>
+                <p className="text-sm font-medium leading-6 text-black/70">
+                  Select a top and bottom, then let Gemini explain the outfit in
+                  a modern Saint Clothing streetwear style.
+                </p>
               )}
 
               {aiSuggestion && (
-                <div className="saint-fade rounded-[5px] bg-white px-3 py-3">
-                  <p className="text-[11px] font-bold leading-5 text-black">
-                    {aiSuggestion}
-                  </p>
-                </div>
+                <p className="saint-fade text-sm font-medium leading-6 text-black/80">
+                  {aiSuggestion}
+                </p>
               )}
             </div>
-          </aside>
-        </div>
+
+            <div className="rounded-[5px] border border-black/10 bg-white/80 p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-black/40">
+                Total Price
+              </p>
+
+              <h3 className="mt-2 text-3xl font-black text-black">
+                {currency}
+                {totalPrice.toLocaleString()}
+              </h3>
+
+              <button
+                type="button"
+                disabled={selectedProducts.length === 0}
+                className={`mt-4 w-full rounded-[5px] px-4 py-3 text-xs font-black uppercase tracking-widest ${
+                  selectedProducts.length === 0
+                    ? "cursor-not-allowed bg-black/10 text-black/40"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                Add All To Cart
+              </button>
+
+              {selectedProducts.length > 0 && (
+                <button
+                  onClick={resetPositions}
+                  className="mt-2 w-full rounded-[5px] border border-black/10 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-black"
+                >
+                  Reset Fit Position
+                </button>
+              )}
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   );
