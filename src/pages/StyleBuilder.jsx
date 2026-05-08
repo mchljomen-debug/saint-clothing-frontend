@@ -27,10 +27,10 @@ const BOTTOM_KEYWORDS = [
 ];
 
 const PREVIEW_BACKGROUNDS = [
-  { name: "White", color: "#ffffff" },
+  { name: "Black", color: "#050505" },
+  { name: "Charcoal", color: "#1b1b1b" },
   { name: "Cream", color: "#f6efe6" },
-  { name: "Grey", color: "#d9d6cf" },
-  { name: "Black", color: "#2f3030" },
+  { name: "White", color: "#ffffff" },
 ];
 
 const DEFAULT_POSITIONS = {
@@ -140,9 +140,9 @@ const getSmartLayout = ({ selectedBottom }) => {
 
   return {
     top: {
-      top: 70,
-      height: 340,
-      width: 340,
+      top: 120,
+      height: 250,
+      width: 335,
       scale: 1,
       snapX: 0,
       snapY: 0,
@@ -151,19 +151,19 @@ const getSmartLayout = ({ selectedBottom }) => {
     bottom: {
       top:
         bottomKind === "pants"
-          ? 300
+          ? 355
           : bottomKind === "jorts"
-          ? 285
-          : 280,
+          ? 332
+          : 328,
 
       height:
         bottomKind === "pants"
-          ? 380
+          ? 385
           : bottomKind === "jorts"
-          ? 320
-          : 310,
+          ? 260
+          : 250,
 
-      width: 320,
+      width: 325,
       scale: 1,
       snapX: 0,
       snapY: 0,
@@ -262,7 +262,7 @@ const StyleBuilder = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [positions, setPositions] = useState(DEFAULT_POSITIONS);
   const [skinTone, setSkinTone] = useState(SKIN_TONES[3]);
-  const [previewBg, setPreviewBg] = useState(PREVIEW_BACKGROUNDS[1].color);
+  const [previewBg, setPreviewBg] = useState(PREVIEW_BACKGROUNDS[0].color);
 
   const [aiSuggestion, setAiSuggestion] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -282,6 +282,20 @@ const StyleBuilder = () => {
       (item) => category === "All" || item.category === category
     );
   }, [cleanProducts, category]);
+
+  const topOptions = useMemo(() => {
+    return cleanProducts.filter((item) => {
+      const type = getProductType(item);
+      return type === "top" || type === "both";
+    });
+  }, [cleanProducts]);
+
+  const bottomOptions = useMemo(() => {
+    return cleanProducts.filter((item) => {
+      const type = getProductType(item);
+      return type === "bottom" || type === "both";
+    });
+  }, [cleanProducts]);
 
   const selectedTop = selectedProducts.find((item) => {
     const type = getProductType(item);
@@ -403,27 +417,34 @@ const StyleBuilder = () => {
     });
   };
 
+  const handleSelectProduct = (productId, slot) => {
+    if (!productId) {
+      setSelectedProducts((prev) =>
+        prev.filter((item) => {
+          const type = getProductType(item);
+          if (slot === "top") return !["top", "both"].includes(type);
+          if (slot === "bottom") return !["bottom", "both"].includes(type);
+          return true;
+        })
+      );
+      return;
+    }
+
+    const product = cleanProducts.find((p) => p._id === productId);
+    if (product) addToFit(product);
+  };
+
   const generateAutomaticFit = () => {
-    const tops = cleanProducts.filter((item) => {
-      const type = getProductType(item);
-      return type === "top" || type === "both";
-    });
-
-    const bottoms = cleanProducts.filter((item) => {
-      const type = getProductType(item);
-      return type === "bottom" || type === "both";
-    });
-
     setAiSuggestion("");
     setAiError("");
 
-    if (tops.length === 0 && bottoms.length === 0) return;
+    if (topOptions.length === 0 && bottomOptions.length === 0) return;
 
-    if (tops.length > 0 && bottoms.length > 0) {
+    if (topOptions.length > 0 && bottomOptions.length > 0) {
       const rankedPairs = [];
 
-      tops.forEach((top) => {
-        bottoms.forEach((bottom) => {
+      topOptions.forEach((top) => {
+        bottomOptions.forEach((bottom) => {
           if (top._id !== bottom._id) {
             rankedPairs.push({
               top,
@@ -446,13 +467,15 @@ const StyleBuilder = () => {
       return;
     }
 
-    if (tops.length > 0) {
-      setSelectedProducts([tops[Math.floor(Math.random() * tops.length)]]);
+    if (topOptions.length > 0) {
+      setSelectedProducts([topOptions[Math.floor(Math.random() * topOptions.length)]]);
       setPositions(DEFAULT_POSITIONS);
       return;
     }
 
-    setSelectedProducts([bottoms[Math.floor(Math.random() * bottoms.length)]]);
+    setSelectedProducts([
+      bottomOptions[Math.floor(Math.random() * bottomOptions.length)],
+    ]);
     setPositions(DEFAULT_POSITIONS);
   };
 
@@ -524,7 +547,7 @@ const StyleBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f5ef] px-3 py-4 lg:px-5">
+    <div className="min-h-screen bg-[#f6f1e8] px-3 py-4 lg:px-5">
       <style>
         {`
           @keyframes saintFloat {
@@ -560,10 +583,10 @@ const StyleBuilder = () => {
         `}
       </style>
 
-      <div className="mx-auto grid max-w-[1550px] gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1560px] gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
         <aside className="rounded-[5px] bg-[#fbf7ef] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.08)]">
           <div className="mb-4">
-            <h1 className="text-3xl font-black uppercase tracking-[-0.06em] text-black">
+            <h1 className="text-3xl font-black uppercase tracking-[-0.08em] text-black">
               Style Builder
             </h1>
             <p className="mt-1 text-sm font-medium text-black/70">
@@ -691,33 +714,21 @@ const StyleBuilder = () => {
               <div className="flex items-center gap-2">
                 <select
                   value={selectedTop?._id || ""}
-                  onChange={(e) => {
-                    const product = cleanProducts.find((p) => p._id === e.target.value);
-                    if (product) addToFit(product);
-                  }}
+                  onChange={(e) => handleSelectProduct(e.target.value, "top")}
                   className="w-full rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-bold outline-none"
                 >
                   <option value="">Select top</option>
-                  {cleanProducts
-                    .filter((item) => {
-                      const type = getProductType(item);
-                      return type === "top" || type === "both";
-                    })
-                    .map((item) => (
-                      <option key={item._id} value={item._id}>
-                        {item.name} — {currency}
-                        {getFinalPrice(item).toLocaleString()}
-                      </option>
-                    ))}
+                  {topOptions.map((item) => (
+                    <option key={item._id} value={item._id}>
+                      {item.name} — {currency}
+                      {getFinalPrice(item).toLocaleString()}
+                    </option>
+                  ))}
                 </select>
 
                 {selectedTop && (
                   <button
-                    onClick={() =>
-                      setSelectedProducts((prev) =>
-                        prev.filter((p) => p._id !== selectedTop._id)
-                      )
-                    }
+                    onClick={() => handleSelectProduct("", "top")}
                     className="rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-black"
                   >
                     ✕
@@ -731,33 +742,21 @@ const StyleBuilder = () => {
               <div className="flex items-center gap-2">
                 <select
                   value={selectedBottom?._id || ""}
-                  onChange={(e) => {
-                    const product = cleanProducts.find((p) => p._id === e.target.value);
-                    if (product) addToFit(product);
-                  }}
+                  onChange={(e) => handleSelectProduct(e.target.value, "bottom")}
                   className="w-full rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-bold outline-none"
                 >
                   <option value="">Select bottom</option>
-                  {cleanProducts
-                    .filter((item) => {
-                      const type = getProductType(item);
-                      return type === "bottom" || type === "both";
-                    })
-                    .map((item) => (
-                      <option key={item._id} value={item._id}>
-                        {item.name} — {currency}
-                        {getFinalPrice(item).toLocaleString()}
-                      </option>
-                    ))}
+                  {bottomOptions.map((item) => (
+                    <option key={item._id} value={item._id}>
+                      {item.name} — {currency}
+                      {getFinalPrice(item).toLocaleString()}
+                    </option>
+                  ))}
                 </select>
 
                 {selectedBottom && (
                   <button
-                    onClick={() =>
-                      setSelectedProducts((prev) =>
-                        prev.filter((p) => p._id !== selectedBottom._id)
-                      )
-                    }
+                    onClick={() => handleSelectProduct("", "bottom")}
                     className="rounded-[5px] border border-black/10 bg-white px-3 py-3 text-xs font-black"
                   >
                     ✕
@@ -765,6 +764,15 @@ const StyleBuilder = () => {
                 )}
               </div>
             </div>
+
+            {selectedProducts.length > 0 && (
+              <button
+                onClick={clearFit}
+                className="mt-3 w-full rounded-[5px] bg-red-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-red-600"
+              >
+                Clear Fit
+              </button>
+            )}
           </div>
 
           <div className="mt-5 border-t border-black/10 pt-4">
@@ -790,16 +798,66 @@ const StyleBuilder = () => {
               ))}
             </div>
           </div>
+
+          {selectedProducts.length > 0 && (
+            <div className="mt-5 border-t border-black/10 pt-4">
+              <h2 className="text-base font-black uppercase tracking-tight text-black">
+                4. Fit Adjustment
+              </h2>
+
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-[5px] bg-white p-3">
+                  <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-black/40">
+                    Top Scale
+                  </p>
+                  <input
+                    type="range"
+                    min="0.6"
+                    max="1.6"
+                    step="0.01"
+                    value={positions.top.scale}
+                    onChange={(event) => updateScale("top", event.target.value)}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="rounded-[5px] bg-white p-3">
+                  <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-black/40">
+                    Bottom Scale
+                  </p>
+                  <input
+                    type="range"
+                    min="0.6"
+                    max="1.6"
+                    step="0.01"
+                    value={positions.bottom.scale}
+                    onChange={(event) => updateScale("bottom", event.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={resetPositions}
+                className="mt-2 w-full rounded-[5px] border border-black/10 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-black"
+              >
+                Reset Fit Position
+              </button>
+            </div>
+          )}
         </aside>
 
         <main className="min-w-0">
           <section
-            className="relative h-[640px] overflow-hidden rounded-[5px]"
+            className="relative h-[760px] overflow-hidden rounded-[5px]"
             style={{
-              background: `linear-gradient(180deg, ${previewBg} 0%, ${skinTone.color}55 100%)`,
+              background:
+                previewBg === "#050505" || previewBg === "#1b1b1b"
+                  ? previewBg
+                  : `linear-gradient(180deg, ${previewBg} 0%, ${skinTone.color}38 100%)`,
             }}
           >
-            <div className="absolute left-5 top-5 z-40 flex items-center gap-3 rounded-[5px] bg-white/80 px-4 py-3 backdrop-blur">
+            <div className="absolute left-5 top-5 z-40 flex items-center gap-3 rounded-[5px] bg-white/90 px-4 py-3 shadow-lg shadow-black/10 backdrop-blur">
               <div
                 className="h-10 w-8"
                 style={{
@@ -827,22 +885,28 @@ const StyleBuilder = () => {
 
             <button
               type="button"
-              className="absolute right-5 top-5 z-40 rounded-[5px] bg-white/80 px-5 py-3 text-xs font-black uppercase tracking-widest text-black backdrop-blur"
+              className="absolute right-5 top-5 z-40 rounded-[5px] bg-white/90 px-5 py-3 text-xs font-black uppercase tracking-widest text-black shadow-lg shadow-black/10 backdrop-blur"
             >
               Download Outfit
             </button>
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <p className="select-none text-[150px] font-black uppercase tracking-[-0.08em] text-white/[0.08]">
+              <p
+                className={`select-none text-[170px] font-black uppercase tracking-[-0.08em] ${
+                  previewBg === "#050505" || previewBg === "#1b1b1b"
+                    ? "text-white/[0.06]"
+                    : "text-black/[0.025]"
+                }`}
+              >
                 SAINT
               </p>
             </div>
 
-            <div className="saint-float absolute left-1/2 top-1/2 h-[720px] w-[430px] -translate-x-1/2 -translate-y-1/2">
+            <div className="saint-float absolute left-1/2 top-[52%] h-[760px] w-[450px] -translate-x-1/2 -translate-y-1/2">
               <img
                 src={assets.mannequin}
                 alt="Mannequin"
-                className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[720px] w-[420px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[745px] w-[430px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
                 style={{
                   filter: `sepia(0.35) saturate(1.1) hue-rotate(${skinTone.hue}deg) brightness(${skinTone.brightness})`,
                 }}
@@ -905,7 +969,7 @@ const StyleBuilder = () => {
           </section>
 
           <section className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="rounded-[5px] border border-black/10 bg-white/80 p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
+            <div className="rounded-[5px] border border-black/10 bg-white/90 p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-black/40">
@@ -947,7 +1011,7 @@ const StyleBuilder = () => {
               )}
             </div>
 
-            <div className="rounded-[5px] border border-black/10 bg-white/80 p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
+            <div className="rounded-[5px] border border-black/10 bg-white/90 p-5 shadow-[0_12px_30px_rgba(0,0,0,0.04)]">
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-black/40">
                 Total Price
               </p>
@@ -968,15 +1032,6 @@ const StyleBuilder = () => {
               >
                 Add All To Cart
               </button>
-
-              {selectedProducts.length > 0 && (
-                <button
-                  onClick={resetPositions}
-                  className="mt-2 w-full rounded-[5px] border border-black/10 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-black"
-                >
-                  Reset Fit Position
-                </button>
-              )}
             </div>
           </section>
         </main>
