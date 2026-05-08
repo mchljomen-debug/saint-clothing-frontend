@@ -140,17 +140,30 @@ const getSmartLayout = ({ selectedBottom }) => {
 
   return {
     top: {
-      top: 92,
-      height: 190,
-      width: 250,
+      top: 70,
+      height: 340,
+      width: 340,
       scale: 1,
       snapX: 0,
       snapY: 0,
     },
+
     bottom: {
-      top: bottomKind === "pants" ? 278 : bottomKind === "jorts" ? 250 : 245,
-      height: bottomKind === "pants" ? 285 : bottomKind === "jorts" ? 230 : 220,
-      width: 245,
+      top:
+        bottomKind === "pants"
+          ? 300
+          : bottomKind === "jorts"
+          ? 285
+          : 280,
+
+      height:
+        bottomKind === "pants"
+          ? 380
+          : bottomKind === "jorts"
+          ? 320
+          : 310,
+
+      width: 320,
       scale: 1,
       snapX: 0,
       snapY: 0,
@@ -825,11 +838,11 @@ const StyleBuilder = () => {
               </p>
             </div>
 
-            <div className="saint-float absolute left-1/2 top-1/2 h-[610px] w-[360px] -translate-x-1/2 -translate-y-1/2">
+            <div className="saint-float absolute left-1/2 top-1/2 h-[720px] w-[430px] -translate-x-1/2 -translate-y-1/2">
               <img
                 src={assets.mannequin}
                 alt="Mannequin"
-                className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[595px] w-[340px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[720px] w-[420px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
                 style={{
                   filter: `sepia(0.35) saturate(1.1) hue-rotate(${skinTone.hue}deg) brightness(${skinTone.brightness})`,
                 }}
