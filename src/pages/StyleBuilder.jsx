@@ -1,30 +1,7 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
-
-const TOP_KEYWORDS = [
-  "tshirt",
-  "t-shirt",
-  "shirt",
-  "long sleeve",
-  "longsleeve",
-  "crop",
-  "jersey",
-  "hoodie",
-  "jacket",
-  "polo",
-];
-
-const BOTTOM_KEYWORDS = [
-  "jorts",
-  "short",
-  "shorts",
-  "pants",
-  "jeans",
-  "trouser",
-  "bottom",
-];
 
 const PREVIEW_BACKGROUNDS = [
   { name: "Black", color: "#050505" },
@@ -47,6 +24,8 @@ const SKIN_TONES = [
   { type: "VI", label: "Deep", color: "#4A2A1A", hue: -18, brightness: 0.62 },
 ];
 
+const normalize = (value) => String(value || "").trim().toLowerCase();
+
 const getProductImage = (item) => {
   if (item?.outfitImage) return item.outfitImage;
   if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
@@ -56,39 +35,22 @@ const getProductImage = (item) => {
   return "/placeholder.png";
 };
 
-const getProductText = (product) =>
-  `${product?.category || ""} ${product?.name || ""} ${
-    product?.subCategory || ""
-  }`.toLowerCase();
+const getFinalPrice = (item) => {
+  const price = Number(item?.price || 0);
+  const salePercent = Number(item?.salePercent || 0);
 
-const getProductType = (product) => {
-  const section = String(product?.recommendationSection || "").toLowerCase();
-
-  if (["top", "bottom", "both"].includes(section)) return section;
-
-  const text = getProductText(product);
-
-  if (TOP_KEYWORDS.some((word) => text.includes(word))) return "top";
-  if (BOTTOM_KEYWORDS.some((word) => text.includes(word))) return "bottom";
-
-  return "other";
-};
-
-const getBottomKind = (product) => {
-  const text = getProductText(product);
-
-  if (text.includes("pants") || text.includes("jeans") || text.includes("trouser")) {
-    return "pants";
+  if (item?.onSale && salePercent > 0) {
+    return Math.max(price - (price * salePercent) / 100, 0);
   }
 
-  if (text.includes("jorts")) return "jorts";
-  if (text.includes("shorts") || text.includes("short")) return "shorts";
-
-  return "bottom";
+  return price;
 };
 
 const getSmartLayout = ({ selectedBottom }) => {
-  const bottomKind = getBottomKind(selectedBottom);
+  const category = normalize(selectedBottom?.category);
+
+  const isPants = category.includes("pants") || category.includes("jeans");
+  const isJorts = category.includes("jorts");
 
   return {
     top: {
@@ -100,18 +62,8 @@ const getSmartLayout = ({ selectedBottom }) => {
       snapY: 0,
     },
     bottom: {
-      top:
-        bottomKind === "pants"
-          ? 300
-          : bottomKind === "jorts"
-          ? 278
-          : 272,
-      height:
-        bottomKind === "pants"
-          ? 360
-          : bottomKind === "jorts"
-          ? 265
-          : 255,
+      top: isPants ? 300 : isJorts ? 278 : 272,
+      height: isPants ? 360 : isJorts ? 265 : 255,
       width: 315,
       scale: 1,
       snapX: 0,
@@ -143,49 +95,13 @@ const getOutfitStyle = (item, dynamicScale = 1, snap = {}, drag = {}) => {
   };
 };
 
-const getFinalPrice = (item) => {
-  const price = Number(item?.price || 0);
-  const salePercent = Number(item?.salePercent || 0);
-
-  if (item?.onSale && salePercent > 0) {
-    return Math.max(price - (price * salePercent) / 100, 0);
-  }
-
-  return price;
-};
-
 const scorePair = (top, bottom) => {
   let score = 0;
   if (!top || !bottom) return score;
 
-  const topColor = String(top.color || "").toLowerCase();
-  const bottomColor = String(bottom.color || "").toLowerCase();
-
-  const topTags = Array.isArray(top.styleTags)
-    ? top.styleTags.map((t) => String(t).toLowerCase())
-    : [];
-
-  const bottomTags = Array.isArray(bottom.styleTags)
-    ? bottom.styleTags.map((t) => String(t).toLowerCase())
-    : [];
-
-  const sharedTags = bottomTags.filter((tag) => topTags.includes(tag));
-
   if (top.category && bottom.matchWith?.includes(top.category)) score += 10;
   if (bottom.category && top.matchWith?.includes(bottom.category)) score += 10;
   if (top.styleVibe && bottom.styleVibe && top.styleVibe === bottom.styleVibe) score += 6;
-
-  score += sharedTags.length * 3;
-
-  if (topColor && bottomColor && topColor === bottomColor) score += 1;
-
-  const neutralColors = ["black", "white", "gray", "grey", "cream", "beige"];
-  const topNeutral = neutralColors.some((c) => topColor.includes(c));
-  const bottomNeutral = neutralColors.some((c) => bottomColor.includes(c));
-
-  if (topColor && bottomColor && topColor !== bottomColor) score += 4;
-  if (topNeutral || bottomNeutral) score += 2;
-  if (topColor.includes("black") && bottomColor.includes("black")) score -= 6;
 
   if (top.bestseller) score += 3;
   if (bottom.bestseller) score += 3;
@@ -213,13 +129,51 @@ const StyleBuilder = () => {
   const [skinTone, setSkinTone] = useState(SKIN_TONES[3]);
   const [previewBg, setPreviewBg] = useState(PREVIEW_BACKGROUNDS[0].color);
 
+  const [categoryMeta, setCategoryMeta] = useState([]);
+
   const [aiSuggestion, setAiSuggestion] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await axios.get(`${backendUrl}/api/category/list`);
+
+        if (response.data?.success) {
+          setCategoryMeta(response.data.categories || []);
+        }
+      } catch (error) {
+        console.error("Build Fit Category Load Error:", error);
+      }
+    };
+
+    loadCategories();
+  }, [backendUrl]);
+
+  const getProductSection = (product) => {
+    const productCategory = normalize(product?.category);
+
+    const match = categoryMeta.find(
+      (cat) => normalize(cat.name) === productCategory
+    );
+
+    return normalize(match?.section || "other");
+  };
+
   const CATEGORIES = useMemo(() => {
-    return ["All", ...Array.from(new Set(categoryOptions.filter(Boolean)))];
-  }, [categoryOptions]);
+    const backendCategoryNames = categoryMeta.map((item) => item.name).filter(Boolean);
+
+    return [
+      "All",
+      ...Array.from(
+        new Set([
+          ...categoryOptions.filter(Boolean),
+          ...backendCategoryNames,
+        ])
+      ),
+    ];
+  }, [categoryOptions, categoryMeta]);
 
   const cleanProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
@@ -233,28 +187,20 @@ const StyleBuilder = () => {
   }, [cleanProducts, category]);
 
   const topOptions = useMemo(() => {
-    return filteredProducts.filter((item) => {
-      const type = getProductType(item);
-      return type === "top" || type === "both";
-    });
-  }, [filteredProducts]);
+    return filteredProducts.filter((item) => getProductSection(item) === "top");
+  }, [filteredProducts, categoryMeta]);
 
   const bottomOptions = useMemo(() => {
-    return filteredProducts.filter((item) => {
-      const type = getProductType(item);
-      return type === "bottom" || type === "both";
-    });
-  }, [filteredProducts]);
+    return filteredProducts.filter((item) => getProductSection(item) === "bottom");
+  }, [filteredProducts, categoryMeta]);
 
-  const selectedTop = selectedProducts.find((item) => {
-    const type = getProductType(item);
-    return type === "top" || type === "both";
-  });
+  const selectedTop = selectedProducts.find(
+    (item) => getProductSection(item) === "top"
+  );
 
-  const selectedBottom = selectedProducts.find((item) => {
-    const type = getProductType(item);
-    return type === "bottom" || type === "both";
-  });
+  const selectedBottom = selectedProducts.find(
+    (item) => getProductSection(item) === "bottom"
+  );
 
   const outfitLayout = getSmartLayout({ selectedBottom });
 
@@ -335,7 +281,7 @@ const StyleBuilder = () => {
     setAiSuggestion("");
     setAiError("");
 
-    const productType = getProductType(product);
+    const section = getProductSection(product);
 
     setSelectedProducts((prev) => {
       const exists = prev.some((item) => item._id === product._id);
@@ -344,39 +290,22 @@ const StyleBuilder = () => {
         return prev.filter((item) => item._id !== product._id);
       }
 
-      if (productType === "top") {
+      if (section === "top") {
         return [
-          ...prev.filter((item) => !["top", "both"].includes(getProductType(item))),
+          ...prev.filter((item) => getProductSection(item) !== "top"),
           product,
         ];
       }
 
-      if (productType === "bottom") {
+      if (section === "bottom") {
         return [
-          ...prev.filter((item) => !["bottom", "both"].includes(getProductType(item))),
+          ...prev.filter((item) => getProductSection(item) !== "bottom"),
           product,
         ];
-      }
-
-      if (productType === "both") {
-        return [product];
       }
 
       return prev;
     });
-  };
-
-  const removeSlot = (slot) => {
-    setSelectedProducts((prev) =>
-      prev.filter((item) => {
-        const type = getProductType(item);
-        if (slot === "top") return !["top", "both"].includes(type);
-        if (slot === "bottom") return !["bottom", "both"].includes(type);
-        return true;
-      })
-    );
-    setAiSuggestion("");
-    setAiError("");
   };
 
   const generateAutomaticFit = () => {
@@ -390,22 +319,16 @@ const StyleBuilder = () => {
 
       topOptions.forEach((top) => {
         bottomOptions.forEach((bottom) => {
-          if (top._id !== bottom._id) {
-            rankedPairs.push({
-              top,
-              bottom,
-              score: scorePair(top, bottom),
-            });
-          }
+          rankedPairs.push({
+            top,
+            bottom,
+            score: scorePair(top, bottom),
+          });
         });
       });
 
       const sortedPairs = rankedPairs.sort((a, b) => b.score - a.score);
-      const poolSize = Math.max(5, Math.ceil(sortedPairs.length * 0.3));
-      const smartPool = sortedPairs.slice(0, poolSize);
-
-      const selectedPair =
-        smartPool[Math.floor(Math.random() * smartPool.length)] || smartPool[0];
+      const selectedPair = sortedPairs[0];
 
       setSelectedProducts([selectedPair.top, selectedPair.bottom].filter(Boolean));
       setPositions(DEFAULT_POSITIONS);
@@ -413,14 +336,12 @@ const StyleBuilder = () => {
     }
 
     if (topOptions.length > 0) {
-      setSelectedProducts([topOptions[Math.floor(Math.random() * topOptions.length)]]);
+      setSelectedProducts([topOptions[0]]);
       setPositions(DEFAULT_POSITIONS);
       return;
     }
 
-    setSelectedProducts([
-      bottomOptions[Math.floor(Math.random() * bottomOptions.length)],
-    ]);
+    setSelectedProducts([bottomOptions[0]]);
     setPositions(DEFAULT_POSITIONS);
   };
 
@@ -497,7 +418,11 @@ const StyleBuilder = () => {
           : "border-black/10 bg-white hover:border-black"
       } ${mode === "automatic" ? "cursor-default opacity-80" : ""}`}
     >
-      <div className={`h-16 w-14 overflow-hidden rounded-[5px] ${active ? "bg-white" : "bg-[#f5f1e9]"}`}>
+      <div
+        className={`h-16 w-14 overflow-hidden rounded-[5px] ${
+          active ? "bg-white" : "bg-[#f5f1e9]"
+        }`}
+      >
         <img
           src={getProductImage(item)}
           alt={item.name}
@@ -509,7 +434,11 @@ const StyleBuilder = () => {
         <p className="line-clamp-1 text-[11px] font-black uppercase">
           {item.name}
         </p>
-        <p className={`mt-1 text-[10px] font-bold ${active ? "text-white/70" : "text-black/50"}`}>
+        <p
+          className={`mt-1 text-[10px] font-bold ${
+            active ? "text-white/70" : "text-black/50"
+          }`}
+        >
           {currency}
           {getFinalPrice(item).toLocaleString()}
         </p>
@@ -643,7 +572,7 @@ const StyleBuilder = () => {
             <div className="saint-scroll mt-2 max-h-[220px] space-y-2 overflow-y-auto pr-1">
               {topOptions.length === 0 ? (
                 <p className="rounded-[5px] bg-white p-3 text-xs font-bold text-black/50">
-                  No top items found.
+                  No top items found. Set this category section to top.
                 </p>
               ) : (
                 topOptions.map((item) =>
@@ -659,7 +588,7 @@ const StyleBuilder = () => {
             <div className="saint-scroll mt-2 max-h-[220px] space-y-2 overflow-y-auto pr-1">
               {bottomOptions.length === 0 ? (
                 <p className="rounded-[5px] bg-white p-3 text-xs font-bold text-black/50">
-                  No bottom items found.
+                  No bottom items found. Set this category section to bottom.
                 </p>
               ) : (
                 bottomOptions.map((item) =>
