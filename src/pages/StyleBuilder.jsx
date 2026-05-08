@@ -1,4 +1,5 @@
 import React, { useContext, useMemo, useState } from "react";
+import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
 
 const TOP_KEYWORDS = [
@@ -46,8 +47,9 @@ const getProductImage = (item) => {
 };
 
 const getProductText = (product) =>
-  `${product?.category || ""} ${product?.name || ""} ${product?.subCategory || ""
-    }`.toLowerCase();
+  `${product?.category || ""} ${product?.name || ""} ${
+    product?.subCategory || ""
+  }`.toLowerCase();
 
 const getProductType = (product) => {
   const section = String(product?.recommendationSection || "").toLowerCase();
@@ -82,7 +84,6 @@ const getBottomKind = (product) => {
 
 const getSmartLayout = ({ selectedBottom }) => {
   const bottomKind = getBottomKind(selectedBottom);
-  const isPants = bottomKind === "pants";
 
   return {
     top: {
@@ -95,13 +96,17 @@ const getSmartLayout = ({ selectedBottom }) => {
     },
     bottom: {
       top:
-        bottomKind === "pants" ? 255 :
-          bottomKind === "jorts" ? 215 :
-            205,
+        bottomKind === "pants"
+          ? 255
+          : bottomKind === "jorts"
+          ? 215
+          : 205,
       height:
-        bottomKind === "pants" ? 315 :
-          bottomKind === "jorts" ? 305 :
-            300,
+        bottomKind === "pants"
+          ? 315
+          : bottomKind === "jorts"
+          ? 305
+          : 300,
       width: 350,
       scale: 1,
       snapX: 0,
@@ -151,8 +156,13 @@ const scorePair = (top, bottom) => {
   const topColor = String(top.color || "").toLowerCase();
   const bottomColor = String(bottom.color || "").toLowerCase();
 
-  const topTags = Array.isArray(top.styleTags) ? top.styleTags.map((t) => String(t).toLowerCase()) : [];
-  const bottomTags = Array.isArray(bottom.styleTags) ? bottom.styleTags.map((t) => String(t).toLowerCase()) : [];
+  const topTags = Array.isArray(top.styleTags)
+    ? top.styleTags.map((t) => String(t).toLowerCase())
+    : [];
+
+  const bottomTags = Array.isArray(bottom.styleTags)
+    ? bottom.styleTags.map((t) => String(t).toLowerCase())
+    : [];
 
   const sharedTags = bottomTags.filter((tag) => topTags.includes(tag));
 
@@ -165,7 +175,6 @@ const scorePair = (top, bottom) => {
 
   score += sharedTags.length * 3;
 
-  // color logic: not always same color
   if (topColor && bottomColor && topColor === bottomColor) score += 1;
 
   const neutralColors = ["black", "white", "gray", "grey", "cream", "beige"];
@@ -175,7 +184,6 @@ const scorePair = (top, bottom) => {
   if (topColor && bottomColor && topColor !== bottomColor) score += 4;
   if (topNeutral || bottomNeutral) score += 2;
 
-  // avoid always black-black
   if (topColor.includes("black") && bottomColor.includes("black")) {
     score -= 6;
   }
@@ -191,13 +199,23 @@ const scorePair = (top, bottom) => {
 };
 
 const StyleBuilder = () => {
-  const { products, currency, categoryOptions = [] } = useContext(ShopContext);
+  const {
+    products,
+    currency,
+    categoryOptions = [],
+    backendUrl,
+    token,
+  } = useContext(ShopContext);
 
   const [mode, setMode] = useState("manual");
   const [category, setCategory] = useState("All");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [previewBg, setPreviewBg] = useState("#ffffff");
   const [positions, setPositions] = useState(DEFAULT_POSITIONS);
+
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
 
   const CATEGORIES = useMemo(() => {
     return ["All", ...Array.from(new Set(categoryOptions.filter(Boolean)))];
@@ -233,6 +251,8 @@ const StyleBuilder = () => {
   const clearFit = () => {
     setSelectedProducts([]);
     setPositions(DEFAULT_POSITIONS);
+    setAiSuggestion("");
+    setAiError("");
   };
 
   const resetPositions = () => {
@@ -297,6 +317,9 @@ const StyleBuilder = () => {
   const addToFit = (product) => {
     if (!product?._id || mode !== "manual") return;
 
+    setAiSuggestion("");
+    setAiError("");
+
     const productType = getProductType(product);
 
     setSelectedProducts((prev) => {
@@ -343,6 +366,9 @@ const StyleBuilder = () => {
       return type === "bottom" || type === "both";
     });
 
+    setAiSuggestion("");
+    setAiError("");
+
     if (tops.length === 0 && bottoms.length === 0) return;
 
     if (tops.length > 0 && bottoms.length > 0) {
@@ -362,7 +388,6 @@ const StyleBuilder = () => {
 
       const sortedPairs = rankedPairs.sort((a, b) => b.score - a.score);
 
-      // AI style: choose from top 30%, not only top 1
       const poolSize = Math.max(5, Math.ceil(sortedPairs.length * 0.3));
       const smartPool = sortedPairs.slice(0, poolSize);
 
@@ -383,11 +408,66 @@ const StyleBuilder = () => {
     setSelectedProducts([bottoms[Math.floor(Math.random() * bottoms.length)]]);
     setPositions(DEFAULT_POSITIONS);
   };
+
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
 
     if (nextMode === "automatic") {
       generateAutomaticFit();
+    }
+  };
+
+  const generateAISuggestion = async () => {
+    try {
+      setAiLoading(true);
+      setAiError("");
+      setAiSuggestion("");
+
+      if (!selectedTop && !selectedBottom) {
+        setAiError("Pick at least one item before using AI Style Analysis.");
+        return;
+      }
+
+      const response = await axios.post(
+        `${backendUrl}/api/ai/suggest-fit`,
+        {
+          top: selectedTop
+            ? {
+                name: selectedTop.name,
+                category: selectedTop.category,
+                color: selectedTop.color,
+                styleVibe: selectedTop.styleVibe,
+                styleTags: selectedTop.styleTags,
+                price: selectedTop.price,
+              }
+            : null,
+          bottom: selectedBottom
+            ? {
+                name: selectedBottom.name,
+                category: selectedBottom.category,
+                color: selectedBottom.color,
+                styleVibe: selectedBottom.styleVibe,
+                styleTags: selectedBottom.styleTags,
+                price: selectedBottom.price,
+              }
+            : null,
+          style: "modern streetwear",
+        },
+        {
+          headers: token ? { token } : {},
+        }
+      );
+
+      if (response.data?.success) {
+        setAiSuggestion(response.data.suggestion || "");
+      } else {
+        setAiError(response.data?.message || "AI style analysis failed.");
+      }
+    } catch (error) {
+      console.error("AI Style Analysis Error:", error);
+      setAiError("AI style analysis failed. Please try again.");
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -451,27 +531,29 @@ const StyleBuilder = () => {
 
               <p className="mt-1 max-w-2xl text-sm font-medium leading-5 text-gray-500">
                 Build a fit manually or generate a smart outfit from your product
-                collection.
+                collection with AI style analysis.
               </p>
             </div>
 
             <div className="flex w-full rounded-[5px] bg-black p-1 shadow-lg shadow-black/10 sm:w-auto">
               <button
                 onClick={() => handleModeChange("manual")}
-                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${mode === "manual"
-                  ? "bg-white text-black"
-                  : "text-white hover:bg-white/10"
-                  }`}
+                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  mode === "manual"
+                    ? "bg-white text-black"
+                    : "text-white hover:bg-white/10"
+                }`}
               >
                 Manual
               </button>
 
               <button
                 onClick={() => handleModeChange("automatic")}
-                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${mode === "automatic"
-                  ? "bg-white text-black"
-                  : "text-white hover:bg-white/10"
-                  }`}
+                className={`flex-1 rounded-[5px] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition sm:flex-none ${
+                  mode === "automatic"
+                    ? "bg-white text-black"
+                    : "text-white hover:bg-white/10"
+                }`}
               >
                 Automatic
               </button>
@@ -513,10 +595,11 @@ const StyleBuilder = () => {
                 <button
                   key={cat}
                   onClick={() => setCategory(cat)}
-                  className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${category === cat
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
-                    }`}
+                  className={`shrink-0 rounded-[5px] border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${
+                    category === cat
+                      ? "border-black bg-black text-white"
+                      : "border-gray-200 bg-white text-gray-500 hover:border-black hover:text-black"
+                  }`}
                 >
                   {cat}
                 </button>
@@ -543,16 +626,18 @@ const StyleBuilder = () => {
                       key={item._id}
                       onClick={() => addToFit(item)}
                       disabled={mode === "automatic"}
-                      className={`group text-left transition ${mode === "automatic"
-                        ? "cursor-default opacity-90"
-                        : "cursor-pointer"
-                        }`}
+                      className={`group text-left transition ${
+                        mode === "automatic"
+                          ? "cursor-default opacity-90"
+                          : "cursor-pointer"
+                      }`}
                     >
                       <div
-                        className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${active
-                          ? "ring-2 ring-black ring-offset-2"
-                          : "hover:bg-gray-100"
-                          }`}
+                        className={`relative overflow-hidden rounded-[5px] bg-[#f5f5f3] transition duration-300 ${
+                          active
+                            ? "ring-2 ring-black ring-offset-2"
+                            : "hover:bg-gray-100"
+                        }`}
                       >
                         <div className="aspect-[3/4]">
                           <img
@@ -630,10 +715,11 @@ const StyleBuilder = () => {
                     key={bg.name}
                     onClick={() => setPreviewBg(bg.color)}
                     title={bg.name}
-                    className={`h-7 w-7 rounded-[5px] border transition ${previewBg.toLowerCase() === bg.color.toLowerCase()
-                      ? "border-black ring-2 ring-black ring-offset-2"
-                      : "border-gray-300"
-                      }`}
+                    className={`h-7 w-7 rounded-[5px] border transition ${
+                      previewBg.toLowerCase() === bg.color.toLowerCase()
+                        ? "border-black ring-2 ring-black ring-offset-2"
+                        : "border-gray-300"
+                    }`}
                     style={{ backgroundColor: bg.color }}
                   />
                 ))}
@@ -646,8 +732,9 @@ const StyleBuilder = () => {
             >
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <p
-                  className={`select-none text-[95px] font-black uppercase tracking-[-0.08em] ${isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
-                    }`}
+                  className={`select-none text-[95px] font-black uppercase tracking-[-0.08em] ${
+                    isDarkPreview ? "text-white/[0.04]" : "text-black/[0.018]"
+                  }`}
                 >
                   SAINT
                 </p>
@@ -817,11 +904,13 @@ const StyleBuilder = () => {
 
                         {mode === "manual" && (
                           <button
-                            onClick={() =>
+                            onClick={() => {
                               setSelectedProducts((prev) =>
                                 prev.filter((p) => p._id !== item._id)
-                              )
-                            }
+                              );
+                              setAiSuggestion("");
+                              setAiError("");
+                            }}
                             className="rounded-[5px] bg-red-50 px-2.5 py-1.5 text-[8px] font-black uppercase tracking-widest text-red-500"
                           >
                             Remove
@@ -830,6 +919,55 @@ const StyleBuilder = () => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-2 rounded-[5px] border border-black/10 bg-black p-3 text-white">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-white/40">
+                    Gemini AI
+                  </p>
+
+                  <h3 className="text-sm font-black uppercase tracking-tight">
+                    Style Analysis
+                  </h3>
+                </div>
+
+                <button
+                  onClick={generateAISuggestion}
+                  disabled={aiLoading || (!selectedTop && !selectedBottom)}
+                  className={`rounded-[5px] px-3 py-2 text-[9px] font-black uppercase tracking-widest transition ${
+                    aiLoading || (!selectedTop && !selectedBottom)
+                      ? "cursor-not-allowed bg-white/10 text-white/40"
+                      : "bg-white text-black hover:bg-gray-200"
+                  }`}
+                >
+                  {aiLoading ? "Analyzing..." : "Analyze Fit"}
+                </button>
+              </div>
+
+              {aiError && (
+                <div className="rounded-[5px] bg-red-500/10 px-3 py-2 text-[10px] font-bold leading-4 text-red-200">
+                  {aiError}
+                </div>
+              )}
+
+              {!aiError && !aiSuggestion && (
+                <div className="rounded-[5px] bg-white/5 px-3 py-2">
+                  <p className="text-[10px] font-medium leading-4 text-white/50">
+                    Pick an outfit, then let Gemini explain why the pieces work
+                    together in a modern Saint Clothing streetwear style.
+                  </p>
+                </div>
+              )}
+
+              {aiSuggestion && (
+                <div className="saint-fade rounded-[5px] bg-white px-3 py-3">
+                  <p className="text-[11px] font-bold leading-5 text-black">
+                    {aiSuggestion}
+                  </p>
                 </div>
               )}
             </div>
