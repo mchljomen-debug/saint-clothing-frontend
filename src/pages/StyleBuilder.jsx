@@ -445,70 +445,81 @@ const StyleBuilder = () => {
   };
 
   const generateAIOutfitImage = async () => {
-    try {
-      setImageLoading(true);
-      setImageError("");
-      setGeneratedImage("");
+  try {
+    setImageLoading(true);
+    setImageError("");
+    setGeneratedImage("");
 
-      if (!selectedTop && !selectedBottom) {
-        setImageError("Pick at least one item before generating outfit image.");
-        return;
-      }
-
-      const mannequinBase64 = await imageUrlToBase64(assets.mannequin);
-
-      const topImage = selectedTop
-        ? await imageUrlToBase64(getProductImage(selectedTop))
-        : null;
-
-      const bottomImage = selectedBottom
-        ? await imageUrlToBase64(getProductImage(selectedBottom))
-        : null;
-
-      const response = await axios.post(
-        `${backendUrl}/api/ai/generate-fit-image`,
-        {
-          mannequin: mannequinBase64,
-          top: selectedTop
-            ? {
-                name: selectedTop.name,
-                category: selectedTop.category,
-                color: selectedTop.color,
-                styleVibe: selectedTop.styleVibe,
-                styleTags: selectedTop.styleTags,
-                image: topImage,
-              }
-            : null,
-          bottom: selectedBottom
-            ? {
-                name: selectedBottom.name,
-                category: selectedBottom.category,
-                color: selectedBottom.color,
-                styleVibe: selectedBottom.styleVibe,
-                styleTags: selectedBottom.styleTags,
-                image: bottomImage,
-              }
-            : null,
-          style:
-            "Generate a realistic full body mannequin wearing the selected Saint Clothing outfit. The shirt and shorts must look naturally worn on the mannequin, like a real product catalog photo, black studio background, centered full body, no text, no watermark.",
-        },
-        {
-          headers: token ? { token } : {},
-        }
-      );
-
-      if (response.data?.success) {
-        setGeneratedImage(response.data.image || "");
-      } else {
-        setImageError(response.data?.message || "AI outfit image generation failed.");
-      }
-    } catch (error) {
-      console.error("AI Outfit Image Error:", error);
-      setImageError("AI outfit image generation failed. Please try again.");
-    } finally {
-      setImageLoading(false);
+    if (!selectedTop && !selectedBottom) {
+      setImageError("Pick at least one item before generating outfit image.");
+      return;
     }
-  };
+
+    const mannequinBase64 = await imageUrlToBase64(assets.mannequin);
+
+    const topImage = selectedTop
+      ? await imageUrlToBase64(getProductImage(selectedTop))
+      : null;
+
+    const bottomImage = selectedBottom
+      ? await imageUrlToBase64(getProductImage(selectedBottom))
+      : null;
+
+    const response = await axios.post(
+      `${backendUrl}/api/ai/generate-fit-image`,
+      {
+        mannequin: mannequinBase64,
+        top: selectedTop
+          ? {
+              name: selectedTop.name,
+              category: selectedTop.category,
+              color: selectedTop.color,
+              styleVibe: selectedTop.styleVibe,
+              styleTags: selectedTop.styleTags,
+              image: topImage,
+            }
+          : null,
+        bottom: selectedBottom
+          ? {
+              name: selectedBottom.name,
+              category: selectedBottom.category,
+              color: selectedBottom.color,
+              styleVibe: selectedBottom.styleVibe,
+              styleTags: selectedBottom.styleTags,
+              image: bottomImage,
+            }
+          : null,
+        style:
+          "Generate a realistic full body mannequin wearing the selected Saint Clothing outfit. The shirt and shorts must look naturally worn on the mannequin, like a real product catalog photo, black studio background, centered full body, no text, no watermark.",
+      },
+      {
+        headers: token ? { token } : {},
+      }
+    );
+
+    if (response.data?.success) {
+      setGeneratedImage(response.data.image || "");
+    } else {
+      setImageError(
+        response.data?.message ||
+          response.data?.details?.message ||
+          "AI outfit image generation failed."
+      );
+    }
+  } catch (error) {
+    console.error("AI Outfit Image Error:", error);
+    console.error("Backend Error:", error.response?.data);
+
+    setImageError(
+      error.response?.data?.message ||
+        error.response?.data?.details?.message ||
+        error.response?.data?.error ||
+        "AI outfit image generation failed. Please check Render logs."
+    );
+  } finally {
+    setImageLoading(false);
+  }
+};
 
   const downloadOutfit = () => {
     if (!generatedImage) return;
