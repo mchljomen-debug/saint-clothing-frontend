@@ -48,7 +48,6 @@ const getFinalPrice = (item) => {
 
 const getSmartLayout = ({ selectedBottom }) => {
   const category = normalize(selectedBottom?.category);
-
   const isPants = category.includes("pants") || category.includes("jeans");
   const isJorts = category.includes("jorts");
 
@@ -265,7 +264,7 @@ const StyleBuilder = () => {
   };
 
   const startDrag = (event, slot) => {
-    if (mode !== "manual") return;
+    if (mode !== "manual" || generatedImage) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -490,7 +489,8 @@ const StyleBuilder = () => {
                 image: bottomImage,
               }
             : null,
-          style: "modern Saint Clothing streetwear",
+          style:
+            "Generate a realistic full body mannequin wearing the selected Saint Clothing outfit. The shirt and shorts must look naturally worn on the mannequin, like a real product catalog photo, black studio background, centered full body, no text, no watermark.",
         },
         {
           headers: token ? { token } : {},
@@ -508,6 +508,15 @@ const StyleBuilder = () => {
     } finally {
       setImageLoading(false);
     }
+  };
+
+  const downloadOutfit = () => {
+    if (!generatedImage) return;
+
+    const link = document.createElement("a");
+    link.href = generatedImage;
+    link.download = "saint-generated-outfit.png";
+    link.click();
   };
 
   const renderProductCard = (item, active) => (
@@ -723,7 +732,7 @@ const StyleBuilder = () => {
             </div>
           </div>
 
-          {selectedProducts.length > 0 && (
+          {selectedProducts.length > 0 && !generatedImage && (
             <div className="mt-5 border-t border-black/10 pt-4">
               <h2 className="text-base font-black uppercase tracking-tight text-black">
                 Fit Adjustment
@@ -773,17 +782,21 @@ const StyleBuilder = () => {
 
         <main className="min-w-0">
           <section
-            className="relative h-[760px] overflow-hidden rounded-[5px]"
+            className="relative h-[760px] overflow-hidden rounded-[5px] bg-black"
             style={{
-              background:
-                previewBg === "#050505" || previewBg === "#1b1b1b"
-                  ? previewBg
-                  : `linear-gradient(180deg, ${previewBg} 0%, ${skinTone.color}30 100%)`,
+              background: generatedImage
+                ? "#050505"
+                : previewBg === "#050505" || previewBg === "#1b1b1b"
+                ? previewBg
+                : `linear-gradient(180deg, ${previewBg} 0%, ${skinTone.color}30 100%)`,
             }}
           >
-            <div className="absolute left-5 top-5 z-40 rounded-[5px] bg-white/90 px-4 py-3 shadow-lg shadow-black/10 backdrop-blur">
-              <p className="text-[10px] font-black uppercase tracking-widest text-black/50">
-                2D Mannequin Preview
+            <div className="absolute left-5 top-5 z-40 rounded-[5px] bg-white/10 px-4 py-3 shadow-lg shadow-black/10 backdrop-blur">
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/70">
+                {generatedImage ? "AI Generated Outfit" : "2D Mannequin Preview"}
+              </p>
+              <p className="mt-1 text-xs font-bold text-white/90">
+                {generatedImage ? "Catalog-style outfit preview" : "Manual outfit builder"}
               </p>
             </div>
 
@@ -794,19 +807,39 @@ const StyleBuilder = () => {
                 disabled={imageLoading || (!selectedTop && !selectedBottom)}
                 className={`rounded-[5px] px-5 py-3 text-xs font-black uppercase tracking-widest shadow-lg shadow-black/10 backdrop-blur ${
                   imageLoading || (!selectedTop && !selectedBottom)
-                    ? "cursor-not-allowed bg-white/50 text-black/40"
-                    : "bg-black text-white hover:bg-gray-800"
+                    ? "cursor-not-allowed bg-white/20 text-white/40"
+                    : "bg-white text-black hover:bg-gray-200"
                 }`}
               >
-                {imageLoading ? "Generating..." : "Generate AI Outfit"}
+                {imageLoading
+                  ? "Generating..."
+                  : generatedImage
+                  ? "Generate New Outfit"
+                  : "Generate AI Outfit"}
               </button>
 
               <button
                 type="button"
-                className="rounded-[5px] bg-white/90 px-5 py-3 text-xs font-black uppercase tracking-widest text-black shadow-lg shadow-black/10 backdrop-blur"
+                onClick={downloadOutfit}
+                disabled={!generatedImage}
+                className={`rounded-[5px] px-5 py-3 text-xs font-black uppercase tracking-widest shadow-lg shadow-black/10 backdrop-blur ${
+                  generatedImage
+                    ? "border border-white/40 bg-black/40 text-white hover:bg-white hover:text-black"
+                    : "cursor-not-allowed bg-white/20 text-white/40"
+                }`}
               >
                 Download Outfit
               </button>
+
+              {generatedImage && (
+                <button
+                  type="button"
+                  onClick={() => setGeneratedImage("")}
+                  className="rounded-[5px] border border-white/30 bg-black/40 px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white hover:text-black"
+                >
+                  Back To 2D
+                </button>
+              )}
             </div>
 
             {imageError && (
@@ -816,7 +849,7 @@ const StyleBuilder = () => {
             )}
 
             {imageLoading && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
                 <div className="rounded-[5px] bg-white px-8 py-6 text-center shadow-2xl">
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-black/40">
                     Gemini AI
@@ -825,107 +858,100 @@ const StyleBuilder = () => {
                     Generating Outfit
                   </h3>
                   <p className="mt-2 text-sm font-medium text-black/60">
-                    Creating a mannequin preview wearing your selected fit.
+                    Creating a realistic mannequin wearing your selected outfit.
                   </p>
                 </div>
               </div>
             )}
 
-            {generatedImage && !imageLoading && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
-                <div className="relative max-h-full max-w-[540px] overflow-hidden rounded-[5px] bg-white p-3 shadow-2xl">
-                  <button
-                    onClick={() => setGeneratedImage("")}
-                    className="absolute right-3 top-3 z-10 rounded-[5px] bg-black px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+            {generatedImage ? (
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <img
+                  src={generatedImage}
+                  alt="AI Generated Outfit"
+                  className="saint-fade h-full max-h-[720px] w-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.55)]"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <p
+                    className={`select-none text-[170px] font-black uppercase tracking-[-0.08em] ${
+                      previewBg === "#050505" || previewBg === "#1b1b1b"
+                        ? "text-white/[0.06]"
+                        : "text-black/[0.025]"
+                    }`}
                   >
-                    Close
-                  </button>
-
-                  <img
-                    src={generatedImage}
-                    alt="AI Generated Outfit"
-                    className="max-h-[680px] w-full object-contain"
-                  />
+                    SAINT
+                  </p>
                 </div>
-              </div>
+
+                <div className="absolute left-1/2 top-[50%] h-[690px] w-[430px] -translate-x-1/2 -translate-y-1/2">
+                  <img
+                    src={assets.mannequin}
+                    alt="Mannequin"
+                    className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[680px] w-[400px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
+                    style={{
+                      filter: `sepia(0.35) saturate(1.1) hue-rotate(${skinTone.hue}deg) brightness(${skinTone.brightness})`,
+                    }}
+                  />
+
+                  <div
+                    onMouseDown={(event) => startDrag(event, "top")}
+                    onTouchStart={(event) => startDrag(event, "top")}
+                    className="absolute left-1/2 z-30 -translate-x-1/2 cursor-grab touch-none select-none active:cursor-grabbing"
+                    style={{
+                      top: `${outfitLayout.top.top}px`,
+                      height: `${outfitLayout.top.height}px`,
+                      width: `${outfitLayout.top.width}px`,
+                    }}
+                  >
+                    {selectedTop && (
+                      <img
+                        key={selectedTop._id}
+                        src={getProductImage(selectedTop)}
+                        alt={selectedTop.name}
+                        draggable={false}
+                        style={getOutfitStyle(
+                          selectedTop,
+                          outfitLayout.top.scale,
+                          outfitLayout.top,
+                          positions.top
+                        )}
+                        className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.20)]"
+                      />
+                    )}
+                  </div>
+
+                  <div
+                    onMouseDown={(event) => startDrag(event, "bottom")}
+                    onTouchStart={(event) => startDrag(event, "bottom")}
+                    className="absolute left-1/2 z-20 -translate-x-1/2 cursor-grab touch-none select-none active:cursor-grabbing"
+                    style={{
+                      top: `${outfitLayout.bottom.top}px`,
+                      height: `${outfitLayout.bottom.height}px`,
+                      width: `${outfitLayout.bottom.width}px`,
+                    }}
+                  >
+                    {selectedBottom && (
+                      <img
+                        key={selectedBottom._id}
+                        src={getProductImage(selectedBottom)}
+                        alt={selectedBottom.name}
+                        draggable={false}
+                        style={getOutfitStyle(
+                          selectedBottom,
+                          outfitLayout.bottom.scale,
+                          outfitLayout.bottom,
+                          positions.bottom
+                        )}
+                        className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.18)]"
+                      />
+                    )}
+                  </div>
+                </div>
+              </>
             )}
-
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <p
-                className={`select-none text-[170px] font-black uppercase tracking-[-0.08em] ${
-                  previewBg === "#050505" || previewBg === "#1b1b1b"
-                    ? "text-white/[0.06]"
-                    : "text-black/[0.025]"
-                }`}
-              >
-                SAINT
-              </p>
-            </div>
-
-            <div className="absolute left-1/2 top-[50%] h-[690px] w-[430px] -translate-x-1/2 -translate-y-1/2">
-              <img
-                src={assets.mannequin}
-                alt="Mannequin"
-                className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-[680px] w-[400px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
-                style={{
-                  filter: `sepia(0.35) saturate(1.1) hue-rotate(${skinTone.hue}deg) brightness(${skinTone.brightness})`,
-                }}
-              />
-
-              <div
-                onMouseDown={(event) => startDrag(event, "top")}
-                onTouchStart={(event) => startDrag(event, "top")}
-                className="absolute left-1/2 z-30 -translate-x-1/2 cursor-grab touch-none select-none active:cursor-grabbing"
-                style={{
-                  top: `${outfitLayout.top.top}px`,
-                  height: `${outfitLayout.top.height}px`,
-                  width: `${outfitLayout.top.width}px`,
-                }}
-              >
-                {selectedTop && (
-                  <img
-                    key={selectedTop._id}
-                    src={getProductImage(selectedTop)}
-                    alt={selectedTop.name}
-                    draggable={false}
-                    style={getOutfitStyle(
-                      selectedTop,
-                      outfitLayout.top.scale,
-                      outfitLayout.top,
-                      positions.top
-                    )}
-                    className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.20)]"
-                  />
-                )}
-              </div>
-
-              <div
-                onMouseDown={(event) => startDrag(event, "bottom")}
-                onTouchStart={(event) => startDrag(event, "bottom")}
-                className="absolute left-1/2 z-20 -translate-x-1/2 cursor-grab touch-none select-none active:cursor-grabbing"
-                style={{
-                  top: `${outfitLayout.bottom.top}px`,
-                  height: `${outfitLayout.bottom.height}px`,
-                  width: `${outfitLayout.bottom.width}px`,
-                }}
-              >
-                {selectedBottom && (
-                  <img
-                    key={selectedBottom._id}
-                    src={getProductImage(selectedBottom)}
-                    alt={selectedBottom.name}
-                    draggable={false}
-                    style={getOutfitStyle(
-                      selectedBottom,
-                      outfitLayout.bottom.scale,
-                      outfitLayout.bottom,
-                      positions.bottom
-                    )}
-                    className="saint-fade pointer-events-none h-full w-full select-none object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.18)]"
-                  />
-                )}
-              </div>
-            </div>
           </section>
 
           <section className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
