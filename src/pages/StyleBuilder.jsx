@@ -113,6 +113,34 @@ const scorePair = (top, bottom) => {
   return score;
 };
 
+const imageUrlToBase64 = async (url) => {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to load image.");
+  }
+
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const result = reader.result;
+      const [meta, data] = result.split(",");
+      const mimeType = meta.match(/data:(.*);base64/)?.[1] || "image/png";
+
+      resolve({
+        mimeType,
+        data,
+      });
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
 const StyleBuilder = () => {
   const {
     products,
@@ -134,6 +162,10 @@ const StyleBuilder = () => {
   const [aiSuggestion, setAiSuggestion] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
+
+  const [generatedImage, setGeneratedImage] = useState("");
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState("");
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -214,6 +246,8 @@ const StyleBuilder = () => {
     setPositions(DEFAULT_POSITIONS);
     setAiSuggestion("");
     setAiError("");
+    setGeneratedImage("");
+    setImageError("");
   };
 
   const resetPositions = () => {
@@ -280,6 +314,8 @@ const StyleBuilder = () => {
 
     setAiSuggestion("");
     setAiError("");
+    setGeneratedImage("");
+    setImageError("");
 
     const section = getProductSection(product);
 
@@ -311,6 +347,8 @@ const StyleBuilder = () => {
   const generateAutomaticFit = () => {
     setAiSuggestion("");
     setAiError("");
+    setGeneratedImage("");
+    setImageError("");
 
     if (topOptions.length === 0 && bottomOptions.length === 0) return;
 
@@ -404,6 +442,71 @@ const StyleBuilder = () => {
       setAiError("AI style analysis failed. Please try again.");
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const generateAIOutfitImage = async () => {
+    try {
+      setImageLoading(true);
+      setImageError("");
+      setGeneratedImage("");
+
+      if (!selectedTop && !selectedBottom) {
+        setImageError("Pick at least one item before generating outfit image.");
+        return;
+      }
+
+      const mannequinBase64 = await imageUrlToBase64(assets.mannequin);
+
+      const topImage = selectedTop
+        ? await imageUrlToBase64(getProductImage(selectedTop))
+        : null;
+
+      const bottomImage = selectedBottom
+        ? await imageUrlToBase64(getProductImage(selectedBottom))
+        : null;
+
+      const response = await axios.post(
+        `${backendUrl}/api/ai/generate-fit-image`,
+        {
+          mannequin: mannequinBase64,
+          top: selectedTop
+            ? {
+                name: selectedTop.name,
+                category: selectedTop.category,
+                color: selectedTop.color,
+                styleVibe: selectedTop.styleVibe,
+                styleTags: selectedTop.styleTags,
+                image: topImage,
+              }
+            : null,
+          bottom: selectedBottom
+            ? {
+                name: selectedBottom.name,
+                category: selectedBottom.category,
+                color: selectedBottom.color,
+                styleVibe: selectedBottom.styleVibe,
+                styleTags: selectedBottom.styleTags,
+                image: bottomImage,
+              }
+            : null,
+          style: "modern Saint Clothing streetwear",
+        },
+        {
+          headers: token ? { token } : {},
+        }
+      );
+
+      if (response.data?.success) {
+        setGeneratedImage(response.data.image || "");
+      } else {
+        setImageError(response.data?.message || "AI outfit image generation failed.");
+      }
+    } catch (error) {
+      console.error("AI Outfit Image Error:", error);
+      setImageError("AI outfit image generation failed. Please try again.");
+    } finally {
+      setImageLoading(false);
     }
   };
 
@@ -684,12 +787,68 @@ const StyleBuilder = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              className="absolute right-5 top-5 z-40 rounded-[5px] bg-white/90 px-5 py-3 text-xs font-black uppercase tracking-widest text-black shadow-lg shadow-black/10 backdrop-blur"
-            >
-              Download Outfit
-            </button>
+            <div className="absolute right-5 top-5 z-40 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={generateAIOutfitImage}
+                disabled={imageLoading || (!selectedTop && !selectedBottom)}
+                className={`rounded-[5px] px-5 py-3 text-xs font-black uppercase tracking-widest shadow-lg shadow-black/10 backdrop-blur ${
+                  imageLoading || (!selectedTop && !selectedBottom)
+                    ? "cursor-not-allowed bg-white/50 text-black/40"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                {imageLoading ? "Generating..." : "Generate AI Outfit"}
+              </button>
+
+              <button
+                type="button"
+                className="rounded-[5px] bg-white/90 px-5 py-3 text-xs font-black uppercase tracking-widest text-black shadow-lg shadow-black/10 backdrop-blur"
+              >
+                Download Outfit
+              </button>
+            </div>
+
+            {imageError && (
+              <div className="absolute bottom-5 left-5 z-40 max-w-[360px] rounded-[5px] bg-red-50 px-4 py-3 text-xs font-black text-red-600 shadow-lg">
+                {imageError}
+              </div>
+            )}
+
+            {imageLoading && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+                <div className="rounded-[5px] bg-white px-8 py-6 text-center shadow-2xl">
+                  <p className="text-xs font-black uppercase tracking-[0.25em] text-black/40">
+                    Gemini AI
+                  </p>
+                  <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-black">
+                    Generating Outfit
+                  </h3>
+                  <p className="mt-2 text-sm font-medium text-black/60">
+                    Creating a mannequin preview wearing your selected fit.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {generatedImage && !imageLoading && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
+                <div className="relative max-h-full max-w-[540px] overflow-hidden rounded-[5px] bg-white p-3 shadow-2xl">
+                  <button
+                    onClick={() => setGeneratedImage("")}
+                    className="absolute right-3 top-3 z-10 rounded-[5px] bg-black px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white"
+                  >
+                    Close
+                  </button>
+
+                  <img
+                    src={generatedImage}
+                    alt="AI Generated Outfit"
+                    className="max-h-[680px] w-full object-contain"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <p
