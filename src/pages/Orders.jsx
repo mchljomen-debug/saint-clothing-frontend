@@ -31,7 +31,6 @@ const formatDateLong = (dateValue) => {
   if (!dateValue) return "Waiting for restock date";
 
   const date = new Date(dateValue);
-
   if (Number.isNaN(date.getTime())) return "Waiting for restock date";
 
   return date.toLocaleDateString("en-US", {
@@ -78,10 +77,11 @@ const StarPicker = ({ value, onChange }) => {
           key={star}
           type="button"
           onClick={() => onChange(star)}
-          className={`text-3xl transition ${star <= value
+          className={`text-3xl transition ${
+            star <= value
               ? "text-yellow-400"
               : "text-gray-300 hover:text-yellow-300"
-            }`}
+          }`}
         >
           ★
         </button>
@@ -92,6 +92,7 @@ const StarPicker = ({ value, onChange }) => {
 
 const Orders = () => {
   const { backendUrl, token, user } = useContext(ShopContext);
+
   const [orderData, setOrderData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -203,6 +204,7 @@ const Orders = () => {
     if (paymentState === "failed") {
       return "text-red-700 border-red-200 bg-red-50";
     }
+
     return "text-amber-700 border-amber-200 bg-amber-50";
   };
 
@@ -283,6 +285,7 @@ const Orders = () => {
     const normalizedFolder = folder
       ? `${folder.replace(/^\/+|\/+$/g, "")}/`
       : "";
+
     return `${backendUrl}/uploads/${normalizedFolder}${clean}`;
   };
 
@@ -410,6 +413,11 @@ const Orders = () => {
 
   const closeDeliveryProofModal = () => {
     if (submittingDeliveryProof) return;
+
+    if (deliveryProofPreview) {
+      URL.revokeObjectURL(deliveryProofPreview);
+    }
+
     setDeliveryProofModalOpen(false);
     setSelectedDeliveryOrder(null);
     setDeliveryProofImage(null);
@@ -448,30 +456,27 @@ const Orders = () => {
 
       const proofData = new FormData();
       proofData.append("orderId", selectedDeliveryOrder._id);
-      proofData.append("userId", user._id);
       proofData.append("deliveryProofImage", deliveryProofImage);
       proofData.append("deliveryProofNote", deliveryProofNote.trim());
 
-      const res = await axios.post(
-        `${backendUrl}/api/order/receive`,
-        proofData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axios.post(`${backendUrl}/api/order/receive`, proofData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       if (res.data.success) {
-        toast.success("Order marked as received with delivery proof");
+        toast.success("Delivery proof uploaded successfully");
         closeDeliveryProofModal();
         fetchOrders();
       } else {
         toast.error(res.data.message);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit delivery proof");
+      toast.error(
+        err.response?.data?.message || "Failed to submit delivery proof"
+      );
     } finally {
       setSubmittingDeliveryProof(false);
     }
@@ -564,10 +569,11 @@ const Orders = () => {
                 setActiveFilter(filter.key);
                 setCurrentPage(1);
               }}
-              className={`shrink-0 rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition ${activeFilter === filter.key
+              className={`shrink-0 rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+                activeFilter === filter.key
                   ? "border-black bg-black text-white"
                   : "border-black/10 bg-white/70 text-[#0A0D17] hover:border-black"
-                }`}
+              }`}
             >
               {filter.label}
             </button>
@@ -585,7 +591,9 @@ const Orders = () => {
             <>
               {paginatedOrderItems.map(({ order, item, key }) => {
                 const normalizedStatus = normalizeStatus(order.status);
-                const paymentMethod = normalizePaymentMethod(order.paymentMethod);
+                const paymentMethod = normalizePaymentMethod(
+                  order.paymentMethod
+                );
                 const paymentLabel = getPaymentStatusLabel(order);
                 const paymentState = normalizePaymentStatus(order);
                 const currentStep = getStepIndex(order.status);
@@ -593,7 +601,6 @@ const Orders = () => {
                 const isPreorder = Boolean(order.isPreorder || item.isPreorder);
                 const shipDate = getPreorderShipDate(order, item);
 
-                const isOutForDelivery = normalizedStatus === "Out for Delivery";
                 const isDelivered = normalizedStatus === "Delivered";
                 const isPendingPayment = normalizedStatus === "Pending Payment";
                 const isPaymentFailed = normalizedStatus === "Payment Failed";
@@ -696,8 +703,11 @@ const Orders = () => {
                                   {isPreorder ? "Ships On" : "Est. Delivery"}
                                 </p>
                                 <p
-                                  className={`mt-1 text-[12px] font-bold ${isPreorder ? "text-amber-700" : "text-gray-700"
-                                    }`}
+                                  className={`mt-1 text-[12px] font-bold ${
+                                    isPreorder
+                                      ? "text-amber-700"
+                                      : "text-gray-700"
+                                  }`}
                                 >
                                   {isPreorder
                                     ? formatDateLong(shipDate)
@@ -744,44 +754,32 @@ const Orders = () => {
                                   {order.jntTrackingNumber || "Not Available"}
                                 </p>
                               </div>
-
-                              {(paymentMethod === "GCash" ||
-                                paymentMethod === "Maya" ||
-                                paymentMethod === "GoTyme") && (
-                                  <div>
-                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
-                                      Reference No.
-                                    </p>
-                                    <p className="mt-1 text-[12px] font-bold uppercase text-gray-700 break-all">
-                                      {order.referenceNumber || "Not Available"}
-                                    </p>
-                                  </div>
-                                )}
                             </div>
 
                             {(paymentState === "verifying" ||
                               isPendingPayment ||
                               isPaymentFailed) && (
-                                <div
-                                  className={`mt-5 rounded-2xl border px-4 py-3 text-left ${isPaymentFailed
-                                      ? "border-red-200 bg-red-50 text-red-700"
-                                      : "border-amber-200 bg-amber-50 text-amber-700"
-                                    }`}
-                                >
-                                  <p className="text-[10px] font-black uppercase tracking-[0.16em]">
-                                    {isPaymentFailed
-                                      ? "Payment Issue"
-                                      : "Payment Update"}
-                                  </p>
-                                  <p className="mt-1 text-xs font-semibold">
-                                    {isPaymentFailed
-                                      ? "Your online payment was not confirmed. Please contact support or try again."
-                                      : paymentState === "verifying"
-                                        ? "Your payment proof is under verification. We will update your order once confirmed."
-                                        : "Waiting for payment confirmation before order processing starts."}
-                                  </p>
-                                </div>
-                              )}
+                              <div
+                                className={`mt-5 rounded-2xl border px-4 py-3 text-left ${
+                                  isPaymentFailed
+                                    ? "border-red-200 bg-red-50 text-red-700"
+                                    : "border-amber-200 bg-amber-50 text-amber-700"
+                                }`}
+                              >
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em]">
+                                  {isPaymentFailed
+                                    ? "Payment Issue"
+                                    : "Payment Update"}
+                                </p>
+                                <p className="mt-1 text-xs font-semibold">
+                                  {isPaymentFailed
+                                    ? "Your online payment was not confirmed. Please contact support or try again."
+                                    : paymentState === "verifying"
+                                    ? "Your payment proof is under verification. We will update your order once confirmed."
+                                    : "Waiting for payment confirmation before order processing starts."}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -802,7 +800,10 @@ const Orders = () => {
 
                           {order.jntTrackingNumber && (
                             <a
-                              href={order.jntTrackingUrl || "https://www.jtexpress.ph/track-and-trace"}
+                              href={
+                                order.jntTrackingUrl ||
+                                "https://www.jtexpress.ph/track-and-trace"
+                              }
                               target="_blank"
                               rel="noreferrer"
                               className="h-11 w-full xl:w-auto rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#222] inline-flex items-center justify-center text-center"
@@ -813,6 +814,7 @@ const Orders = () => {
 
                           {isDelivered && !order.deliveryProofImage && (
                             <button
+                              type="button"
                               onClick={() => openDeliveryProofModal(order)}
                               className="h-11 w-full xl:w-auto rounded-xl border border-black bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
                             >
@@ -831,8 +833,9 @@ const Orders = () => {
                             </a>
                           )}
 
-                          {isDelivered && (
+                          {isDelivered && order.deliveryProofImage && (
                             <button
+                              type="button"
                               onClick={() => openReviewModal(item, order)}
                               className="h-11 w-full xl:w-auto rounded-xl border border-black/10 bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
                             >
@@ -856,32 +859,35 @@ const Orders = () => {
                                 >
                                   <div className="w-full flex items-center">
                                     <div
-                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${isDone
+                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${
+                                        isDone
                                           ? "bg-black text-white border-black"
                                           : "bg-white text-gray-400 border-black/10"
-                                        }`}
+                                      }`}
                                     >
                                       {stepIndex + 1}
                                     </div>
 
                                     {stepIndex !== ORDER_STEPS.length - 1 && (
                                       <div
-                                        className={`flex-1 h-[2px] ml-2 ${stepIndex < currentStep
+                                        className={`flex-1 h-[2px] ml-2 ${
+                                          stepIndex < currentStep
                                             ? "bg-black"
                                             : "bg-black/10"
-                                          }`}
+                                        }`}
                                       ></div>
                                     )}
                                   </div>
 
                                   <div>
                                     <p
-                                      className={`text-[10px] font-black uppercase tracking-[0.12em] ${isCurrent
+                                      className={`text-[10px] font-black uppercase tracking-[0.12em] ${
+                                        isCurrent
                                           ? "text-black"
                                           : isDone
-                                            ? "text-[#0A0D17]"
-                                            : "text-gray-400"
-                                        }`}
+                                          ? "text-[#0A0D17]"
+                                          : "text-gray-400"
+                                      }`}
                                     >
                                       {step}
                                     </p>
@@ -914,12 +920,15 @@ const Orders = () => {
               <div className="mt-6 flex items-center justify-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
-                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${currentPage === 1
+                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+                    currentPage === 1
                       ? "cursor-not-allowed border border-black/10 bg-gray-100 text-gray-400"
                       : "border border-black bg-white text-black hover:bg-black hover:text-white"
-                    }`}
+                  }`}
                 >
                   Prev
                 </button>
@@ -936,10 +945,11 @@ const Orders = () => {
                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                   }
                   disabled={currentPage === totalPages}
-                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${currentPage === totalPages
+                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+                    currentPage === totalPages
                       ? "cursor-not-allowed border border-black/10 bg-gray-100 text-gray-400"
                       : "border border-black bg-white text-black hover:bg-black hover:text-white"
-                    }`}
+                  }`}
                 >
                   Next
                 </button>
@@ -949,76 +959,81 @@ const Orders = () => {
         </div>
       </div>
 
-
       {deliveryProofModalOpen && selectedDeliveryOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-xl overflow-hidden rounded-[22px] border border-black/10 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-black/10 bg-[#0A0D17] px-6 py-5 text-white">
+          <div className="w-full max-w-sm overflow-hidden rounded-[18px] border border-black/10 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/10 bg-[#0A0D17] px-4 py-3 text-white">
               <div>
-                <p className="text-lg font-black uppercase">Delivery Proof</p>
-                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/50">
-                  Order #{String(selectedDeliveryOrder._id || "").slice(-8).toUpperCase()}
+                <p className="text-sm font-black uppercase">Delivery Proof</p>
+                <p className="mt-1 text-[9px] font-black uppercase tracking-[0.16em] text-white/50">
+                  #{String(selectedDeliveryOrder._id || "")
+                    .slice(-8)
+                    .toUpperCase()}
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={closeDeliveryProofModal}
-                className="text-xl font-bold text-white/60 transition hover:text-white"
+                disabled={submittingDeliveryProof}
+                className="text-lg font-bold text-white/60 transition hover:text-white disabled:opacity-40"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-5 bg-[#FAFAF8] p-6">
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
-                  Required Before Delivered
+            <div className="space-y-4 bg-[#FAFAF8] p-4">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-amber-700">
+                  Proof Required
                 </p>
-                <p className="mt-1 text-xs font-semibold leading-5 text-amber-700/80">
-                  Attach a photo showing the parcel was received. The admin will see this proof in the order page.
+                <p className="mt-1 text-[11px] font-semibold leading-4 text-amber-700/80">
+                  Upload a photo showing that the parcel was received.
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-black uppercase text-[#0A0D17]">
-                  Upload Delivery Proof Photo
+                <label className="text-[10px] font-black uppercase tracking-[0.16em] text-[#0A0D17]">
+                  Upload Proof
                 </label>
+
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleDeliveryProofChange}
-                  className="mt-3 block w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#0A0D17]"
+                  className="mt-2 block w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-[#0A0D17]"
                 />
               </div>
 
               {deliveryProofPreview && (
-                <div className="rounded-2xl border border-black/10 bg-white p-3">
+                <div className="rounded-xl border border-black/10 bg-white p-2">
                   <img
                     src={deliveryProofPreview}
                     alt="Delivery Proof Preview"
-                    className="max-h-[320px] w-full rounded-xl object-contain"
+                    className="max-h-[180px] w-full rounded-lg object-contain"
                   />
                 </div>
               )}
 
               <div>
-                <label className="text-sm font-black uppercase text-[#0A0D17]">
+                <label className="text-[10px] font-black uppercase tracking-[0.16em] text-[#0A0D17]">
                   Note Optional
                 </label>
+
                 <textarea
                   value={deliveryProofNote}
                   onChange={(e) => setDeliveryProofNote(e.target.value)}
-                  placeholder="Example: Received by customer / guard / family member"
-                  className="mt-3 min-h-[110px] w-full resize-none rounded-xl border border-black/10 bg-white p-4 text-sm font-semibold outline-none transition focus:border-black"
+                  placeholder="Received by customer"
+                  className="mt-2 min-h-[70px] w-full resize-none rounded-xl border border-black/10 bg-white p-3 text-xs font-semibold outline-none transition focus:border-black"
                 />
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={closeDeliveryProofModal}
-                  className="h-11 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
+                  disabled={submittingDeliveryProof}
+                  className="h-10 flex-1 rounded-xl border border-black/10 bg-white text-[10px] font-black uppercase tracking-[0.16em] text-black disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1027,9 +1042,9 @@ const Orders = () => {
                   type="button"
                   onClick={markAsReceived}
                   disabled={submittingDeliveryProof}
-                  className="h-11 rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:opacity-50"
+                  className="h-10 flex-1 rounded-xl bg-black text-[10px] font-black uppercase tracking-[0.16em] text-white disabled:opacity-50"
                 >
-                  {submittingDeliveryProof ? "Submitting..." : "Submit Proof & Mark Delivered"}
+                  {submittingDeliveryProof ? "Submitting..." : "Submit"}
                 </button>
               </div>
             </div>
