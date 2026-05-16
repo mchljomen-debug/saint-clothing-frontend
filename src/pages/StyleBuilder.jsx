@@ -444,7 +444,7 @@ const StyleBuilder = () => {
     }
   };
 
-  const generateAIOutfitImage = async () => {
+const generateAIOutfitImage = async () => {
   try {
     setImageLoading(true);
     setImageError("");
@@ -469,6 +469,7 @@ const StyleBuilder = () => {
       `${backendUrl}/api/ai/generate-fit-image`,
       {
         mannequin: mannequinBase64,
+
         top: selectedTop
           ? {
               name: selectedTop.name,
@@ -479,6 +480,7 @@ const StyleBuilder = () => {
               image: topImage,
             }
           : null,
+
         bottom: selectedBottom
           ? {
               name: selectedBottom.name,
@@ -489,6 +491,7 @@ const StyleBuilder = () => {
               image: bottomImage,
             }
           : null,
+
         style:
           "Generate a realistic full body mannequin wearing the selected Saint Clothing outfit. The shirt and shorts must look naturally worn on the mannequin, like a real product catalog photo, black studio background, centered full body, no text, no watermark.",
       },
@@ -510,10 +513,40 @@ const StyleBuilder = () => {
     console.error("AI Outfit Image Error:", error);
     console.error("Backend Error:", error.response?.data);
 
+    const backendMessage = error.response?.data?.message || "";
+    const backendDetails = error.response?.data?.details?.message || "";
+    const fullMessage = `${backendMessage} ${backendDetails}`;
+
+    const isQuotaError =
+      fullMessage.includes("429") ||
+      fullMessage.toLowerCase().includes("quota") ||
+      fullMessage.includes("RESOURCE_EXHAUSTED");
+
+    const isRetryDelay =
+      fullMessage.includes("retryDelay") ||
+      fullMessage.includes("retry");
+
+    const isModelError =
+      fullMessage.includes("not found") ||
+      fullMessage.includes("not supported");
+
+    if (isQuotaError || isRetryDelay) {
+      setImageError(
+        "Gemini image generation is temporarily rate-limited. Wait around 10-20 seconds and try again. If it still fails, create a new API key after billing is enabled."
+      );
+      return;
+    }
+
+    if (isModelError) {
+      setImageError(
+        "Gemini image model is not available for this API key. Try creating a new API key under the same paid project."
+      );
+      return;
+    }
+
     setImageError(
-      error.response?.data?.message ||
-        error.response?.data?.details?.message ||
-        error.response?.data?.error ||
+      backendMessage ||
+        backendDetails ||
         "AI outfit image generation failed. Please check Render logs."
     );
   } finally {
