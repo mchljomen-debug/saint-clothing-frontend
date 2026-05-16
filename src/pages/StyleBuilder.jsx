@@ -454,6 +454,8 @@ const StyleBuilder = () => {
   };
 
   const generateAIOutfitImage = async () => {
+    if (!selectedTop || !selectedBottom) return;
+
     const requestId = Date.now();
     generationRequestIdRef.current = requestId;
 
@@ -461,13 +463,7 @@ const StyleBuilder = () => {
       setImageLoading(true);
       setImageError("");
 
-      if (!selectedTop || !selectedBottom) {
-        setImageError("Pick both a top and bottom before generating outfit image.");
-        return;
-      }
-
       const mannequinBase64 = await imageUrlToBase64(assets.mannequin);
-
       const topImage = await imageUrlToBase64(getProductImage(selectedTop));
       const bottomImage = await imageUrlToBase64(getProductImage(selectedBottom));
 
@@ -522,7 +518,6 @@ const StyleBuilder = () => {
 
       const backendMessage = error.response?.data?.message || "";
       const backendDetails = error.response?.data?.details?.message || "";
-
       const fullMessage = `${backendMessage} ${backendDetails}`;
 
       const isQuotaError =
