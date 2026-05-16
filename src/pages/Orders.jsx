@@ -78,11 +78,10 @@ const StarPicker = ({ value, onChange }) => {
           key={star}
           type="button"
           onClick={() => onChange(star)}
-          className={`text-3xl transition ${
-            star <= value
+          className={`text-3xl transition ${star <= value
               ? "text-yellow-400"
               : "text-gray-300 hover:text-yellow-300"
-          }`}
+            }`}
         >
           ★
         </button>
@@ -565,11 +564,10 @@ const Orders = () => {
                 setActiveFilter(filter.key);
                 setCurrentPage(1);
               }}
-              className={`shrink-0 rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition ${
-                activeFilter === filter.key
+              className={`shrink-0 rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition ${activeFilter === filter.key
                   ? "border-black bg-black text-white"
                   : "border-black/10 bg-white/70 text-[#0A0D17] hover:border-black"
-              }`}
+                }`}
             >
               {filter.label}
             </button>
@@ -698,9 +696,8 @@ const Orders = () => {
                                   {isPreorder ? "Ships On" : "Est. Delivery"}
                                 </p>
                                 <p
-                                  className={`mt-1 text-[12px] font-bold ${
-                                    isPreorder ? "text-amber-700" : "text-gray-700"
-                                  }`}
+                                  className={`mt-1 text-[12px] font-bold ${isPreorder ? "text-amber-700" : "text-gray-700"
+                                    }`}
                                 >
                                   {isPreorder
                                     ? formatDateLong(shipDate)
@@ -751,41 +748,40 @@ const Orders = () => {
                               {(paymentMethod === "GCash" ||
                                 paymentMethod === "Maya" ||
                                 paymentMethod === "GoTyme") && (
-                                <div>
-                                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
-                                    Reference No.
-                                  </p>
-                                  <p className="mt-1 text-[12px] font-bold uppercase text-gray-700 break-all">
-                                    {order.referenceNumber || "Not Available"}
-                                  </p>
-                                </div>
-                              )}
+                                  <div>
+                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                      Reference No.
+                                    </p>
+                                    <p className="mt-1 text-[12px] font-bold uppercase text-gray-700 break-all">
+                                      {order.referenceNumber || "Not Available"}
+                                    </p>
+                                  </div>
+                                )}
                             </div>
 
                             {(paymentState === "verifying" ||
                               isPendingPayment ||
                               isPaymentFailed) && (
-                              <div
-                                className={`mt-5 rounded-2xl border px-4 py-3 text-left ${
-                                  isPaymentFailed
-                                    ? "border-red-200 bg-red-50 text-red-700"
-                                    : "border-amber-200 bg-amber-50 text-amber-700"
-                                }`}
-                              >
-                                <p className="text-[10px] font-black uppercase tracking-[0.16em]">
-                                  {isPaymentFailed
-                                    ? "Payment Issue"
-                                    : "Payment Update"}
-                                </p>
-                                <p className="mt-1 text-xs font-semibold">
-                                  {isPaymentFailed
-                                    ? "Your online payment was not confirmed. Please contact support or try again."
-                                    : paymentState === "verifying"
-                                    ? "Your payment proof is under verification. We will update your order once confirmed."
-                                    : "Waiting for payment confirmation before order processing starts."}
-                                </p>
-                              </div>
-                            )}
+                                <div
+                                  className={`mt-5 rounded-2xl border px-4 py-3 text-left ${isPaymentFailed
+                                      ? "border-red-200 bg-red-50 text-red-700"
+                                      : "border-amber-200 bg-amber-50 text-amber-700"
+                                    }`}
+                                >
+                                  <p className="text-[10px] font-black uppercase tracking-[0.16em]">
+                                    {isPaymentFailed
+                                      ? "Payment Issue"
+                                      : "Payment Update"}
+                                  </p>
+                                  <p className="mt-1 text-xs font-semibold">
+                                    {isPaymentFailed
+                                      ? "Your online payment was not confirmed. Please contact support or try again."
+                                      : paymentState === "verifying"
+                                        ? "Your payment proof is under verification. We will update your order once confirmed."
+                                        : "Waiting for payment confirmation before order processing starts."}
+                                  </p>
+                                </div>
+                              )}
                           </div>
                         </div>
 
@@ -815,12 +811,12 @@ const Orders = () => {
                             </a>
                           )}
 
-                          {isOutForDelivery && (
+                          {isDelivered && !order.deliveryProofImage && (
                             <button
                               onClick={() => openDeliveryProofModal(order)}
                               className="h-11 w-full xl:w-auto rounded-xl border border-black bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
                             >
-                              Attach Proof & Mark Received
+                              Upload Delivery Proof
                             </button>
                           )}
 
@@ -860,35 +856,32 @@ const Orders = () => {
                                 >
                                   <div className="w-full flex items-center">
                                     <div
-                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${
-                                        isDone
+                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${isDone
                                           ? "bg-black text-white border-black"
                                           : "bg-white text-gray-400 border-black/10"
-                                      }`}
+                                        }`}
                                     >
                                       {stepIndex + 1}
                                     </div>
 
                                     {stepIndex !== ORDER_STEPS.length - 1 && (
                                       <div
-                                        className={`flex-1 h-[2px] ml-2 ${
-                                          stepIndex < currentStep
+                                        className={`flex-1 h-[2px] ml-2 ${stepIndex < currentStep
                                             ? "bg-black"
                                             : "bg-black/10"
-                                        }`}
+                                          }`}
                                       ></div>
                                     )}
                                   </div>
 
                                   <div>
                                     <p
-                                      className={`text-[10px] font-black uppercase tracking-[0.12em] ${
-                                        isCurrent
+                                      className={`text-[10px] font-black uppercase tracking-[0.12em] ${isCurrent
                                           ? "text-black"
                                           : isDone
-                                          ? "text-[#0A0D17]"
-                                          : "text-gray-400"
-                                      }`}
+                                            ? "text-[#0A0D17]"
+                                            : "text-gray-400"
+                                        }`}
                                     >
                                       {step}
                                     </p>
@@ -923,11 +916,10 @@ const Orders = () => {
                   type="button"
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${
-                    currentPage === 1
+                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${currentPage === 1
                       ? "cursor-not-allowed border border-black/10 bg-gray-100 text-gray-400"
                       : "border border-black bg-white text-black hover:bg-black hover:text-white"
-                  }`}
+                    }`}
                 >
                   Prev
                 </button>
@@ -944,11 +936,10 @@ const Orders = () => {
                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                   }
                   disabled={currentPage === totalPages}
-                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${
-                    currentPage === totalPages
+                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${currentPage === totalPages
                       ? "cursor-not-allowed border border-black/10 bg-gray-100 text-gray-400"
                       : "border border-black bg-white text-black hover:bg-black hover:text-white"
-                  }`}
+                    }`}
                 >
                   Next
                 </button>
