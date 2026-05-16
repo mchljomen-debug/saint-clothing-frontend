@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
@@ -162,9 +168,12 @@ const StyleBuilder = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  const [generatedImage, setGeneratedImage] = useState("");
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState("");
+const [generatedImage, setGeneratedImage] = useState("");
+const [imageLoading, setImageLoading] = useState(false);
+const [imageError, setImageError] = useState("");
+
+const autoGenerateTimerRef = useRef(null);
+const generationRequestIdRef = useRef(0);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -445,6 +454,9 @@ const StyleBuilder = () => {
   };
 
 const generateAIOutfitImage = async () => {
+  const requestId = Date.now();
+  generationRequestIdRef.current = requestId;
+
   try {
     setImageLoading(true);
     setImageError("");
@@ -500,6 +512,8 @@ const generateAIOutfitImage = async () => {
       }
     );
 
+    if (generationRequestIdRef.current !== requestId) return;
+
     if (response.data?.success) {
       setGeneratedImage(response.data.image || "");
     } else {
@@ -510,11 +524,14 @@ const generateAIOutfitImage = async () => {
       );
     }
   } catch (error) {
+    if (generationRequestIdRef.current !== requestId) return;
+
     console.error("AI Outfit Image Error:", error);
     console.error("Backend Error:", error.response?.data);
 
     const backendMessage = error.response?.data?.message || "";
     const backendDetails = error.response?.data?.details?.message || "";
+
     const fullMessage = `${backendMessage} ${backendDetails}`;
 
     const isQuotaError =
@@ -532,15 +549,17 @@ const generateAIOutfitImage = async () => {
 
     if (isQuotaError || isRetryDelay) {
       setImageError(
-        "Gemini image generation is temporarily rate-limited. Wait around 10-20 seconds and try again. If it still fails, create a new API key after billing is enabled."
+        "Gemini image generation is temporarily rate-limited. Wait around 10-20 seconds and try again."
       );
+
       return;
     }
 
     if (isModelError) {
       setImageError(
-        "Gemini image model is not available for this API key. Try creating a new API key under the same paid project."
+        "Gemini image model is not available for this API key."
       );
+
       return;
     }
 
@@ -550,9 +569,29 @@ const generateAIOutfitImage = async () => {
         "AI outfit image generation failed. Please check Render logs."
     );
   } finally {
-    setImageLoading(false);
+    if (generationRequestIdRef.current === requestId) {
+      setImageLoading(false);
+    }
   }
 };
+useEffect(() => {
+  if (!selectedTop && !selectedBottom) return;
+  if (!token) return;
+
+  if (autoGenerateTimerRef.current) {
+    clearTimeout(autoGenerateTimerRef.current);
+  }
+
+  autoGenerateTimerRef.current = setTimeout(() => {
+    generateAIOutfitImage();
+  }, 900);
+
+  return () => {
+    if (autoGenerateTimerRef.current) {
+      clearTimeout(autoGenerateTimerRef.current);
+    }
+  };
+}, [selectedTop?._id, selectedBottom?._id, token, backendUrl]);
 
   const downloadOutfit = () => {
     if (!generatedImage) return;
