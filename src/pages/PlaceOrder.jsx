@@ -421,26 +421,59 @@ const PlaceOrder = () => {
   };
 
   const createPaymongoCheckout = async (orderId) => {
+  try {
     const paymongoResponse = await axios.post(
       `${backendUrl}/api/order/create-paymongo-checkout`,
       { orderId },
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
 
-    if (!paymongoResponse.data.success) {
+    console.log(
+      "PAYMONGO RESPONSE:",
+      paymongoResponse?.data
+    );
+
+    if (!paymongoResponse?.data?.success) {
       throw new Error(
-        paymongoResponse.data.message || "Failed to create PayMongo checkout"
+        paymongoResponse?.data?.message ||
+          "Failed to create PayMongo checkout"
       );
     }
 
-    if (!paymongoResponse.data.checkoutUrl) {
-      throw new Error("PayMongo checkout URL is missing");
+    if (!paymongoResponse?.data?.checkoutUrl) {
+      throw new Error(
+        "PayMongo checkout URL is missing"
+      );
     }
 
-    localStorage.setItem("pending_paymongo_order", orderId);
+    localStorage.setItem(
+      "pending_paymongo_order",
+      orderId
+    );
 
-    window.location.href = paymongoResponse.data.checkoutUrl;
-  };
+    toast.success(
+      "Redirecting to PayMongo checkout..."
+    );
+
+    window.location.href =
+      paymongoResponse.data.checkoutUrl;
+  } catch (error) {
+    console.log(
+      "PAYMONGO FRONTEND ERROR:",
+      error.response?.data || error.message
+    );
+
+    toast.error(
+      error.response?.data?.message ||
+        error.message ||
+        "PayMongo checkout failed"
+    );
+  }
+};
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
