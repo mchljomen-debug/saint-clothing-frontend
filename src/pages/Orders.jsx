@@ -130,6 +130,7 @@ const Orders = () => {
     if (value === "gcash") return "GCash";
     if (value === "gotyme" || value === "go tyme") return "GoTyme";
     if (value === "stripe") return "Stripe";
+    if (value === "paymongo" || value === "online payment") return "PayMongo";
 
     return paymentMethod || "COD";
   };
@@ -611,7 +612,7 @@ const Orders = () => {
                               </div>
                             )}
 
-                            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                               <div>
                                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
                                   Date
@@ -662,6 +663,24 @@ const Orders = () => {
                                 >
                                   {paymentLabel}
                                 </div>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Courier
+                                </p>
+                                <p className="mt-1 text-[12px] font-bold uppercase text-gray-700">
+                                  {order.courier || "J&T Express"}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Tracking No.
+                                </p>
+                                <p className="mt-1 text-[12px] font-bold uppercase text-gray-700 break-all">
+                                  {order.jntTrackingNumber || "Not Available"}
+                                </p>
                               </div>
 
                               {(paymentMethod === "GCash" ||
@@ -718,6 +737,17 @@ const Orders = () => {
                             <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
                               Ships {formatDateLong(shipDate)}
                             </div>
+                          )}
+
+                          {order.jntTrackingNumber && (
+                            <a
+                              href={order.jntTrackingUrl || "https://www.jtexpress.ph/track-and-trace"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="h-11 w-full xl:w-auto rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#222] inline-flex items-center justify-center text-center"
+                            >
+                              Track J&T Parcel
+                            </a>
                           )}
 
                           {isOutForDelivery && (
