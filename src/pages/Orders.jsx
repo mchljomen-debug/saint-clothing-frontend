@@ -1,7 +1,7 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import Title from "../components/Title";
+import { toast } from "react-toastify";
+import axios from "axios";
 import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
 
@@ -28,10 +28,11 @@ const addDays = (date, days) => {
 };
 
 const formatDateLong = (dateValue) => {
-  if (!dateValue) return "N/A";
+  if (!dateValue) return "Waiting for restock date";
 
   const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "N/A";
+
+  if (Number.isNaN(date.getTime())) return "Waiting for restock date";
 
   return date.toLocaleDateString("en-US", {
     month: "long",
@@ -40,24 +41,18 @@ const formatDateLong = (dateValue) => {
   });
 };
 
-const formatDateTime = (dateValue) => {
-  if (!dateValue) return "N/A";
-
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "N/A";
-
-  return date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+const getPreorderShipDate = (order, item) => {
+  return (
+    order?.preorderShipDate ||
+    order?.deliveryEstimate?.shipsOn ||
+    item?.preorderShipDate ||
+    (item?.expectedRestockDate ? addDays(item.expectedRestockDate, 2) : null)
+  );
 };
 
 const formatEstimateFromOrder = (order) => {
   if (order?.deliveryEstimate?.range) return order.deliveryEstimate.range;
+  if (order?.estimatedDelivery?.range) return order.estimatedDelivery.range;
 
   const baseDate = new Date(order?.createdAt || order?.date || Date.now());
 
@@ -75,12 +70,38 @@ const formatEstimateFromOrder = (order) => {
   return `${start} - ${end}`;
 };
 
-const Orders = () => {
-  const { backendUrl, token, user, currency = "₱" } = useContext(ShopContext);
+const StarPicker = ({ value, onChange }) => {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star)}
+          className={`text-3xl transition ${
+            star <= value
+              ? "text-yellow-400"
+              : "text-gray-300 hover:text-yellow-300"
+          }`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  );
+};
 
-  const [orders, setOrders] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("all");
+const Orders = () => {
+  const { backendUrl, token, user } = useContext(ShopContext);
+  const [orderData, setOrderData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedReviewItem, setSelectedReviewItem] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const [deliveryProofModalOpen, setDeliveryProofModalOpen] = useState(false);
   const [selectedDeliveryOrder, setSelectedDeliveryOrder] = useState(null);
@@ -89,7 +110,9 @@ const Orders = () => {
   const [deliveryProofNote, setDeliveryProofNote] = useState("");
   const [submittingDeliveryProof, setSubmittingDeliveryProof] = useState(false);
 
-  const itemsPerPage = 5;
+  const currency = "₱";
+  const itemsPerPage = 10;
+  const notifyOrdersEnabled = !!user?.preferences?.notifyOrders;
 
   const normalizeStatus = (status) => {
     const value = String(status || "").trim().toLowerCase();
@@ -102,21 +125,21 @@ const Orders = () => {
     if (value === "delivered") return "Delivered";
     if (value === "pending payment") return "Pending Payment";
     if (value === "payment failed") return "Payment Failed";
-    if (value === "cancelled") return "Cancelled";
 
     return "Order Placed";
   };
 
-  const normalizePaymentMethod = (method) => {
-    const value = String(method || "").trim().toLowerCase();
+  const normalizePaymentMethod = (paymentMethod) => {
+    const value = String(paymentMethod || "").trim().toLowerCase();
 
     if (value === "cod" || value === "cash on delivery") return "COD";
-    if (value === "gcash") return "GCash";
     if (value === "maya" || value === "paymaya") return "Maya";
+    if (value === "gcash") return "GCash";
     if (value === "gotyme" || value === "go tyme") return "GoTyme";
+    if (value === "stripe") return "Stripe";
     if (value === "paymongo" || value === "online payment") return "PayMongo";
 
-    return method || "COD";
+    return paymentMethod || "COD";
   };
 
   const normalizePaymentStatus = (order) => {
@@ -126,7 +149,7 @@ const Orders = () => {
 
     if (method === "COD") {
       if (order?.payment === true) return "paid";
-      if (orderStatus === "Delivered") return "paid";
+      if (orderStatus === "Delivered") return "to_collect";
       return "cod_pending";
     }
 
@@ -134,17 +157,21 @@ const Orders = () => {
     if (statusValue === "verifying") return "verifying";
     if (statusValue === "failed") return "failed";
     if (statusValue === "pending") return "pending";
+
+    if (orderStatus === "Pending Payment") return "pending";
+    if (orderStatus === "Payment Failed") return "failed";
     if (order?.payment === true) return "paid";
 
     return "pending";
   };
 
   const getPaymentStatusLabel = (order) => {
-    const method = normalizePaymentMethod(order?.paymentMethod);
     const paymentState = normalizePaymentStatus(order);
+    const method = normalizePaymentMethod(order?.paymentMethod);
 
     if (method === "COD") {
       if (paymentState === "paid") return "Paid";
+      if (paymentState === "to_collect") return "Collected on Delivery";
       return "Cash on Delivery";
     }
 
@@ -152,6 +179,59 @@ const Orders = () => {
     if (paymentState === "verifying") return "Payment Verifying";
     if (paymentState === "failed") return "Payment Failed";
     return "Pending Payment";
+  };
+
+  const getPaymentStatusStyles = (order) => {
+    const paymentState = normalizePaymentStatus(order);
+    const method = normalizePaymentMethod(order?.paymentMethod);
+
+    if (method === "COD") {
+      if (paymentState === "paid") {
+        return "text-emerald-700 border-emerald-200 bg-emerald-50";
+      }
+      if (paymentState === "to_collect") {
+        return "text-sky-700 border-sky-200 bg-sky-50";
+      }
+      return "text-amber-700 border-amber-200 bg-amber-50";
+    }
+
+    if (paymentState === "paid") {
+      return "text-emerald-700 border-emerald-200 bg-emerald-50";
+    }
+    if (paymentState === "verifying") {
+      return "text-violet-700 border-violet-200 bg-violet-50";
+    }
+    if (paymentState === "failed") {
+      return "text-red-700 border-red-200 bg-red-50";
+    }
+    return "text-amber-700 border-amber-200 bg-amber-50";
+  };
+
+  const getOrderStatusStyles = (status) => {
+    switch (normalizeStatus(status)) {
+      case "Delivered":
+        return "text-emerald-700 border-emerald-200 bg-emerald-50";
+      case "Out for Delivery":
+        return "text-sky-700 border-sky-200 bg-sky-50";
+      case "Shipped":
+        return "text-gray-700 border-gray-300 bg-gray-100";
+      case "Packing":
+        return "text-violet-700 border-violet-200 bg-violet-50";
+      case "Pending Payment":
+        return "text-amber-700 border-amber-200 bg-amber-50";
+      case "Payment Failed":
+        return "text-red-700 border-red-200 bg-red-50";
+      default:
+        return "text-amber-700 border-amber-200 bg-amber-50";
+    }
+  };
+
+  const getNewestOrders = (orders) => {
+    return [...orders].sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.date || 0).getTime();
+      const dateB = new Date(b.createdAt || b.date || 0).getTime();
+      return dateB - dateA;
+    });
   };
 
   const extractImageValue = (input) => {
@@ -193,67 +273,47 @@ const Orders = () => {
       return clean;
     }
 
-    if (clean.startsWith("/uploads/")) return `${backendUrl}${clean}`;
-    if (clean.startsWith("uploads/")) return `${backendUrl}/${clean}`;
+    if (clean.startsWith("/uploads/")) {
+      return `${backendUrl}${clean}`;
+    }
+
+    if (clean.startsWith("uploads/")) {
+      return `${backendUrl}/${clean}`;
+    }
 
     const normalizedFolder = folder
       ? `${folder.replace(/^\/+|\/+$/g, "")}/`
       : "";
-
     return `${backendUrl}/uploads/${normalizedFolder}${clean}`;
   };
 
-  const getOrderImageUrl = (image) => buildAssetUrl(image);
-
-  const getStatusColor = (status) => {
-    switch (normalizeStatus(status)) {
-      case "Delivered":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "Out for Delivery":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "Shipped":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "Packing":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "Pending Payment":
-        return "bg-amber-50 text-amber-700 border-amber-200";
-      case "Payment Failed":
-        return "bg-red-50 text-red-700 border-red-200";
-      case "Cancelled":
-        return "bg-red-50 text-red-700 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
+  const getOrderImageUrl = (image) => {
+    return buildAssetUrl(image);
   };
 
-  const getPaymentColor = (order) => {
-    const paymentState = normalizePaymentStatus(order);
+  const notifyStatusChanges = (orders) => {
+    if (!notifyOrdersEnabled || !user?._id) return;
 
-    if (paymentState === "paid") {
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    }
+    const storageKey = `order_status_map_${user._id}`;
+    const previousMap = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    const nextMap = {};
 
-    if (paymentState === "verifying") {
-      return "bg-violet-50 text-violet-700 border-violet-200";
-    }
+    orders.forEach((order) => {
+      const normalized = normalizeStatus(order.status);
+      nextMap[order._id] = normalized;
 
-    if (paymentState === "failed") {
-      return "bg-red-50 text-red-700 border-red-200";
-    }
+      if (previousMap[order._id] && previousMap[order._id] !== normalized) {
+        toast.info(
+          `Order ${order._id.slice(-8).toUpperCase()} updated: ${normalized}`
+        );
+      }
+    });
 
-    return "bg-amber-50 text-amber-700 border-amber-200";
-  };
-
-  const getOrderStepIndex = (status) => {
-    const normalized = normalizeStatus(status);
-    const index = ORDER_STEPS.indexOf(normalized);
-    return index >= 0 ? index : 0;
+    localStorage.setItem(storageKey, JSON.stringify(nextMap));
   };
 
   const fetchOrders = async () => {
     try {
-      if (!token || !user?._id) return;
-
       const res = await axios.post(
         `${backendUrl}/api/order/userorders`,
         { userId: user._id },
@@ -261,66 +321,85 @@ const Orders = () => {
       );
 
       if (res.data.success) {
-        const sorted = [...(res.data.orders || [])].sort(
-          (a, b) =>
-            new Date(b.createdAt || b.date || 0) -
-            new Date(a.createdAt || a.date || 0)
-        );
-
-        setOrders(sorted);
-      } else {
-        toast.error(res.data.message || "Failed to load orders");
+        const sortedOrders = getNewestOrders(res.data.orders || []);
+        setOrderData(sortedOrders);
+        setCurrentPage(1);
+        notifyStatusChanges(sortedOrders);
       }
-    } catch (error) {
-      console.error("LOAD ORDERS ERROR:", error.response?.data || error.message);
-      toast.error(error.response?.data?.message || "Failed to load orders");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load orders");
     }
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, [token, user?._id]);
+    if (token && user) {
+      fetchOrders();
+    }
+  }, [token, user]);
+
+  const sortedOrderData = useMemo(() => {
+    return getNewestOrders(orderData);
+  }, [orderData]);
 
   const filteredOrders = useMemo(() => {
-    let temp = [...orders];
+    return sortedOrderData.filter((order) => {
+      const status = normalizeStatus(order.status);
+      const paymentState = normalizePaymentStatus(order);
 
-    if (activeFilter === "toPay") {
-      temp = temp.filter((order) =>
-        ["Pending Payment", "Payment Failed"].includes(normalizeStatus(order.status))
-      );
-    }
+      if (activeFilter === "all") return true;
 
-    if (activeFilter === "processing") {
-      temp = temp.filter((order) =>
-        ["Order Placed", "Packing"].includes(normalizeStatus(order.status))
-      );
-    }
+      if (activeFilter === "toPay") {
+        return (
+          paymentState === "pending" ||
+          paymentState === "verifying" ||
+          paymentState === "cod_pending" ||
+          status === "Pending Payment"
+        );
+      }
 
-    if (activeFilter === "shipping") {
-      temp = temp.filter((order) =>
-        ["Shipped", "Out for Delivery"].includes(normalizeStatus(order.status))
-      );
-    }
+      if (activeFilter === "processing") {
+        return status === "Order Placed" || status === "Packing";
+      }
 
-    if (activeFilter === "delivered") {
-      temp = temp.filter(
-        (order) => normalizeStatus(order.status) === "Delivered"
-      );
-    }
+      if (activeFilter === "shipping") {
+        return status === "Shipped" || status === "Out for Delivery";
+      }
 
-    return temp;
-  }, [orders, activeFilter]);
+      if (activeFilter === "delivered") {
+        return status === "Delivered";
+      }
 
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1;
+      return true;
+    });
+  }, [sortedOrderData, activeFilter]);
 
-  const currentOrders = filteredOrders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const flattenedOrderItems = useMemo(() => {
+    return filteredOrders.flatMap((order, index) =>
+      (order.items || []).map((item, i) => ({
+        key: `${order._id}-${i}-${index}`,
+        order,
+        item,
+      }))
+    );
+  }, [filteredOrders]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(flattenedOrderItems.length / itemsPerPage)
   );
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeFilter]);
+  const paginatedOrderItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return flattenedOrderItems.slice(start, start + itemsPerPage);
+  }, [flattenedOrderItems, currentPage]);
+
+  const getStepIndex = (status) => {
+    const normalized = normalizeStatus(status);
+    return ORDER_STEPS.findIndex(
+      (step) => step.toLowerCase() === normalized.toLowerCase()
+    );
+  };
 
   const openDeliveryProofModal = (order) => {
     setSelectedDeliveryOrder(order);
@@ -332,7 +411,6 @@ const Orders = () => {
 
   const closeDeliveryProofModal = () => {
     if (submittingDeliveryProof) return;
-
     setDeliveryProofModalOpen(false);
     setSelectedDeliveryOrder(null);
     setDeliveryProofImage(null);
@@ -340,99 +418,157 @@ const Orders = () => {
     setDeliveryProofNote("");
   };
 
-  const handleDeliveryProofFile = (file) => {
-    setDeliveryProofImage(file || null);
+  const handleDeliveryProofChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setDeliveryProofImage(file);
 
-    if (!file) {
+    if (deliveryProofPreview) {
+      URL.revokeObjectURL(deliveryProofPreview);
+    }
+
+    if (file) {
+      setDeliveryProofPreview(URL.createObjectURL(file));
+    } else {
       setDeliveryProofPreview("");
+    }
+  };
+
+  const markAsReceived = async () => {
+    if (!selectedDeliveryOrder?._id) {
+      toast.error("Order is missing");
       return;
     }
 
-    const previewUrl = URL.createObjectURL(file);
-    setDeliveryProofPreview(previewUrl);
-  };
+    if (!deliveryProofImage) {
+      toast.error("Please attach a delivery proof photo");
+      return;
+    }
 
-  const submitDeliveryProof = async () => {
     try {
-      if (!selectedDeliveryOrder?._id) {
-        toast.error("Order is missing");
-        return;
-      }
-
-      if (!deliveryProofImage) {
-        toast.error("Please upload delivery proof photo");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("orderId", selectedDeliveryOrder._id);
-      formData.append("deliveryProofNote", deliveryProofNote || "");
-      formData.append("deliveryProofImage", deliveryProofImage);
-
       setSubmittingDeliveryProof(true);
 
-      const res = await axios.post(`${backendUrl}/api/order/receive`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const proofData = new FormData();
+      proofData.append("orderId", selectedDeliveryOrder._id);
+      proofData.append("userId", user._id);
+      proofData.append("deliveryProofImage", deliveryProofImage);
+      proofData.append("deliveryProofNote", deliveryProofNote.trim());
+
+      const res = await axios.post(
+        `${backendUrl}/api/order/receive`,
+        proofData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (res.data.success) {
-        toast.success("Order marked as received with proof");
+        toast.success("Order marked as received with delivery proof");
         closeDeliveryProofModal();
-        await fetchOrders();
+        fetchOrders();
       } else {
-        toast.error(res.data.message || "Failed to submit delivery proof");
+        toast.error(res.data.message);
       }
-    } catch (error) {
-      console.error(
-        "DELIVERY PROOF ERROR:",
-        error.response?.data || error.message
-      );
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to submit delivery proof"
-      );
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to submit delivery proof");
     } finally {
       setSubmittingDeliveryProof(false);
     }
   };
 
-  const openJntTracking = () => {
-    window.open("https://www.jtexpress.ph/track-and-trace", "_blank");
+  const openReviewModal = (item, order) => {
+    setSelectedReviewItem({
+      ...item,
+      orderId: order._id,
+      orderStatus: order.status,
+    });
+    setReviewRating(5);
+    setReviewComment("");
+    setReviewModalOpen(true);
   };
 
-  const canUploadDeliveryProof = (order) => {
-    return (
-      normalizeStatus(order.status) === "Out for Delivery" &&
-      !order.deliveryProofImage
-    );
+  const closeReviewModal = () => {
+    if (submittingReview) return;
+    setReviewModalOpen(false);
+    setSelectedReviewItem(null);
+    setReviewRating(5);
+    setReviewComment("");
+  };
+
+  const submitReview = async () => {
+    if (!selectedReviewItem?.productId) {
+      toast.error("Product not found for review");
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      toast.error("Please write your review");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+
+      const res = await axios.post(
+        `${backendUrl}/api/product/review/${selectedReviewItem.productId}`,
+        {
+          rating: reviewRating,
+          comment: reviewComment.trim(),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data.success) {
+        toast.success("Review submitted successfully");
+        closeReviewModal();
+        fetchOrders();
+      } else {
+        toast.error(res.data.message || "Failed to submit review");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-transparent px-4 py-10 font-['Outfit']">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <Title text1="MY" text2="ORDERS" />
+    <div className="min-h-screen bg-transparent pt-[8px] pb-16 font-['Outfit']">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="border-t border-black/10 pt-8 md:pt-10">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <Title text1="ORDER" text2="ARCHIVE" />
+              <p className="mt-3 text-[10px] md:text-[11px] font-black uppercase tracking-[0.32em] text-gray-500">
+                Purchase history and tracking
+              </p>
+            </div>
 
-          <p className="mt-2 text-sm text-gray-500">
-            Track your orders, shipping status, payment status, and delivery
-            proof.
-          </p>
+            <div className="hidden md:block">
+              <p className="text-[10px] font-black uppercase tracking-[0.26em] text-gray-400">
+                {notifyOrdersEnabled ? "Order Alerts On" : "Live Tracking"}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mt-7 flex gap-2 overflow-x-auto pb-2">
           {ORDER_FILTERS.map((filter) => (
             <button
               key={filter.key}
               type="button"
-              onClick={() => setActiveFilter(filter.key)}
-              className={`rounded-[5px] border px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${
+              onClick={() => {
+                setActiveFilter(filter.key);
+                setCurrentPage(1);
+              }}
+              className={`shrink-0 rounded-full border px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] transition ${
                 activeFilter === filter.key
                   ? "border-black bg-black text-white"
-                  : "border-black/10 bg-white text-black hover:border-black"
+                  : "border-black/10 bg-white/70 text-[#0A0D17] hover:border-black"
               }`}
             >
               {filter.label}
@@ -440,417 +576,556 @@ const Orders = () => {
           ))}
         </div>
 
-        {currentOrders.length === 0 ? (
-          <div className="rounded-[5px] border border-dashed border-black/15 bg-white/70 py-20 text-center">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-black/40">
-              No Orders Found
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            {currentOrders.map((order) => {
-              const status = normalizeStatus(order.status);
-              const activeStep = getOrderStepIndex(order.status);
-              const paymentLabel = getPaymentStatusLabel(order);
+        <div className="mt-6 md:mt-8 flex flex-col gap-4">
+          {flattenedOrderItems.length === 0 ? (
+            <div className="rounded-[22px] border border-black/10 bg-white/45 backdrop-blur-md py-28 text-center">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">
+                No Order History
+              </p>
+            </div>
+          ) : (
+            <>
+              {paginatedOrderItems.map(({ order, item, key }) => {
+                const normalizedStatus = normalizeStatus(order.status);
+                const paymentMethod = normalizePaymentMethod(order.paymentMethod);
+                const paymentLabel = getPaymentStatusLabel(order);
+                const paymentState = normalizePaymentStatus(order);
+                const currentStep = getStepIndex(order.status);
 
-              return (
-                <div
-                  key={order._id}
-                  className="overflow-hidden rounded-[5px] border border-black/10 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.04)]"
-                >
-                  <div className="border-b border-black/10 bg-[#0A0D17] px-4 py-4 text-white md:px-5">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/45">
-                          Order ID
-                        </p>
+                const isPreorder = Boolean(order.isPreorder || item.isPreorder);
+                const shipDate = getPreorderShipDate(order, item);
 
-                        <p className="mt-1 break-all text-sm font-black">
-                          #{String(order._id).slice(-10).toUpperCase()}
-                        </p>
-                      </div>
+                const isOutForDelivery = normalizedStatus === "Out for Delivery";
+                const isDelivered = normalizedStatus === "Delivered";
+                const isPendingPayment = normalizedStatus === "Pending Payment";
+                const isPaymentFailed = normalizedStatus === "Payment Failed";
+                const showProgress = !isPendingPayment && !isPaymentFailed;
 
-                      <div className="flex flex-wrap gap-2">
-                        <span
-                          className={`rounded-[5px] border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
-                          {status}
-                        </span>
+                const itemPrice = Number(item.price || 0);
+                const salePercent = Number(item.salePercent || 0);
+                const finalUnitPrice =
+                  item.onSale && salePercent > 0
+                    ? Math.max(itemPrice - (itemPrice * salePercent) / 100, 0)
+                    : itemPrice;
 
-                        <span
-                          className={`rounded-[5px] border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] ${getPaymentColor(
-                            order
-                          )}`}
-                        >
-                          {paymentLabel}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 md:p-5">
-                    <div className="mb-5 rounded-[5px] border border-black/10 bg-[#FAFAF8] p-4">
-                      <div className="flex items-center justify-between gap-3 overflow-x-auto">
-                        {ORDER_STEPS.map((step, index) => {
-                          const done = index <= activeStep;
-                          return (
-                            <div
-                              key={step}
-                              className="flex min-w-[105px] flex-1 items-center"
-                            >
-                              <div className="flex flex-col items-center">
-                                <div
-                                  className={`flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-black ${
-                                    done
-                                      ? "border-black bg-black text-white"
-                                      : "border-black/10 bg-white text-black/40"
-                                  }`}
-                                >
-                                  {index + 1}
-                                </div>
-
-                                <p
-                                  className={`mt-2 text-center text-[9px] font-black uppercase tracking-[0.12em] ${
-                                    done ? "text-black" : "text-black/35"
-                                  }`}
-                                >
-                                  {step}
-                                </p>
-                              </div>
-
-                              {index < ORDER_STEPS.length - 1 && (
-                                <div
-                                  className={`mx-2 h-[2px] flex-1 ${
-                                    index < activeStep
-                                      ? "bg-black"
-                                      : "bg-black/10"
-                                  }`}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 lg:grid-cols-[1.1fr_0.8fr]">
-                      <div className="space-y-3">
-                        {(order.items || []).map((item, index) => {
-                          const basePrice = Number(item.price || 0);
-                          const salePercent = Number(item.salePercent || 0);
-                          const finalPrice =
-                            item.onSale && salePercent > 0
-                              ? Math.max(
-                                  basePrice - (basePrice * salePercent) / 100,
-                                  0
-                                )
-                              : basePrice;
-
-                          return (
-                            <div
-                              key={`${order._id}-${item.productId}-${item.size}-${index}`}
-                              className="flex gap-3 rounded-[5px] border border-black/10 bg-white p-3"
-                            >
-                              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[5px] border border-black/10 bg-[#f5f5f5]">
-                                <img
-                                  src={getOrderImageUrl(item.image)}
-                                  alt={item.name}
-                                  className="h-full w-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.onerror = null;
-                                    e.currentTarget.src = assets.fallback_image;
-                                  }}
-                                />
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <p className="text-sm font-black uppercase text-[#0A0D17]">
-                                    {item.name}
-                                  </p>
-
-                                  {item.isPreorder && (
-                                    <span className="rounded-[5px] bg-amber-100 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-amber-700">
-                                      Pre-order
-                                    </span>
-                                  )}
-                                </div>
-
-                                <p className="mt-1 text-xs font-semibold text-gray-500">
-                                  Size {item.size || "S"} · Qty{" "}
-                                  {item.quantity || 1}
-                                </p>
-
-                                <p className="mt-1 text-sm font-black text-black">
-                                  {currency}
-                                  {(
-                                    finalPrice * Number(item.quantity || 1)
-                                  ).toLocaleString()}
-                                </p>
-
-                                {item.isPreorder && (
-                                  <p className="mt-1 text-[11px] font-bold text-amber-700">
-                                    Ships on{" "}
-                                    {formatDateLong(
-                                      order.preorderShipDate ||
-                                        order.deliveryEstimate?.shipsOn ||
-                                        item.expectedRestockDate
-                                    )}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="rounded-[5px] border border-black/10 bg-[#FAFAF8] p-4">
-                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-black/45">
-                            Order Summary
-                          </p>
-
-                          <div className="mt-3 space-y-2 text-sm">
-                            <div className="flex justify-between gap-3">
-                              <span className="text-black/55">Total</span>
-                              <span className="font-black">
-                                {currency}
-                                {Number(order.amount || 0).toLocaleString()}
-                              </span>
-                            </div>
-
-                            <div className="flex justify-between gap-3">
-                              <span className="text-black/55">Payment</span>
-                              <span className="font-bold">
-                                {normalizePaymentMethod(order.paymentMethod)}
-                              </span>
-                            </div>
-
-                            <div className="flex justify-between gap-3">
-                              <span className="text-black/55">Order Date</span>
-                              <span className="text-right font-bold">
-                                {formatDateTime(order.createdAt || order.date)}
-                              </span>
-                            </div>
-
-                            <div className="flex justify-between gap-3">
-                              <span className="text-black/55">
-                                Estimated Delivery
-                              </span>
-                              <span className="text-right font-bold">
-                                {formatEstimateFromOrder(order)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {(order.jntTrackingNumber || status === "Shipped" || status === "Out for Delivery") && (
-                          <div className="rounded-[5px] border border-black/10 bg-white p-4">
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-black/45">
-                              Courier Tracking
-                            </p>
-
-                            <p className="mt-2 text-sm font-black">
-                              {order.courier || "J&T Express"}
-                            </p>
-
-                            <p className="mt-1 break-all text-xs text-black/60">
-                              Tracking No:{" "}
-                              <span className="font-bold text-black">
-                                {order.jntTrackingNumber || "Waiting for tracking number"}
-                              </span>
-                            </p>
-
-                            <button
-                              type="button"
-                              onClick={openJntTracking}
-                              className="mt-3 h-10 w-full rounded-[5px] border border-black/10 bg-black text-[10px] font-black uppercase tracking-[0.16em] text-white transition hover:opacity-90"
-                            >
-                              Track J&T Parcel
-                            </button>
-                          </div>
-                        )}
-
-                        {order.deliveryProofImage && (
-                          <div className="rounded-[5px] border border-emerald-200 bg-emerald-50 p-4">
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-                              Delivery Proof Submitted
-                            </p>
-
+                return (
+                  <div
+                    key={key}
+                    className="group rounded-[22px] border border-black/10 bg-white/45 backdrop-blur-md p-5 md:p-6 lg:p-7 transition-all duration-300 hover:border-black/20"
+                  >
+                    <div className="flex flex-col gap-7">
+                      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
+                        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 flex-1">
+                          <div className="relative w-28 h-36 overflow-hidden rounded-[16px] bg-white border border-black/10 flex-shrink-0">
                             <img
-                              src={order.deliveryProofImage}
-                              alt="Delivery Proof"
-                              className="mt-3 max-h-60 w-full rounded-[5px] border border-emerald-200 bg-white object-contain"
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                              src={getOrderImageUrl(item.image)}
+                              alt={item.name}
+                              loading="lazy"
                               onError={(e) => {
                                 e.currentTarget.onerror = null;
                                 e.currentTarget.src = assets.fallback_image;
                               }}
                             />
+                          </div>
 
-                            {order.deliveryProofNote && (
-                              <p className="mt-3 text-xs font-semibold text-emerald-800">
-                                Note: {order.deliveryProofNote}
+                          <div className="flex-1 text-center md:text-left">
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                              <p className="text-2xl font-black italic uppercase tracking-tight text-[#0A0D17] leading-none">
+                                {item.name}
                               </p>
+
+                              {isPreorder && (
+                                <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700">
+                                  Pre-order
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                              Order Ref: {order._id.slice(-8).toUpperCase()}
+                            </p>
+
+                            <div className="mt-5 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                              <p className="text-lg font-black text-[#0A0D17]">
+                                {currency}
+                                {finalUnitPrice.toLocaleString()}
+                              </p>
+
+                              <span className="rounded-full border border-black/10 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-gray-600">
+                                Qty: {item.quantity}
+                              </span>
+
+                              <span className="rounded-full bg-black px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white">
+                                Size: {item.size}
+                              </span>
+                            </div>
+
+                            {isPreorder && (
+                              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left">
+                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">
+                                  Ships On
+                                </p>
+                                <p className="mt-1 text-sm font-black text-amber-700">
+                                  {formatDateLong(shipDate)}
+                                </p>
+                                {item.preorderNote && (
+                                  <p className="mt-1 text-xs font-semibold text-amber-700/80">
+                                    {item.preorderNote}
+                                  </p>
+                                )}
+                              </div>
                             )}
 
-                            {order.deliveryProofSubmittedAt && (
-                              <p className="mt-2 text-[11px] text-emerald-700/70">
-                                Submitted:{" "}
-                                {formatDateTime(order.deliveryProofSubmittedAt)}
-                              </p>
+                            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Date
+                                </p>
+                                <p className="mt-1 text-[12px] font-bold text-gray-700">
+                                  {new Date(
+                                    order.createdAt || order.date || Date.now()
+                                  ).toLocaleDateString("en-US", {
+                                    day: "2-digit",
+                                    month: "long",
+                                    year: "numeric",
+                                  })}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  {isPreorder ? "Ships On" : "Est. Delivery"}
+                                </p>
+                                <p
+                                  className={`mt-1 text-[12px] font-bold ${
+                                    isPreorder ? "text-amber-700" : "text-gray-700"
+                                  }`}
+                                >
+                                  {isPreorder
+                                    ? formatDateLong(shipDate)
+                                    : formatEstimateFromOrder(order)}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Payment Method
+                                </p>
+                                <p className="mt-1 text-[12px] font-bold uppercase text-gray-700">
+                                  {paymentMethod}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Payment Status
+                                </p>
+                                <div
+                                  className={`mt-1 inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getPaymentStatusStyles(
+                                    order
+                                  )}`}
+                                >
+                                  {paymentLabel}
+                                </div>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Courier
+                                </p>
+                                <p className="mt-1 text-[12px] font-bold uppercase text-gray-700">
+                                  {order.courier || "J&T Express"}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                  Tracking No.
+                                </p>
+                                <p className="mt-1 text-[12px] font-bold uppercase text-gray-700 break-all">
+                                  {order.jntTrackingNumber || "Not Available"}
+                                </p>
+                              </div>
+
+                              {(paymentMethod === "GCash" ||
+                                paymentMethod === "Maya" ||
+                                paymentMethod === "GoTyme") && (
+                                <div>
+                                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                                    Reference No.
+                                  </p>
+                                  <p className="mt-1 text-[12px] font-bold uppercase text-gray-700 break-all">
+                                    {order.referenceNumber || "Not Available"}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            {(paymentState === "verifying" ||
+                              isPendingPayment ||
+                              isPaymentFailed) && (
+                              <div
+                                className={`mt-5 rounded-2xl border px-4 py-3 text-left ${
+                                  isPaymentFailed
+                                    ? "border-red-200 bg-red-50 text-red-700"
+                                    : "border-amber-200 bg-amber-50 text-amber-700"
+                                }`}
+                              >
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em]">
+                                  {isPaymentFailed
+                                    ? "Payment Issue"
+                                    : "Payment Update"}
+                                </p>
+                                <p className="mt-1 text-xs font-semibold">
+                                  {isPaymentFailed
+                                    ? "Your online payment was not confirmed. Please contact support or try again."
+                                    : paymentState === "verifying"
+                                    ? "Your payment proof is under verification. We will update your order once confirmed."
+                                    : "Waiting for payment confirmation before order processing starts."}
+                                </p>
+                              </div>
                             )}
                           </div>
-                        )}
+                        </div>
 
-                        {canUploadDeliveryProof(order) && (
-                          <button
-                            type="button"
-                            onClick={() => openDeliveryProofModal(order)}
-                            className="h-12 w-full rounded-[5px] bg-black text-[11px] font-black uppercase tracking-[0.2em] text-white transition hover:opacity-90"
+                        <div className="xl:w-[250px] flex flex-col items-center xl:items-end gap-3">
+                          <div
+                            className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] ${getOrderStatusStyles(
+                              order.status
+                            )}`}
                           >
-                            I Received My Order
-                          </button>
-                        )}
-
-                        {status === "Delivered" && !order.deliveryProofImage && (
-                          <div className="rounded-[5px] border border-black/10 bg-white p-4 text-xs font-semibold text-black/55">
-                            This order is marked delivered.
+                            {normalizedStatus}
                           </div>
-                        )}
 
-                        {status === "Pending Payment" && (
-                          <div className="rounded-[5px] border border-amber-200 bg-amber-50 p-4 text-xs font-bold text-amber-700">
-                            Payment is still pending. Your order will continue
-                            once payment is confirmed.
+                          {isPreorder && (
+                            <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                              Ships {formatDateLong(shipDate)}
+                            </div>
+                          )}
+
+                          {order.jntTrackingNumber && (
+                            <a
+                              href={order.jntTrackingUrl || "https://www.jtexpress.ph/track-and-trace"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="h-11 w-full xl:w-auto rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#222] inline-flex items-center justify-center text-center"
+                            >
+                              Track J&T Parcel
+                            </a>
+                          )}
+
+                          {isOutForDelivery && (
+                            <button
+                              onClick={() => openDeliveryProofModal(order)}
+                              className="h-11 w-full xl:w-auto rounded-xl border border-black bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
+                            >
+                              Attach Proof & Mark Received
+                            </button>
+                          )}
+
+                          {isDelivered && order.deliveryProofImage && (
+                            <a
+                              href={order.deliveryProofImage}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="h-11 w-full xl:w-auto rounded-xl border border-emerald-200 bg-emerald-50 px-6 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 transition hover:border-emerald-400 inline-flex items-center justify-center text-center"
+                            >
+                              View Delivery Proof
+                            </a>
+                          )}
+
+                          {isDelivered && (
+                            <button
+                              onClick={() => openReviewModal(item, order)}
+                              className="h-11 w-full xl:w-auto rounded-xl border border-black/10 bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
+                            >
+                              Rate & Review
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-black/10 pt-6">
+                        {showProgress ? (
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            {ORDER_STEPS.map((step, stepIndex) => {
+                              const isDone = stepIndex <= currentStep;
+                              const isCurrent = stepIndex === currentStep;
+
+                              return (
+                                <div
+                                  key={step}
+                                  className="flex flex-col items-center text-center gap-3"
+                                >
+                                  <div className="w-full flex items-center">
+                                    <div
+                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border ${
+                                        isDone
+                                          ? "bg-black text-white border-black"
+                                          : "bg-white text-gray-400 border-black/10"
+                                      }`}
+                                    >
+                                      {stepIndex + 1}
+                                    </div>
+
+                                    {stepIndex !== ORDER_STEPS.length - 1 && (
+                                      <div
+                                        className={`flex-1 h-[2px] ml-2 ${
+                                          stepIndex < currentStep
+                                            ? "bg-black"
+                                            : "bg-black/10"
+                                        }`}
+                                      ></div>
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <p
+                                      className={`text-[10px] font-black uppercase tracking-[0.12em] ${
+                                        isCurrent
+                                          ? "text-black"
+                                          : isDone
+                                          ? "text-[#0A0D17]"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      {step}
+                                    </p>
+                                    <p className="mt-1 text-[9px] text-gray-400">
+                                      {isDone ? "Completed" : "Waiting"}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-black/10 bg-white px-4 py-5 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-400">
+                              Order Progress
+                            </p>
+                            <p className="mt-2 text-sm font-bold text-[#0A0D17]">
+                              {isPaymentFailed
+                                ? "Order processing stopped because payment was not confirmed."
+                                : "Order processing will begin after payment confirmation."}
+                            </p>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
 
-        {filteredOrders.length > itemsPerPage && (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <button
-              type="button"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              className="rounded-[5px] border border-black/10 bg-white px-4 py-2 text-xs font-black uppercase disabled:opacity-40"
-            >
-              Previous
-            </button>
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+                    currentPage === 1
+                      ? "cursor-not-allowed border border-black/10 bg-gray-100 text-gray-400"
+                      : "border border-black bg-white text-black hover:bg-black hover:text-white"
+                  }`}
+                >
+                  Prev
+                </button>
 
-            <span className="px-3 text-xs font-black uppercase tracking-[0.16em] text-black/50">
-              {currentPage} / {totalPages}
-            </span>
-
-            <button
-              type="button"
-              disabled={currentPage === totalPages}
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              className="rounded-[5px] border border-black/10 bg-white px-4 py-2 text-xs font-black uppercase disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-
-      {deliveryProofModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-[5px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
-            <div className="bg-[#0A0D17] px-5 py-4 text-white">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/45">
-                    Delivery Confirmation
+                <div className="h-11 rounded-xl border border-black/10 bg-white px-5 flex items-center justify-center">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0A0D17]">
+                    Page {currentPage} of {totalPages}
                   </p>
-
-                  <h2 className="mt-1 text-lg font-black uppercase">
-                    Upload Proof
-                  </h2>
                 </div>
 
                 <button
                   type="button"
-                  onClick={closeDeliveryProofModal}
-                  disabled={submittingDeliveryProof}
-                  className="h-9 w-9 rounded-[5px] border border-white/15 bg-white/5 text-xl leading-none text-white"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`h-11 rounded-xl px-5 text-[10px] font-black uppercase tracking-[0.18em] transition ${
+                    currentPage === totalPages
+                      ? "cursor-not-allowed border border-black/10 bg-gray-100 text-gray-400"
+                      : "border border-black bg-white text-black hover:bg-black hover:text-white"
+                  }`}
                 >
-                  ×
+                  Next
                 </button>
               </div>
+            </>
+          )}
+        </div>
+      </div>
+
+
+      {deliveryProofModalOpen && selectedDeliveryOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-xl overflow-hidden rounded-[22px] border border-black/10 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/10 bg-[#0A0D17] px-6 py-5 text-white">
+              <div>
+                <p className="text-lg font-black uppercase">Delivery Proof</p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/50">
+                  Order #{String(selectedDeliveryOrder._id || "").slice(-8).toUpperCase()}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeDeliveryProofModal}
+                className="text-xl font-bold text-white/60 transition hover:text-white"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="p-5">
-              <p className="text-sm font-semibold text-black/60">
-                Upload a clear photo showing that you received the package.
-                This will be visible to admin as delivery proof.
-              </p>
+            <div className="space-y-5 bg-[#FAFAF8] p-6">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                  Required Before Delivered
+                </p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-amber-700/80">
+                  Attach a photo showing the parcel was received. The admin will see this proof in the order page.
+                </p>
+              </div>
 
-              <div className="mt-5">
-                <label className="text-[10px] font-black uppercase tracking-[0.18em] text-black/45">
-                  Proof Photo
+              <div>
+                <label className="text-sm font-black uppercase text-[#0A0D17]">
+                  Upload Delivery Proof Photo
                 </label>
-
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) =>
-                    handleDeliveryProofFile(e.target.files?.[0] || null)
-                  }
-                  className="mt-2 w-full rounded-[5px] border border-black/10 bg-white px-3 py-3 text-sm"
+                  onChange={handleDeliveryProofChange}
+                  className="mt-3 block w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#0A0D17]"
                 />
               </div>
 
               {deliveryProofPreview && (
-                <div className="mt-4 rounded-[5px] border border-black/10 bg-[#FAFAF8] p-3">
+                <div className="rounded-2xl border border-black/10 bg-white p-3">
                   <img
                     src={deliveryProofPreview}
                     alt="Delivery Proof Preview"
-                    className="max-h-72 w-full rounded-[5px] object-contain"
+                    className="max-h-[320px] w-full rounded-xl object-contain"
                   />
                 </div>
               )}
 
-              <div className="mt-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.18em] text-black/45">
+              <div>
+                <label className="text-sm font-black uppercase text-[#0A0D17]">
                   Note Optional
                 </label>
-
                 <textarea
                   value={deliveryProofNote}
                   onChange={(e) => setDeliveryProofNote(e.target.value)}
-                  placeholder="Example: Received by me / package received in good condition"
-                  className="mt-2 h-28 w-full resize-none rounded-[5px] border border-black/10 bg-white px-3 py-3 text-sm outline-none focus:border-black"
+                  placeholder="Example: Received by customer / guard / family member"
+                  className="mt-3 min-h-[110px] w-full resize-none rounded-xl border border-black/10 bg-white p-4 text-sm font-semibold outline-none transition focus:border-black"
                 />
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={closeDeliveryProofModal}
-                  disabled={submittingDeliveryProof}
-                  className="h-11 rounded-[5px] border border-black/10 bg-white text-[11px] font-black uppercase tracking-[0.16em] text-black disabled:opacity-50"
+                  className="h-11 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="button"
-                  onClick={submitDeliveryProof}
+                  onClick={markAsReceived}
                   disabled={submittingDeliveryProof}
-                  className="h-11 rounded-[5px] bg-black text-[11px] font-black uppercase tracking-[0.16em] text-white disabled:opacity-50"
+                  className="h-11 rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:opacity-50"
                 >
-                  {submittingDeliveryProof ? "Submitting..." : "Submit Proof"}
+                  {submittingDeliveryProof ? "Submitting..." : "Submit Proof & Mark Delivered"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reviewModalOpen && selectedReviewItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-xl rounded-[22px] border border-black/10 bg-white/90 backdrop-blur-md overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/10 px-6 py-5">
+              <div>
+                <p className="text-lg font-black uppercase text-[#0A0D17]">
+                  Rate & Review
+                </p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
+                  {selectedReviewItem.name}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeReviewModal}
+                className="text-xl font-bold text-gray-400 transition hover:text-black"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6 p-6">
+              <div className="flex items-center gap-4">
+                <img
+                  src={getOrderImageUrl(selectedReviewItem.image)}
+                  alt={selectedReviewItem.name}
+                  className="h-24 w-20 rounded-[14px] border border-black/10 object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = assets.fallback_image;
+                  }}
+                />
+
+                <div>
+                  <p className="font-black uppercase text-[#0A0D17]">
+                    {selectedReviewItem.name}
+                  </p>
+                  <p className="mt-1 text-xs uppercase text-gray-500">
+                    Size: {selectedReviewItem.size}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-3 text-sm font-black uppercase text-[#0A0D17]">
+                  Your Rating
+                </p>
+                <StarPicker value={reviewRating} onChange={setReviewRating} />
+              </div>
+
+              <div>
+                <p className="mb-3 text-sm font-black uppercase text-[#0A0D17]">
+                  Your Review
+                </p>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Write your experience about this product..."
+                  className="min-h-[140px] w-full resize-none rounded-xl border border-black/10 bg-white p-4 outline-none transition focus:border-black"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeReviewModal}
+                  className="rounded-xl border border-black/10 px-5 py-3 text-sm font-black uppercase transition hover:border-black"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={submitReview}
+                  disabled={submittingReview}
+                  className="rounded-xl bg-black px-6 py-3 text-sm font-black uppercase text-white transition hover:opacity-90 disabled:opacity-50"
+                >
+                  {submittingReview ? "Submitting..." : "Submit Review"}
                 </button>
               </div>
             </div>
