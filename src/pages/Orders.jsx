@@ -103,6 +103,13 @@ const Orders = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const [deliveryProofModalOpen, setDeliveryProofModalOpen] = useState(false);
+  const [selectedDeliveryOrder, setSelectedDeliveryOrder] = useState(null);
+  const [deliveryProofImage, setDeliveryProofImage] = useState(null);
+  const [deliveryProofPreview, setDeliveryProofPreview] = useState("");
+  const [deliveryProofNote, setDeliveryProofNote] = useState("");
+  const [submittingDeliveryProof, setSubmittingDeliveryProof] = useState(false);
+
   const currency = "₱";
   const itemsPerPage = 10;
   const notifyOrdersEnabled = !!user?.preferences?.notifyOrders;
@@ -394,22 +401,80 @@ const Orders = () => {
     );
   };
 
-  const markAsReceived = async (orderId) => {
+  const openDeliveryProofModal = (order) => {
+    setSelectedDeliveryOrder(order);
+    setDeliveryProofImage(null);
+    setDeliveryProofPreview("");
+    setDeliveryProofNote("");
+    setDeliveryProofModalOpen(true);
+  };
+
+  const closeDeliveryProofModal = () => {
+    if (submittingDeliveryProof) return;
+    setDeliveryProofModalOpen(false);
+    setSelectedDeliveryOrder(null);
+    setDeliveryProofImage(null);
+    setDeliveryProofPreview("");
+    setDeliveryProofNote("");
+  };
+
+  const handleDeliveryProofChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setDeliveryProofImage(file);
+
+    if (deliveryProofPreview) {
+      URL.revokeObjectURL(deliveryProofPreview);
+    }
+
+    if (file) {
+      setDeliveryProofPreview(URL.createObjectURL(file));
+    } else {
+      setDeliveryProofPreview("");
+    }
+  };
+
+  const markAsReceived = async () => {
+    if (!selectedDeliveryOrder?._id) {
+      toast.error("Order is missing");
+      return;
+    }
+
+    if (!deliveryProofImage) {
+      toast.error("Please attach a delivery proof photo");
+      return;
+    }
+
     try {
+      setSubmittingDeliveryProof(true);
+
+      const proofData = new FormData();
+      proofData.append("orderId", selectedDeliveryOrder._id);
+      proofData.append("userId", user._id);
+      proofData.append("deliveryProofImage", deliveryProofImage);
+      proofData.append("deliveryProofNote", deliveryProofNote.trim());
+
       const res = await axios.post(
         `${backendUrl}/api/order/receive`,
-        { orderId, userId: user._id },
-        { headers: { Authorization: `Bearer ${token}` } }
+        proofData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       if (res.data.success) {
-        toast.success("Order marked as received");
+        toast.success("Order marked as received with delivery proof");
+        closeDeliveryProofModal();
         fetchOrders();
       } else {
         toast.error(res.data.message);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update order status");
+      toast.error(err.response?.data?.message || "Failed to submit delivery proof");
+    } finally {
+      setSubmittingDeliveryProof(false);
     }
   };
 
@@ -752,11 +817,22 @@ const Orders = () => {
 
                           {isOutForDelivery && (
                             <button
-                              onClick={() => markAsReceived(order._id)}
+                              onClick={() => openDeliveryProofModal(order)}
                               className="h-11 w-full xl:w-auto rounded-xl border border-black bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
                             >
-                              Mark Received
+                              Attach Proof & Mark Received
                             </button>
+                          )}
+
+                          {isDelivered && order.deliveryProofImage && (
+                            <a
+                              href={order.deliveryProofImage}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="h-11 w-full xl:w-auto rounded-xl border border-emerald-200 bg-emerald-50 px-6 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 transition hover:border-emerald-400 inline-flex items-center justify-center text-center"
+                            >
+                              View Delivery Proof
+                            </a>
                           )}
 
                           {isDelivered && (
@@ -881,6 +957,94 @@ const Orders = () => {
           )}
         </div>
       </div>
+
+
+      {deliveryProofModalOpen && selectedDeliveryOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-xl overflow-hidden rounded-[22px] border border-black/10 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/10 bg-[#0A0D17] px-6 py-5 text-white">
+              <div>
+                <p className="text-lg font-black uppercase">Delivery Proof</p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/50">
+                  Order #{String(selectedDeliveryOrder._id || "").slice(-8).toUpperCase()}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeDeliveryProofModal}
+                className="text-xl font-bold text-white/60 transition hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-5 bg-[#FAFAF8] p-6">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                  Required Before Delivered
+                </p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-amber-700/80">
+                  Attach a photo showing the parcel was received. The admin will see this proof in the order page.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-black uppercase text-[#0A0D17]">
+                  Upload Delivery Proof Photo
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleDeliveryProofChange}
+                  className="mt-3 block w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#0A0D17]"
+                />
+              </div>
+
+              {deliveryProofPreview && (
+                <div className="rounded-2xl border border-black/10 bg-white p-3">
+                  <img
+                    src={deliveryProofPreview}
+                    alt="Delivery Proof Preview"
+                    className="max-h-[320px] w-full rounded-xl object-contain"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-black uppercase text-[#0A0D17]">
+                  Note Optional
+                </label>
+                <textarea
+                  value={deliveryProofNote}
+                  onChange={(e) => setDeliveryProofNote(e.target.value)}
+                  placeholder="Example: Received by customer / guard / family member"
+                  className="mt-3 min-h-[110px] w-full resize-none rounded-xl border border-black/10 bg-white p-4 text-sm font-semibold outline-none transition focus:border-black"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeDeliveryProofModal}
+                  className="h-11 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={markAsReceived}
+                  disabled={submittingDeliveryProof}
+                  className="h-11 rounded-xl bg-black px-6 text-[10px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 disabled:opacity-50"
+                >
+                  {submittingDeliveryProof ? "Submitting..." : "Submit Proof & Mark Delivered"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {reviewModalOpen && selectedReviewItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
