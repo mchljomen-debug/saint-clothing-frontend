@@ -168,12 +168,12 @@ const StyleBuilder = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
-const [generatedImage, setGeneratedImage] = useState("");
-const [imageLoading, setImageLoading] = useState(false);
-const [imageError, setImageError] = useState("");
+  const [generatedImage, setGeneratedImage] = useState("");
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState("");
 
-const autoGenerateTimerRef = useRef(null);
-const generationRequestIdRef = useRef(0);
+  const autoGenerateTimerRef = useRef(null);
+  const generationRequestIdRef = useRef(0);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -453,145 +453,133 @@ const generationRequestIdRef = useRef(0);
     }
   };
 
-const generateAIOutfitImage = async () => {
-  const requestId = Date.now();
-  generationRequestIdRef.current = requestId;
+  const generateAIOutfitImage = async () => {
+    const requestId = Date.now();
+    generationRequestIdRef.current = requestId;
 
-  try {
-    setImageLoading(true);
-    setImageError("");
-    setGeneratedImage("");
+    try {
+      setImageLoading(true);
+      setImageError("");
 
-    if (!selectedTop && !selectedBottom) {
-      setImageError("Pick at least one item before generating outfit image.");
-      return;
-    }
-
-    const mannequinBase64 = await imageUrlToBase64(assets.mannequin);
-
-    const topImage = selectedTop
-      ? await imageUrlToBase64(getProductImage(selectedTop))
-      : null;
-
-    const bottomImage = selectedBottom
-      ? await imageUrlToBase64(getProductImage(selectedBottom))
-      : null;
-
-    const response = await axios.post(
-      `${backendUrl}/api/ai/generate-fit-image`,
-      {
-        mannequin: mannequinBase64,
-
-        top: selectedTop
-          ? {
-              name: selectedTop.name,
-              category: selectedTop.category,
-              color: selectedTop.color,
-              styleVibe: selectedTop.styleVibe,
-              styleTags: selectedTop.styleTags,
-              image: topImage,
-            }
-          : null,
-
-        bottom: selectedBottom
-          ? {
-              name: selectedBottom.name,
-              category: selectedBottom.category,
-              color: selectedBottom.color,
-              styleVibe: selectedBottom.styleVibe,
-              styleTags: selectedBottom.styleTags,
-              image: bottomImage,
-            }
-          : null,
-
-        style:
-          "Generate a realistic full body mannequin wearing the selected Saint Clothing outfit. The shirt and shorts must look naturally worn on the mannequin, like a real product catalog photo, black studio background, centered full body, no text, no watermark.",
-      },
-      {
-        headers: token ? { token } : {},
+      if (!selectedTop || !selectedBottom) {
+        setImageError("Pick both a top and bottom before generating outfit image.");
+        return;
       }
-    );
 
-    if (generationRequestIdRef.current !== requestId) return;
+      const mannequinBase64 = await imageUrlToBase64(assets.mannequin);
 
-    if (response.data?.success) {
-      setGeneratedImage(response.data.image || "");
-    } else {
-      setImageError(
-        response.data?.message ||
-          response.data?.details?.message ||
-          "AI outfit image generation failed."
-      );
-    }
-  } catch (error) {
-    if (generationRequestIdRef.current !== requestId) return;
+      const topImage = await imageUrlToBase64(getProductImage(selectedTop));
+      const bottomImage = await imageUrlToBase64(getProductImage(selectedBottom));
 
-    console.error("AI Outfit Image Error:", error);
-    console.error("Backend Error:", error.response?.data);
-
-    const backendMessage = error.response?.data?.message || "";
-    const backendDetails = error.response?.data?.details?.message || "";
-
-    const fullMessage = `${backendMessage} ${backendDetails}`;
-
-    const isQuotaError =
-      fullMessage.includes("429") ||
-      fullMessage.toLowerCase().includes("quota") ||
-      fullMessage.includes("RESOURCE_EXHAUSTED");
-
-    const isRetryDelay =
-      fullMessage.includes("retryDelay") ||
-      fullMessage.includes("retry");
-
-    const isModelError =
-      fullMessage.includes("not found") ||
-      fullMessage.includes("not supported");
-
-    if (isQuotaError || isRetryDelay) {
-      setImageError(
-        "Gemini image generation is temporarily rate-limited. Wait around 10-20 seconds and try again."
+      const response = await axios.post(
+        `${backendUrl}/api/ai/generate-fit-image`,
+        {
+          mannequin: mannequinBase64,
+          skinTone: {
+            type: skinTone.type,
+            label: skinTone.label,
+            color: skinTone.color,
+          },
+          top: {
+            name: selectedTop.name,
+            category: selectedTop.category,
+            color: selectedTop.color,
+            styleVibe: selectedTop.styleVibe,
+            styleTags: selectedTop.styleTags,
+            image: topImage,
+          },
+          bottom: {
+            name: selectedBottom.name,
+            category: selectedBottom.category,
+            color: selectedBottom.color,
+            styleVibe: selectedBottom.styleVibe,
+            styleTags: selectedBottom.styleTags,
+            image: bottomImage,
+          },
+          style: `Generate a realistic full body mannequin wearing the selected Saint Clothing outfit. The mannequin skin tone should match ${skinTone.label} / ${skinTone.color}. The shirt and shorts must look naturally worn on the mannequin, like a real product catalog photo, black studio background, centered full body, no text, no watermark.`,
+        },
+        {
+          headers: token ? { token } : {},
+        }
       );
 
-      return;
-    }
+      if (generationRequestIdRef.current !== requestId) return;
 
-    if (isModelError) {
+      if (response.data?.success) {
+        setGeneratedImage(response.data.image || "");
+      } else {
+        setImageError(
+          response.data?.message ||
+            response.data?.details?.message ||
+            "AI outfit image generation failed."
+        );
+      }
+    } catch (error) {
+      if (generationRequestIdRef.current !== requestId) return;
+
+      console.error("AI Outfit Image Error:", error);
+      console.error("Backend Error:", error.response?.data);
+
+      const backendMessage = error.response?.data?.message || "";
+      const backendDetails = error.response?.data?.details?.message || "";
+
+      const fullMessage = `${backendMessage} ${backendDetails}`;
+
+      const isQuotaError =
+        fullMessage.includes("429") ||
+        fullMessage.toLowerCase().includes("quota") ||
+        fullMessage.includes("RESOURCE_EXHAUSTED");
+
+      const isRetryDelay =
+        fullMessage.includes("retryDelay") ||
+        fullMessage.includes("retry");
+
+      const isModelError =
+        fullMessage.includes("not found") ||
+        fullMessage.includes("not supported");
+
+      if (isQuotaError || isRetryDelay) {
+        setImageError(
+          "Gemini image generation is temporarily rate-limited. Wait around 10-20 seconds and try again."
+        );
+        return;
+      }
+
+      if (isModelError) {
+        setImageError("Gemini image model is not available for this API key.");
+        return;
+      }
+
       setImageError(
-        "Gemini image model is not available for this API key."
+        backendMessage ||
+          backendDetails ||
+          "AI outfit image generation failed. Please check Render logs."
       );
-
-      return;
+    } finally {
+      if (generationRequestIdRef.current === requestId) {
+        setImageLoading(false);
+      }
     }
+  };
 
-    setImageError(
-      backendMessage ||
-        backendDetails ||
-        "AI outfit image generation failed. Please check Render logs."
-    );
-  } finally {
-    if (generationRequestIdRef.current === requestId) {
-      setImageLoading(false);
-    }
-  }
-};
-useEffect(() => {
-  if (!selectedTop && !selectedBottom) return;
-  if (!token) return;
+  useEffect(() => {
+    if (!selectedTop || !selectedBottom) return;
+    if (!token) return;
 
-  if (autoGenerateTimerRef.current) {
-    clearTimeout(autoGenerateTimerRef.current);
-  }
-
-  autoGenerateTimerRef.current = setTimeout(() => {
-    generateAIOutfitImage();
-  }, 900);
-
-  return () => {
     if (autoGenerateTimerRef.current) {
       clearTimeout(autoGenerateTimerRef.current);
     }
-  };
-}, [selectedTop?._id, selectedBottom?._id, token, backendUrl]);
+
+    autoGenerateTimerRef.current = setTimeout(() => {
+      generateAIOutfitImage();
+    }, 900);
+
+    return () => {
+      if (autoGenerateTimerRef.current) {
+        clearTimeout(autoGenerateTimerRef.current);
+      }
+    };
+  }, [selectedTop?._id, selectedBottom?._id, skinTone.type, token, backendUrl]);
 
   const downloadOutfit = () => {
     if (!generatedImage) return;
@@ -715,7 +703,11 @@ useEffect(() => {
               {SKIN_TONES.map((tone) => (
                 <button
                   key={tone.type}
-                  onClick={() => setSkinTone(tone)}
+                  onClick={() => {
+                    setSkinTone(tone);
+                    setGeneratedImage("");
+                    setImageError("");
+                  }}
                   title={`${tone.type} - ${tone.label}`}
                   className={`h-9 w-9 rounded-full border transition ${
                     skinTone.type === tone.type
@@ -802,7 +794,11 @@ useEffect(() => {
               {PREVIEW_BACKGROUNDS.map((bg) => (
                 <button
                   key={bg.name}
-                  onClick={() => setPreviewBg(bg.color)}
+                  onClick={() => {
+                    setPreviewBg(bg.color);
+                    setGeneratedImage("");
+                    setImageError("");
+                  }}
                   title={bg.name}
                   className={`h-10 w-10 rounded-full border transition ${
                     previewBg === bg.color
@@ -887,9 +883,9 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={generateAIOutfitImage}
-                disabled={imageLoading || (!selectedTop && !selectedBottom)}
+                disabled={imageLoading || !selectedTop || !selectedBottom}
                 className={`rounded-[5px] px-5 py-3 text-xs font-black uppercase tracking-widest shadow-lg shadow-black/10 backdrop-blur ${
-                  imageLoading || (!selectedTop && !selectedBottom)
+                  imageLoading || !selectedTop || !selectedBottom
                     ? "cursor-not-allowed bg-white/20 text-white/40"
                     : "bg-white text-black hover:bg-gray-200"
                 }`}
@@ -897,7 +893,7 @@ useEffect(() => {
                 {imageLoading
                   ? "Generating..."
                   : generatedImage
-                  ? "Generate New Outfit"
+                  ? "Regenerate Outfit"
                   : "Generate AI Outfit"}
               </button>
 
@@ -932,18 +928,8 @@ useEffect(() => {
             )}
 
             {imageLoading && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
-                <div className="rounded-[5px] bg-white px-8 py-6 text-center shadow-2xl">
-                  <p className="text-xs font-black uppercase tracking-[0.25em] text-black/40">
-                    Gemini AI
-                  </p>
-                  <h3 className="mt-2 text-xl font-black uppercase tracking-tight text-black">
-                    Generating Outfit
-                  </h3>
-                  <p className="mt-2 text-sm font-medium text-black/60">
-                    Creating a realistic mannequin wearing your selected outfit.
-                  </p>
-                </div>
+              <div className="absolute bottom-5 right-5 z-40 rounded-[5px] bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-black shadow-lg">
+                Updating AI Outfit...
               </div>
             )}
 
