@@ -127,6 +127,8 @@ const Login = () => {
     confirmPassword: "",
   });
 
+  const [showAddressPanel, setShowAddressPanel] = useState(false);
+
   const cleanAddress = useMemo(() => {
     const address = formData.address || {};
 
@@ -296,6 +298,7 @@ const Login = () => {
     setShowConfirmPassword(false);
     setShowForgotNewPassword(false);
     setShowForgotConfirmPassword(false);
+    setShowAddressPanel(false);
 
     setFormData({
       firstName: "",
@@ -661,10 +664,20 @@ const Login = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-transparent overflow-hidden font-['Outfit'] pt-[88px] pb-12">
+      <style>{`
+        .scrollbar-thin-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-thin-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-transparent overflow-hidden font-['Outfit'] pt-[74px] pb-8">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid md:grid-cols-[1fr_500px] gap-10 items-start">
-            <div className="pt-6 md:pt-12">
+          <div className="grid lg:grid-cols-[1fr_520px] gap-7 items-start">
+            <div className="hidden lg:block pt-10">
               <p className="text-[10px] font-black tracking-[0.32em] uppercase text-gray-500">
                 Saint Clothing
               </p>
@@ -681,10 +694,10 @@ const Login = () => {
               </p>
             </div>
 
-            <div className="bg-white/45 backdrop-blur-md border border-black/10 rounded-[26px] p-6 md:p-8 shadow-[0_10px_28px_rgba(0,0,0,0.04)]">
+            <div className="bg-white/60 backdrop-blur-md border border-black/10 rounded-[18px] p-5 md:p-6 shadow-[0_10px_28px_rgba(0,0,0,0.04)] max-h-[calc(100vh-112px)] overflow-y-auto scrollbar-thin-hide">
               {!forgotMode ? (
                 <>
-                  <div className="mb-8">
+                  <div className="mb-5">
                     <h2 className="text-3xl font-black italic uppercase tracking-tight text-[#0A0D17]">
                       {currentState === "Login" ? "Login" : "Create Account"}
                     </h2>
@@ -696,7 +709,7 @@ const Login = () => {
                     </p>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                     {currentState === "Sign Up" && (
                       <div className="grid grid-cols-2 gap-3">
                         <FloatingField
@@ -827,39 +840,61 @@ const Login = () => {
                           autoComplete="tel"
                         />
 
-                        <div className="rounded-2xl border border-black/10 bg-white/60 p-4">
-                          <div className="mb-4">
-                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-500">
-                              Shipping Address
-                            </p>
-                            <p className="mt-1 text-[11px] font-semibold text-gray-500">
-                              This will be saved to your user account.
-                            </p>
-                          </div>
+                        <div className="overflow-hidden rounded-xl border border-black/10 bg-white/70">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddressPanel((prev) => !prev)}
+                            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-white"
+                          >
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
+                                Shipping Address
+                              </p>
+                              <p
+                                className={`mt-1 text-[11px] font-bold ${
+                                  isAddressComplete
+                                    ? "text-emerald-600"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {isAddressComplete
+                                  ? "Address completed"
+                                  : "Required before creating account"}
+                              </p>
+                            </div>
 
-                          <ShippingAddressFields
-                            formData={formData.address}
-                            setFormData={(nextAddress) => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                address:
-                                  typeof nextAddress === "function"
-                                    ? nextAddress(prev.address)
-                                    : nextAddress,
-                              }));
-                            }}
-                            backendUrl={backendUrl}
-                          />
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-lg font-black text-white">
+                              {showAddressPanel ? "−" : "+"}
+                            </span>
+                          </button>
 
-                          {!isAddressComplete && (
-                            <p className="mt-3 text-[10px] font-semibold text-gray-500">
-                              Complete your house/unit, street, region, city,
-                              barangay, and ZIP code before creating account.
-                            </p>
+                          {showAddressPanel && (
+                            <div className="border-t border-black/10 p-4">
+                              <ShippingAddressFields
+                                formData={formData.address}
+                                setFormData={(nextAddress) => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    address:
+                                      typeof nextAddress === "function"
+                                        ? nextAddress(prev.address)
+                                        : nextAddress,
+                                  }));
+                                }}
+                                backendUrl={backendUrl}
+                              />
+
+                              {!isAddressComplete && (
+                                <p className="mt-3 text-[10px] font-semibold text-gray-500">
+                                  Complete house/unit, street, region, city,
+                                  barangay, and ZIP code.
+                                </p>
+                              )}
+                            </div>
                           )}
                         </div>
 
-                        <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
+                        <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-3 py-2.5">
                           <div className="flex items-start gap-3">
                             <input
                               type="checkbox"
@@ -895,7 +930,7 @@ const Login = () => {
 
                         <div className="mt-1">
                           {otpSent && !emailVerified ? (
-                            <div className="space-y-3 rounded-2xl border border-black/10 bg-white/60 p-4">
+                            <div className="space-y-3 rounded-xl border border-black/10 bg-white/60 p-3">
                               <div className="flex items-center justify-between gap-3">
                                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
                                   OTP Verification
@@ -996,7 +1031,7 @@ const Login = () => {
                     </button>
                   </form>
 
-                  <div className="mt-8 border-t border-black/10 pt-6 text-center">
+                  <div className="mt-5 border-t border-black/10 pt-4 text-center">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
                       {currentState === "Login"
                         ? "No account?"
