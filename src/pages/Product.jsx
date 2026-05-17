@@ -91,6 +91,12 @@ const formatRestockDate = (value) => {
   }
 };
 
+const getColorLabel = ({ color, colorHex }) => {
+  if (color && String(color).trim()) return color;
+  if (colorHex && String(colorHex).trim()) return colorHex;
+  return "Default";
+};
+
 const Product = () => {
   const { products, currency, addToCart, backendUrl, user, token } =
     useContext(ShopContext);
@@ -287,8 +293,23 @@ const Product = () => {
   const colorVariants = useMemo(() => {
     if (!productData?.groupCode || !Array.isArray(products)) return [];
 
-    return products.filter(
-      (item) => item && item.groupCode === productData.groupCode && !item.isDeleted
+    const sameGroup = products.filter(
+      (item) =>
+        item &&
+        item.groupCode === productData.groupCode &&
+        !item.isDeleted
+    );
+
+    return sameGroup.filter(
+      (item, index, arr) =>
+        index ===
+        arr.findIndex(
+          (x) =>
+            String(x.color || "").toLowerCase() ===
+              String(item.color || "").toLowerCase() &&
+            String(x.colorHex || "").toLowerCase() ===
+              String(item.colorHex || "").toLowerCase()
+        )
     );
   }, [products, productData]);
 
@@ -1034,6 +1055,75 @@ const Product = () => {
                   </span>
                 )}
               </div>
+
+              {colorVariants.length > 1 && (
+                <div className="mt-4 rounded-[18px] border border-black/10 bg-[#FAFAF8] p-3.5 sm:p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-500">
+                      Select Color
+                    </p>
+
+                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-black">
+                      {getColorLabel({
+                        color: productData.color,
+                        colorHex: productData.colorHex,
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {colorVariants.map((variant) => {
+                      const isActive =
+                        String(variant._id) === String(productData._id);
+
+                      const variantImage =
+                        variant.images?.length > 0
+                          ? getMediaUrl(variant.images[0], backendUrl)
+                          : "";
+
+                      return (
+                        <button
+                          key={variant._id}
+                          type="button"
+                          onClick={() => {
+                            if (!variant._id || isActive) return;
+                            navigate(`/product/${variant._id}`);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          onMouseEnter={() => {
+                            if (variantImage) {
+                              setSelectedImage(variantImage);
+                            }
+                          }}
+                          className={`flex items-center gap-2 rounded-full border px-3 py-2 transition ${
+                            isActive
+                              ? "border-black bg-black text-white"
+                              : "border-black/10 bg-white text-black hover:border-black"
+                          }`}
+                          title={getColorLabel({
+                            color: variant.color,
+                            colorHex: variant.colorHex,
+                          })}
+                        >
+                          <span
+                            className="h-5 w-5 rounded-full border border-black/20"
+                            style={{
+                              backgroundColor: variant.colorHex || "#d1d5db",
+                            }}
+                          />
+
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em]">
+                            {getColorLabel({
+                              color: variant.color,
+                              colorHex: variant.colorHex,
+                            })}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-3 flex items-center gap-2.5 sm:gap-3 flex-wrap">
                 <div className="flex items-center gap-1">
