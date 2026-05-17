@@ -1,12 +1,29 @@
-import React, { useState, useContext, useEffect, useRef } from "react";
+import React, { useState, useContext, useEffect, useRef, useMemo } from "react";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
-
+import ShippingAddressFields from "../components/ShippingAddressFields";
 
 const OTP_SECONDS = 60;
 const FORGOT_OTP_SECONDS = 300;
+
+const emptyAddress = {
+  houseUnit: "",
+  street: "",
+  barangay: "",
+  city: "",
+  province: "",
+  region: "",
+  zipcode: "",
+  country: "Philippines",
+  latitude: "",
+  longitude: "",
+  psgcRegionCode: "",
+  psgcProvinceCode: "",
+  psgcMunicipalityCode: "",
+  psgcBarangayCode: "",
+};
 
 const floatingInput =
   "peer w-full rounded-xl border bg-white/80 px-4 pb-2.5 pt-5 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-transparent focus:border-black focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,0,0,0.06)] autofill:shadow-[inset_0_0_0_1000px_white] autofill:[-webkit-text-fill-color:#0A0D17]";
@@ -72,6 +89,7 @@ const Login = () => {
 
   const termsScrollRef = useRef(null);
   const secretCommandRef = useRef("");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
@@ -84,6 +102,8 @@ const Login = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    phone: "",
+    address: emptyAddress,
   });
 
   const [errors, setErrors] = useState({});
@@ -106,6 +126,62 @@ const Login = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const cleanAddress = useMemo(() => {
+    const address = formData.address || {};
+
+    return {
+      ...emptyAddress,
+      ...address,
+      houseUnit: String(address.houseUnit || "").trim(),
+      street: String(address.street || "").trim(),
+      barangay: String(address.barangay || "").trim(),
+      city: String(address.city || "").trim(),
+      province: String(address.province || "").trim(),
+      region: String(address.region || "").trim(),
+      zipcode: String(address.zipcode || "").trim(),
+      country: String(address.country || "Philippines").trim(),
+      psgcRegionCode: String(address.psgcRegionCode || "").trim(),
+      psgcProvinceCode: String(address.psgcProvinceCode || "").trim(),
+      psgcMunicipalityCode: String(address.psgcMunicipalityCode || "").trim(),
+      psgcBarangayCode: String(address.psgcBarangayCode || "").trim(),
+    };
+  }, [formData.address]);
+
+  const isAddressComplete = useMemo(() => {
+    return (
+      cleanAddress.houseUnit &&
+      cleanAddress.street &&
+      cleanAddress.barangay &&
+      cleanAddress.city &&
+      cleanAddress.region &&
+      cleanAddress.zipcode &&
+      cleanAddress.country &&
+      (cleanAddress.province || cleanAddress.region.toLowerCase().includes("ncr"))
+    );
+  }, [cleanAddress]);
+
+  const canCreateAccount =
+    currentState === "Sign Up" &&
+    acceptedTerms &&
+    emailVerified &&
+    otpVerified &&
+    !emailExists &&
+    !errors.firstName &&
+    !errors.lastName &&
+    !errors.email &&
+    !errors.password &&
+    !errors.confirmPassword &&
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
+    formData.email.trim() &&
+    formData.password &&
+    formData.confirmPassword &&
+    formData.password === formData.confirmPassword &&
+    passwordStrength === "strong" &&
+    formData.phone.trim() &&
+    /^\d+$/.test(formData.phone.trim()) &&
+    isAddressComplete;
 
   useEffect(() => {
     const fetchTerms = async () => {
@@ -155,6 +231,34 @@ const Login = () => {
     }
   }, [token, navigate]);
 
+  useEffect(() => {
+    const ADMIN_URL = "https://admin.saintclothingbrandph.com";
+    const SECRET_COMMAND = "saintadmin";
+
+    const handleSecretCommand = (e) => {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.key.length !== 1) return;
+
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+
+      if (activeTag === "input" || activeTag === "textarea") return;
+
+      secretCommandRef.current = (
+        secretCommandRef.current + e.key.toLowerCase()
+      ).slice(-SECRET_COMMAND.length);
+
+      if (secretCommandRef.current === SECRET_COMMAND) {
+        secretCommandRef.current = "";
+        window.open(ADMIN_URL, "_blank", "noopener,noreferrer");
+      }
+    };
+
+    window.addEventListener("keydown", handleSecretCommand);
+
+    return () => {
+      window.removeEventListener("keydown", handleSecretCommand);
+    };
+  }, []);
+
   const checkPasswordStrength = (password) => {
     if (!password) return "";
 
@@ -199,12 +303,22 @@ const Login = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      phone: "",
+      address: emptyAddress,
     });
   };
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
-    const updatedFormData = { ...formData, [name]: value };
+
+    const nextValue =
+      name === "phone" ? value.replace(/\D/g, "").slice(0, 11) : value;
+
+    const updatedFormData = {
+      ...formData,
+      [name]: nextValue,
+    };
+
     setFormData(updatedFormData);
 
     let newErrors = { ...errors };
@@ -231,6 +345,16 @@ const Login = () => {
         } catch (error) {
           console.log("Email check error:", error);
         }
+      }
+    }
+
+    if (name === "phone" && currentState === "Sign Up") {
+      if (!nextValue.trim()) {
+        newErrors.phone = "Phone number is required";
+      } else if (!/^\d+$/.test(nextValue)) {
+        newErrors.phone = "Phone must contain numbers only";
+      } else {
+        delete newErrors.phone;
       }
     }
 
@@ -297,13 +421,8 @@ const Login = () => {
       return toast.error("Please enter a valid email first");
     }
 
-    if (!formData.firstName.trim()) {
-      return toast.error("First name is required");
-    }
-
-    if (!formData.lastName.trim()) {
-      return toast.error("Last name is required");
-    }
+    if (!formData.firstName.trim()) return toast.error("First name is required");
+    if (!formData.lastName.trim()) return toast.error("Last name is required");
 
     if (emailExists) {
       return toast.error("Account already exists");
@@ -334,17 +453,9 @@ const Login = () => {
   const verifyOtp = async () => {
     if (otpVerified) return;
 
-    if (!otp) {
-      return toast.error("Enter the OTP first");
-    }
-
-    if (otp.length < 6) {
-      return toast.error("OTP must be 6 digits");
-    }
-
-    if (otpTimer <= 0) {
-      return toast.error("OTP expired. Please resend OTP.");
-    }
+    if (!otp) return toast.error("Enter the OTP first");
+    if (otp.length < 6) return toast.error("OTP must be 6 digits");
+    if (otpTimer <= 0) return toast.error("OTP expired. Please resend OTP.");
 
     try {
       const response = await axios.post(`${backendUrl}/api/user/verify-otp`, {
@@ -367,9 +478,7 @@ const Login = () => {
   };
 
   const sendForgotPasswordOtp = async () => {
-    if (!forgotPasswordData.email) {
-      return toast.error("Enter your email first");
-    }
+    if (!forgotPasswordData.email) return toast.error("Enter your email first");
 
     if (forgotTimer > 0) {
       return toast.error(`Please wait ${forgotTimer}s before resending code`);
@@ -442,30 +551,30 @@ const Login = () => {
 
     try {
       if (currentState === "Sign Up") {
-        if (!acceptedTerms) {
-          return toast.error("You must agree to the Terms & Conditions");
-        }
-
-        if (!emailVerified) {
-          return toast.error("Please verify your email first");
-        }
+        if (!acceptedTerms) return toast.error("You must agree to the Terms & Conditions");
+        if (!emailVerified || !otpVerified) return toast.error("Please verify your email first");
 
         if (errors.confirmPassword || formData.password !== formData.confirmPassword) {
           setConfirmTouched(true);
           return toast.error("Passwords do not match");
         }
 
-        if (passwordStrength !== "strong") {
-          return toast.error("Password must be strong");
-        }
+        if (passwordStrength !== "strong") return toast.error("Password must be strong");
+        if (!formData.phone.trim()) return toast.error("Phone number is required");
+        if (!/^\d+$/.test(formData.phone.trim())) return toast.error("Phone must contain numbers only");
+        if (!isAddressComplete) return toast.error("Please complete your shipping address");
 
         const response = await axios.post(`${backendUrl}/api/user/register`, {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          name: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
+          email: formData.email.trim().toLowerCase(),
           password: formData.password,
           confirmPassword: formData.confirmPassword,
+          phone: formData.phone.trim(),
+          address: cleanAddress,
           acceptedTerms: true,
+          termsVersion: termsVersion || "",
         });
 
         if (response.data.success) {
@@ -491,9 +600,7 @@ const Login = () => {
           localStorage.setItem("user", JSON.stringify(response.data.user));
           toast.success("Login successful");
 
-          if (fetchCart) {
-            await fetchCart(response.data.token);
-          }
+          if (fetchCart) await fetchCart(response.data.token);
 
           navigate("/");
         } else {
@@ -543,9 +650,7 @@ const Login = () => {
     const reachedBottom =
       target.scrollHeight - target.scrollTop - target.clientHeight < 12;
 
-    if (reachedBottom) {
-      setTermsScrolledToBottom(true);
-    }
+    if (reachedBottom) setTermsScrolledToBottom(true);
   };
 
   const acceptTermsFromModal = () => {
@@ -553,49 +658,12 @@ const Login = () => {
     setErrors((prev) => ({ ...prev, terms: "" }));
     setShowTermsModal(false);
   };
-  useEffect(() => {
-    const ADMIN_URL = "https://admin.saintclothingbrandph.com";
-    const SECRET_COMMAND = "saintadmin";
-
-    const handleSecretCommand = (e) => {
-      if (
-        e.ctrlKey ||
-        e.altKey ||
-        e.metaKey ||
-        e.key.length !== 1
-      ) {
-        return;
-      }
-
-      const activeTag = document.activeElement?.tagName?.toLowerCase();
-
-      if (activeTag === "input" || activeTag === "textarea") {
-        return;
-      }
-
-      secretCommandRef.current =
-        (secretCommandRef.current + e.key.toLowerCase()).slice(
-          -SECRET_COMMAND.length
-        );
-
-      if (secretCommandRef.current === SECRET_COMMAND) {
-        secretCommandRef.current = "";
-        window.open(ADMIN_URL, "_blank", "noopener,noreferrer");
-      }
-    };
-
-    window.addEventListener("keydown", handleSecretCommand);
-
-    return () => {
-      window.removeEventListener("keydown", handleSecretCommand);
-    };
-  }, []);
 
   return (
     <>
       <div className="min-h-screen bg-transparent overflow-hidden font-['Outfit'] pt-[88px] pb-12">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid md:grid-cols-[1fr_460px] gap-10 items-start">
+          <div className="grid md:grid-cols-[1fr_500px] gap-10 items-start">
             <div className="pt-6 md:pt-12">
               <p className="text-[10px] font-black tracking-[0.32em] uppercase text-gray-500">
                 Saint Clothing
@@ -658,9 +726,7 @@ const Login = () => {
                       value={formData.email}
                       onChange={handleChange}
                       className={getBorderColor("email")}
-                      autoComplete={
-                        currentState === "Login" ? "email" : "new-email"
-                      }
+                      autoComplete={currentState === "Login" ? "email" : "new-email"}
                     />
 
                     <div className="space-y-2">
@@ -687,14 +753,15 @@ const Login = () => {
                       {currentState === "Sign Up" &&
                         formData.password.length > 0 && (
                           <p
-                            className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
+                            className={`px-1 text-[11px] font-semibold leading-5 ${
+                              passwordStrength === "weak"
                                 ? "text-rose-500"
                                 : passwordStrength === "medium"
-                                  ? "text-amber-500"
-                                  : passwordStrength === "strong"
-                                    ? "text-emerald-600"
-                                    : "text-gray-400"
-                              }`}
+                                ? "text-amber-500"
+                                : passwordStrength === "strong"
+                                ? "text-emerald-600"
+                                : "text-gray-400"
+                            }`}
                           >
                             Your password must be at least 8 characters long and
                             include an uppercase letter, a number, and a symbol.
@@ -749,6 +816,49 @@ const Login = () => {
                             )}
                         </div>
 
+                        <FloatingField
+                          label="Contact Number"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          className={getBorderColor("phone")}
+                          inputMode="numeric"
+                          maxLength={11}
+                          autoComplete="tel"
+                        />
+
+                        <div className="rounded-2xl border border-black/10 bg-white/60 p-4">
+                          <div className="mb-4">
+                            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-gray-500">
+                              Shipping Address
+                            </p>
+                            <p className="mt-1 text-[11px] font-semibold text-gray-500">
+                              This will be saved to your user account.
+                            </p>
+                          </div>
+
+                          <ShippingAddressFields
+                            formData={formData.address}
+                            setFormData={(nextAddress) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                address:
+                                  typeof nextAddress === "function"
+                                    ? nextAddress(prev.address)
+                                    : nextAddress,
+                              }));
+                            }}
+                            backendUrl={backendUrl}
+                          />
+
+                          {!isAddressComplete && (
+                            <p className="mt-3 text-[10px] font-semibold text-gray-500">
+                              Complete your house/unit, street, region, city,
+                              barangay, and ZIP code before creating account.
+                            </p>
+                          )}
+                        </div>
+
                         <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
                           <div className="flex items-start gap-3">
                             <input
@@ -792,14 +902,13 @@ const Login = () => {
                                 </p>
 
                                 <span
-                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
+                                    otpTimer > 0
                                       ? "bg-black text-white"
                                       : "bg-rose-50 text-rose-600"
-                                    }`}
+                                  }`}
                                 >
-                                  {otpTimer > 0
-                                    ? `${otpTimer}s left`
-                                    : "Expired"}
+                                  {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
                                 </span>
                               </div>
 
@@ -858,8 +967,8 @@ const Login = () => {
                               {emailExists
                                 ? "Account Already Exists"
                                 : !acceptedTerms
-                                  ? "Accept Terms First"
-                                  : "Send OTP"}
+                                ? "Accept Terms First"
+                                : "Send OTP"}
                             </button>
                           ) : (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
@@ -874,9 +983,16 @@ const Login = () => {
 
                     <button
                       type="submit"
-                      className="mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 hover:shadow-[0_12px_30px_rgba(0,0,0,0.22)]"
+                      disabled={currentState === "Sign Up" && !canCreateAccount}
+                      className="mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 hover:shadow-[0_12px_30px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
                     >
-                      {currentState === "Login" ? "Login" : "Create Account"}
+                      {currentState === "Login"
+                        ? "Login"
+                        : !emailVerified
+                        ? "Verify Email First"
+                        : !isAddressComplete
+                        ? "Complete Address First"
+                        : "Create Account"}
                     </button>
                   </form>
 
@@ -910,10 +1026,7 @@ const Login = () => {
                     </p>
                   </div>
 
-                  <form
-                    onSubmit={submitForgotPassword}
-                    className="flex flex-col gap-4"
-                  >
+                  <form onSubmit={submitForgotPassword} className="flex flex-col gap-4">
                     <FloatingField
                       label="Email Address"
                       type="email"
@@ -1116,4 +1229,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;
