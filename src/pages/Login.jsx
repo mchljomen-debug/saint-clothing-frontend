@@ -676,7 +676,7 @@ const Login = () => {
 
       <div className="min-h-screen bg-transparent overflow-hidden font-['Outfit'] pt-[74px] pb-8">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-[0.75fr_720px] gap-7 items-start">
+          <div className="grid lg:grid-cols-[1fr_520px] gap-7 items-start">
             <div className="hidden lg:block pt-10">
               <p className="text-[10px] font-black tracking-[0.32em] uppercase text-gray-500">
                 Saint Clothing
@@ -694,7 +694,7 @@ const Login = () => {
               </p>
             </div>
 
-            <div className="bg-white/60 backdrop-blur-md border border-black/10 rounded-[18px] p-5 md:p-6 shadow-[0_10px_28px_rgba(0,0,0,0.04)] max-h-[calc(100vh-104px)] overflow-y-auto scrollbar-thin-hide">
+            <div className="bg-white/60 backdrop-blur-md border border-black/10 rounded-[18px] p-5 md:p-6 shadow-[0_10px_28px_rgba(0,0,0,0.04)] max-h-[calc(100vh-112px)] overflow-y-auto scrollbar-thin-hide">
               {!forgotMode ? (
                 <>
                   <div className="mb-5">
@@ -709,16 +709,9 @@ const Login = () => {
                     </p>
                   </div>
 
-                  <form
-                    onSubmit={handleSubmit}
-                    className={`grid gap-3 ${
-                      currentState === "Sign Up"
-                        ? "md:grid-cols-2"
-                        : "grid-cols-1"
-                    }`}
-                  >
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                     {currentState === "Sign Up" && (
-                      <div className="contents">
+                      <div className="grid grid-cols-2 gap-3">
                         <FloatingField
                           label="First Name"
                           name="firstName"
@@ -847,7 +840,7 @@ const Login = () => {
                           autoComplete="tel"
                         />
 
-                        <div className="md:col-span-2 overflow-hidden rounded-xl border border-black/10 bg-white/70">
+                        <div className="overflow-hidden rounded-xl border border-black/10 bg-white/70">
                           <button
                             type="button"
                             onClick={() => setShowAddressPanel((prev) => !prev)}
@@ -901,7 +894,7 @@ const Login = () => {
                           )}
                         </div>
 
-                        <div className="md:col-span-2 mt-1 rounded-xl border border-black/10 bg-white/60 px-3 py-2.5">
+                        <div className="mt-1 rounded-xl border border-black/10 bg-white/60 px-3 py-2.5">
                           <div className="flex items-start gap-3">
                             <input
                               type="checkbox"
@@ -935,7 +928,7 @@ const Login = () => {
                           )}
                         </div>
 
-                        <div className="md:col-span-2 mt-1">
+                        <div className="mt-1">
                           {otpSent && !emailVerified ? (
                             <div className="space-y-3 rounded-xl border border-black/10 bg-white/60 p-3">
                               <div className="flex items-center justify-between gap-3">
@@ -1026,7 +1019,7 @@ const Login = () => {
                     <button
                       type="submit"
                       disabled={currentState === "Sign Up" && !canCreateAccount}
-                      className="md:col-span-2 mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 hover:shadow-[0_12px_30px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
+                      className="mt-3 h-11 w-full rounded-xl bg-black text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:opacity-90 hover:shadow-[0_12px_30px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
                     >
                       {currentState === "Login"
                         ? "Login"
