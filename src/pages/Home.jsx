@@ -81,134 +81,228 @@ const Home = () => {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
       {/* ================= HERO ================= */}
-      <section className="relative min-h-[calc(100vh-72px)] overflow-hidden md:min-h-[calc(100vh-80px)] [&>*]:min-h-[calc(100vh-72px)] md:[&>*]:min-h-[calc(100vh-80px)]">
+      <section className="relative min-h-[calc(100vh-72px)] overflow-hidden md:min-h-[calc(100vh-80px)] [&>*]:min-h-[calc(100vh-72px)] md:[&>*]:min-h-[calc(100vh-100px)]">
         <Hero />
       </section>
 
-      {/* ================= BUILD FIT PREMIUM PROMO ================= */}
-      <section className="mt-6 px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw]">
-        <div className="group relative overflow-hidden rounded-[5px] bg-[#050505] text-white shadow-[0_30px_80px_rgba(0,0,0,0.22)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_85%_30%,rgba(255,255,255,0.12),transparent_28%)]" />
+      {/* ================= BUILD FIT EDITORIAL FEATURE ================= */}
 
-          <div className="absolute inset-0 opacity-[0.08]">
-            <div className="absolute left-[-8%] top-[-20%] text-[22vw] font-black uppercase tracking-[-0.12em] text-white">
-              SAINT
+      <section className="relative mt-[-1px] overflow-hidden bg-[#f8f7f4]">
+
+        {/* Large editorial background word */}
+
+        <div className="pointer-events-none absolute left-[-5vw] top-[-4vw] select-none text-[22vw] font-black leading-none tracking-[-0.12em] text-black/[0.025]">
+          SAINT
+        </div>
+
+        {/* Technical vertical line */}
+
+        <div className="pointer-events-none absolute left-[8vw] top-0 hidden h-full w-px bg-black/[0.07] lg:block" />
+
+        {/* Technical horizontal line */}
+
+        <div className="pointer-events-none absolute left-0 right-0 top-[18%] h-px bg-black/[0.06]" />
+
+        <div className="relative mx-auto max-w-[1600px] px-5 pt-20 pb-8 sm:px-8 sm:pt-20 sm:pb-10 md:px-[7vw] md:pt-28 md:pb-12 lg:px-[8vw] lg:pt-36 lg:pb-5">
+
+          ```
+          {/* Section header */}
+          <div className="mb-14 flex items-end justify-between gap-8 md:mb-20">
+
+            <div>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="h-px w-10 bg-black" />
+                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/45">
+                  Saint / 02
+                </p>
+              </div>
+
+              <h2 className="max-w-3xl text-[clamp(3.5rem,8vw,8rem)] font-black uppercase leading-[0.82] tracking-[-0.085em] text-black">
+                Build
+                <br />
+                Your Fit.
+              </h2>
             </div>
-            <div className="absolute bottom-[-18%] right-[-4%] text-[18vw] font-black uppercase tracking-[-0.12em] text-white">
-              FIT
+
+            <div className="hidden max-w-[220px] pb-2 text-right md:block">
+              <p className="text-[9px] font-black uppercase leading-5 tracking-[0.22em] text-black/40">
+                A different way
+                <br />
+                to style Saint.
+              </p>
             </div>
+
           </div>
 
-          <div className="relative z-10 grid min-h-[420px] grid-cols-1 items-center gap-10 px-6 py-14 sm:px-8 md:grid-cols-[1fr_0.85fr] md:px-12 lg:px-16">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.38em] text-white/50">
-                Saint Clothing Feature
-              </p>
+          {/* Main feature */}
+          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
 
-              <h2 className="mt-3 max-w-2xl text-5xl font-black uppercase leading-[0.9] tracking-[-0.07em] text-white sm:text-6xl lg:text-7xl">
-                Build Your Fit
-              </h2>
+            {/* LEFT — information */}
+            <div className="relative flex flex-col justify-between rounded-[4px] border border-black/10 bg-white p-7 sm:p-10 lg:min-h-[620px] lg:p-12">
 
-              <p className="mt-5 max-w-xl text-sm font-medium leading-7 text-white/65 md:text-base">
-                Mix tops and bottoms in one visual outfit builder. Create your
-                look before checkout and discover better style combinations.
-              </p>
+              <div>
+                <div className="flex items-center justify-between border-b border-black/10 pb-5">
+                  <p className="text-[9px] font-black uppercase tracking-[0.3em]">
+                    Style Builder
+                  </p>
 
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                  <span className="text-[9px] font-black uppercase tracking-[0.25em] text-black/35">
+                    01 — 03
+                  </span>
+                </div>
+
+                <p className="mt-10 max-w-md text-sm font-medium leading-7 text-black/55 sm:text-base">
+                  Combine pieces, experiment with proportions, and create your
+                  complete Saint look before you even reach checkout.
+                </p>
+              </div>
+
+              {/* Steps */}
+              <div className="mt-12 space-y-0 border-t border-black/10">
+
+                {[
+                  ["01", "Choose a top", "Start with your statement piece."],
+                  ["02", "Choose a bottom", "Balance the silhouette."],
+                  ["03", "Build your look", "See everything together."],
+                ].map(([number, title, description]) => (
+                  <div
+                    key={number}
+                    className="group grid grid-cols-[45px_1fr] gap-4 border-b border-black/10 py-5 transition hover:bg-black hover:px-4 hover:text-white"
+                  >
+                    <span className="text-[9px] font-black tracking-[0.2em] opacity-40">
+                      {number}
+                    </span>
+
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em]">
+                        {title}
+                      </p>
+
+                      <p className="mt-1 text-[10px] leading-5 opacity-45">
+                        {description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+              </div>
+
+              {/* CTA */}
+              <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+
                 <button
                   type="button"
                   onClick={goToBuildFit}
-                  className="border border-white bg-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.28em] text-black transition hover:bg-transparent hover:text-white"
+                  className="group flex items-center justify-between bg-black px-6 py-4 text-left text-white transition hover:bg-[#222]"
                 >
-                  Try Build Fit →
+                  <span className="text-[10px] font-black uppercase tracking-[0.25em]">
+                    Enter Build Fit
+                  </span>
+
+                  <span className="ml-8 text-lg transition-transform duration-300 group-hover:translate-x-1">
+                    →
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigate("/collection")}
-                  className="border border-white/20 bg-white/5 px-8 py-4 text-[10px] font-black uppercase tracking-[0.28em] text-white transition hover:border-white hover:bg-white hover:text-black"
+                  className="border border-black/15 px-6 py-4 text-[10px] font-black uppercase tracking-[0.25em] transition hover:border-black hover:bg-black hover:text-white"
                 >
                   Shop Collection
                 </button>
-              </div>
 
-              <div className="mt-8 grid max-w-lg grid-cols-3 gap-3">
-                {["Pick Top", "Pick Bottom", "Build Look"].map((item, index) => (
-                  <div
-                    key={item}
-                    className="rounded-[5px] border border-white/10 bg-white/[0.04] px-4 py-4 backdrop-blur"
-                  >
-                    <p className="text-[10px] font-black text-white/40">
-                      0{index + 1}
-                    </p>
-                    <p className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-                      {item}
-                    </p>
-                  </div>
-                ))}
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[420px]">
-              <div className="absolute -inset-6 rounded-[5px] bg-white/10 blur-3xl transition duration-700 group-hover:bg-white/15" />
+            {/* RIGHT — visual */}
+            <div className="group relative min-h-[520px] overflow-hidden bg-[#e8e4dc] lg:min-h-[620px]">
 
-              <div className="relative overflow-hidden rounded-[5px] border border-white/15 bg-white/[0.06] p-5 backdrop-blur-xl">
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/50">
-                    Outfit Preview
-                  </p>
-                  <span className="rounded-full bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-black">
-                    Mix & Match
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-[0.8fr_1.2fr] gap-4">
-                  <div className="space-y-3">
-                    <div className="h-24 rounded-[5px] border border-white/10 bg-white/10 p-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
-                        Top
-                      </p>
-                      <div className="mt-4 h-8 rounded-[5px] bg-white/30" />
-                    </div>
-
-                    <div className="h-24 rounded-[5px] border border-white/10 bg-white/10 p-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
-                        Bottom
-                      </p>
-                      <div className="mt-4 h-8 rounded-[5px] bg-white/20" />
-                    </div>
-
-                    <div className="h-20 rounded-[5px] border border-white/10 bg-white/10 p-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
-                        Look
-                      </p>
-                      <div className="mt-3 h-6 rounded-[5px] bg-white/25" />
-                    </div>
-                  </div>
-
-                  <div className="relative min-h-[280px] overflow-hidden rounded-[5px] border border-white/10 bg-[#f8f7f4]">
-                    <p className="absolute inset-0 flex items-center justify-center select-none text-[5.5rem] font-black uppercase tracking-[-0.1em] text-black/[0.035]">
-                      SAINT
-                    </p>
-
-                    <img
-                      src={assets.build_fit_preview}
-                      alt="Build Fit Preview"
-                      className="relative z-10 h-full w-full object-contain p-5 transition duration-700 group-hover:scale-[1.03]"
-                    />
-
-                    <p className="absolute bottom-4 left-4 right-4 z-20 text-center text-[9px] font-black uppercase tracking-[0.22em] text-black/35">
-                      Top + Bottom Visual Styling
-                    </p>
-                  </div>
-                </div>
+              {/* Giant number */}
+              <div className="pointer-events-none absolute right-[-2vw] top-[-3vw] select-none text-[22vw] font-black leading-none tracking-[-0.12em] text-black/[0.045]">
+                01
               </div>
+
+              {/* Editorial label */}
+              <div className="absolute left-6 top-6 z-20 flex items-center gap-3 sm:left-8 sm:top-8">
+                <span className="h-2 w-2 rounded-full bg-black" />
+
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-black/55">
+                  Outfit Preview
+                </p>
+              </div>
+
+              {/* Image */}
+              <div className="absolute inset-[10%] flex items-center justify-center">
+
+                <div className="absolute h-[65%] w-[65%] rounded-full border border-black/10" />
+                <div className="absolute h-[78%] w-[78%] rounded-full border border-black/[0.06]" />
+
+                <img
+                  src={assets.build_fit_preview}
+                  alt="Build Fit Preview"
+                  className="relative z-10 h-full w-full object-contain p-5 transition duration-1000 ease-out group-hover:scale-[1.06]"
+                />
+              </div>
+
+              {/* Bottom information */}
+              <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-black/10 bg-[#e8e4dc]/90 p-6 backdrop-blur-md sm:p-8">
+
+                <div className="flex items-end justify-between gap-5">
+
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-black/35">
+                      Visual Styling System
+                    </p>
+
+                    <p className="mt-2 text-sm font-black uppercase tracking-[0.08em]">
+                      Top + Bottom
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-[8px] font-black uppercase tracking-[0.25em] text-black/35">
+                      Interactive
+                    </p>
+
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em]">
+                      Mix / Match
+                    </p>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Corner marks */}
+              <span className="absolute left-3 top-3 h-5 w-5 border-l border-t border-black/20" />
+
+
+              <span className="absolute right-3 top-3 h-5 w-5 border-r border-t border-black/20" />
+              <span className="absolute bottom-3 left-3 h-5 w-5 border-b border-l border-black/20" />
+              <span className="absolute bottom-3 right-3 h-5 w-5 border-b border-r border-black/20" />
+
             </div>
+
           </div>
 
-          <div className="absolute bottom-0 left-0 h-[3px] w-full bg-gradient-to-r from-white via-white/30 to-transparent" />
+          {/* Bottom statement */}
+          <div className="mt-16 flex flex-col gap-5 border-t border-black/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+
+            <p className="max-w-xl text-[10px] ml-5 font-black uppercase leading-5 tracking-[0.2em] text-black/35">
+              Don't just buy the pieces.
+              <span className="text-black"> Build the look.</span>
+            </p>
+
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-black/30">
+              Saint Clothing / Style System
+            </p>
+
+          </div>
+
         </div>
       </section>
+
 
       {/* ================= CATEGORY ================= */}
       <section className="mt-6">
@@ -308,11 +402,11 @@ const Home = () => {
         <SocialFeed />
       </div>
 
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-10">
+      <div className="mt-8">
         <OurPolicy />
       </div>
 
-      <div className="px-3 sm:px-[5vw] md:px-[7vw] lg:px-[8vw] mt-6 pb-6">
+      <div className="px-5 pb-20 pt-12 sm:px-8 md:px-[7vw] lg:px-[10vw] lg:pb-20 lg:pt-16">
         <NewsletterBox />
       </div>
     </div>

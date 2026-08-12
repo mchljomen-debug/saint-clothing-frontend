@@ -5,133 +5,224 @@ import NewsletterBox from "../components/NewsletterBox";
 
 const Contact = () => {
   return (
-    <div className="min-h-screen overflow-hidden bg-[#F7F7F4] pt-4">
-      <div className="mx-auto max-w-7xl px-3 sm:px-5 md:px-8 lg:px-10">
-        {/* HEADER */}
-        <div className="rounded-[5px] border border-black/10 bg-white px-4 py-6 text-center shadow-sm md:px-6 md:py-8">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.35em] text-gray-400">
-            Saint Clothing
-          </p>
+    <div className="bg-[#F7F7F5] text-[#0A0D17]">
+      <div className="mx-auto max-w-[1440px] px-4 pb-14 pt-8 sm:px-6 md:px-10 md:pb-16 lg:px-16 lg:pt-10">
+
+        {/* ================= HEADER ================= */}
+        <div className="relative mb-8 border-b border-black/10 pb-6">
+          <div className="absolute right-0 top-0 hidden text-right md:block">
+            <p className="text-[9px] font-black uppercase tracking-[0.35em] text-gray-400">
+              CONTACT / 01
+            </p>
+            <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-gray-500">
+              Saint Clothing
+            </p>
+          </div>
 
           <Title text1={"CONTACT"} text2={"SAINT"} />
 
-          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.32em] text-gray-500 md:text-[11px]">
-            Get in touch with Saint Clothing
-          </p>
+          <div className="mt-3 flex items-center gap-3">
+            <span className="h-px w-8 bg-black" />
+            <p className="text-[10px] font-black uppercase tracking-[0.32em] text-gray-500 md:text-[11px]">
+              Open line to Saint Clothing
+            </p>
+          </div>
         </div>
 
-        {/* MAIN */}
-        <div className="mt-5 grid items-stretch gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-          {/* IMAGE */}
-          <div className="overflow-hidden rounded-[5px] border border-black/10 bg-white shadow-sm">
-            <div className="group relative h-full min-h-[340px] w-full overflow-hidden md:min-h-[560px]">
-              <img
-                className="absolute inset-0 h-full w-full object-cover grayscale-[10%] transition-all duration-700 ease-out group-hover:scale-105"
-                src={assets.contact_img}
-                alt="Saint Clothing"
-              />
+        {/* ================= INTRO ================= */}
+        <div className="mb-8 grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
+          <div>
+            <h1 className="max-w-5xl text-[12vw] font-black uppercase leading-[0.75] tracking-[-0.08em] text-black sm:text-[10vw] md:text-[8vw] lg:text-[7rem]">
+              Let's
+              <br />
+              <span className="italic">Talk.</span>
+            </h1>
+          </div>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
+          <div className="border-l border-black/15 pl-5 lg:pb-2">
+            <p className="text-[12px] font-semibold uppercase leading-6 tracking-[0.08em] text-gray-500">
+              Questions, collaborations, wholesale inquiries or just want to
+              say hello?
+            </p>
 
-              <div className="absolute left-4 top-4">
-                <span className="inline-flex rounded-[5px] bg-black px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-                  Contact Saint
+            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.25em] text-black">
+              We are listening.
+            </p>
+          </div>
+        </div>
+
+        {/* ================= MAIN GRID ================= */}
+        <div className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr]">
+
+          {/* IMAGE PANEL */}
+          <div className="group relative min-h-[430px] overflow-hidden bg-black md:min-h-[560px]">
+            <img
+              src={assets.contact_img}
+              alt="Saint Clothing"
+              className="absolute inset-0 h-full w-full object-cover grayscale-[15%] transition duration-1000 ease-out group-hover:scale-105 group-hover:grayscale-0"
+            />
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
+
+            <div className="absolute left-5 top-5">
+              <div className="flex items-center gap-3">
+                <span className="h-2 w-2 rounded-full bg-white" />
+                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white">
+                  Saint Studio
                 </span>
               </div>
+            </div>
 
-              <div className="absolute bottom-4 left-4 right-4">
-                <div className="max-w-[340px] rounded-[5px] border border-black/10 bg-white/90 p-4 shadow-sm backdrop-blur-md">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.26em] text-gray-500">
-                    Client Support
-                  </p>
-                  <p className="text-sm font-bold leading-6 text-[#0A0D17]">
-                    For support, collaborations, wholesale, and general
-                    inquiries.
-                  </p>
-                </div>
+            <div className="absolute bottom-5 left-5 right-5">
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/50">
+                Available For
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["Support", "Collabs", "Wholesale", "General"].map(
+                  (item) => (
+                    <span
+                      key={item}
+                      className="border border-white/25 bg-black/20 px-3 py-2 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-sm"
+                    >
+                      {item}
+                    </span>
+                  )
+                )}
               </div>
             </div>
           </div>
 
-          {/* INFO */}
-          <div className="flex flex-col justify-between rounded-[5px] border border-black/10 bg-white p-5 shadow-sm md:p-7 lg:p-8">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gray-500">
-                Reach Out
-              </p>
+          {/* CONTACT INFORMATION */}
+          <div className="flex flex-col border border-black/10 bg-white">
 
-              <h2 className="mt-2 text-3xl font-black uppercase italic leading-none tracking-tight text-[#0A0D17] md:text-4xl lg:text-5xl">
-                Let’s
-                <br />
-                Connect.
-              </h2>
-
-              <div className="mt-5 h-[2px] w-12 bg-black" />
-
-              <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-[5px] border border-black/10 bg-[#F8F8F6] p-5">
-                  <p className="mb-3 text-[10px] font-black uppercase tracking-[0.26em] text-gray-500">
-                    Email
+            {/* EMAIL */}
+            <a
+              href="mailto:mchljmn@gmail.com"
+              className="group border-b border-black/10 p-6 transition-colors duration-300 hover:bg-black hover:text-white md:p-8"
+            >
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400 group-hover:text-gray-500">
+                    01 / Email
                   </p>
-                  <p className="text-lg font-black uppercase tracking-tight text-black md:text-xl">
+
+                  <h2 className="mt-5 text-2xl font-black uppercase tracking-tight md:text-3xl">
                     Client Services
-                  </p>
-                  <p className="mt-2 break-all text-sm font-semibold text-gray-600">
+                  </h2>
+
+                  <p className="mt-2 break-all text-sm font-medium text-gray-500 group-hover:text-gray-400">
                     mchljmn@gmail.com
                   </p>
                 </div>
 
-                <div className="rounded-[5px] border border-black/10 bg-[#F8F8F6] p-5">
-                  <p className="mb-3 text-[10px] font-black uppercase tracking-[0.26em] text-gray-500">
-                    Phone
+                <span className="text-2xl font-light transition-transform duration-300 group-hover:translate-x-1">
+                  ↗
+                </span>
+              </div>
+            </a>
+
+            {/* PHONE */}
+            <a
+              href="tel:+639753336199"
+              className="group border-b border-black/10 p-6 transition-colors duration-300 hover:bg-black hover:text-white md:p-8"
+            >
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400 group-hover:text-gray-500">
+                    02 / Phone
                   </p>
-                  <p className="text-lg font-black uppercase tracking-tight text-black md:text-xl">
+
+                  <h2 className="mt-5 text-2xl font-black uppercase tracking-tight md:text-3xl">
                     Direct Line
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-gray-600">
+                  </h2>
+
+                  <p className="mt-2 text-sm font-medium text-gray-500 group-hover:text-gray-400">
                     (+63) 975 333 6199
                   </p>
                 </div>
 
-                <div className="rounded-[5px] border border-black bg-black p-5 md:col-span-2">
-                  <p className="mb-3 text-[10px] font-black uppercase tracking-[0.26em] text-gray-400">
-                    Address
+                <span className="text-2xl font-light transition-transform duration-300 group-hover:translate-x-1">
+                  ↗
+                </span>
+              </div>
+            </a>
+
+            {/* LOCATION */}
+            <div className="flex-1 bg-black p-6 text-white md:p-8">
+              <div className="flex h-full flex-col justify-between">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40">
+                      03 / Location
+                    </p>
+
+                    <h2 className="mt-5 text-2xl font-black uppercase tracking-tight md:text-3xl">
+                      Saint Clothing
+                    </h2>
+
+                    <p className="mt-3 text-sm font-medium leading-6 text-white/50">
+                      Pasig City, Metro Manila,
+                      <br />
+                      Philippines, 1600
+                    </p>
+                  </div>
+
+                  <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/30">
+                    PH / 1600
+                  </span>
+                </div>
+
+                <div className="mt-10 border-t border-white/10 pt-5">
+                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-white/40">
+                    Response Time
                   </p>
-                  <p className="text-lg font-black uppercase tracking-tight text-white md:text-xl">
-                    Saint Clothing
-                  </p>
-                  <p className="mt-2 text-sm font-medium leading-6 text-gray-400">
-                    Pasig City, Metro Manila,
-                    <br />
-                    Philippines, 1600
+
+                  <p className="mt-2 text-sm font-bold uppercase tracking-[0.08em] text-white">
+                    Usually within 24–48 hours
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* CTA */}
-            <div className="mt-8 flex flex-col justify-between gap-5 border-t border-black/10 pt-6 md:mt-10 md:flex-row md:items-center">
-              <div className="max-w-md">
-                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.2em] text-black">
-                  Careers at Saint
-                </p>
-                <p className="text-[13px] font-medium leading-6 text-gray-500">
-                  We are open to passionate creatives, developers, and designers
-                  who want to grow with the brand.
-                </p>
-              </div>
-
-              <button className="h-11 whitespace-nowrap rounded-[5px] border border-black bg-black px-6 text-[10px] font-black uppercase tracking-[0.16em] text-white transition hover:bg-white hover:text-black">
-                View Positions
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* NEWSLETTER */}
-        <div className="mb-12 mt-10 md:mb-16 md:mt-12">
+        {/* ================= CAREERS ================= */}
+        <div className="mt-5 grid overflow-hidden border border-black bg-black text-white md:grid-cols-[1fr_auto] md:items-center">
+          <div className="p-6 md:p-8">
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-white/50" />
+
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/50">
+                Work With Us
+              </p>
+            </div>
+
+            <h2 className="mt-4 text-3xl font-black uppercase italic tracking-[-0.03em] md:text-4xl">
+              Build the next chapter.
+            </h2>
+
+            <p className="mt-3 max-w-xl text-[12px] leading-6 text-white/45">
+              We are open to passionate creatives, developers and designers
+              who want to help shape the future of Saint Clothing.
+            </p>
+          </div>
+
+          <div className="border-t border-white/10 p-5 md:border-l md:border-t-0 md:p-8">
+            <button className="group flex w-full items-center justify-between gap-8 border border-white/20 px-6 py-4 text-[9px] font-black uppercase tracking-[0.25em] transition-all duration-300 hover:bg-white hover:text-black md:w-auto">
+              <span>View Positions</span>
+              <span className="text-base transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* ================= NEWSLETTER ================= */}
+        <div className="mt-10 px-4 pb-4 sm:px-6 md:mt-12 md:px-10">
           <NewsletterBox />
         </div>
+
       </div>
     </div>
   );

@@ -1,582 +1,1569 @@
 import React, {
-  createContext,
-  useEffect,
-  useState,
-  useCallback,
-  useRef,
+    createContext,
+    useEffect,
+    useState,
+    useCallback,
+    useRef,
 } from "react";
+
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export const ShopContext = createContext();
 
-const SIZE_ORDER = ["S", "M", "L", "XL", "2XL", "3XL"];
-
-const DEFAULT_CATEGORIES = [
-  "Tshirt",
-  "Long Sleeve",
-  "Jorts",
-  "Mesh Shorts",
-  "Crop Jersey",
+const SIZE_ORDER = [
+    "S",
+    "M",
+    "L",
+    "XL",
+    "2XL",
+    "3XL",
 ];
 
+const DEFAULT_CATEGORIES = [
+    "Tshirt",
+    "Long Sleeve",
+    "Jorts",
+    "Mesh Shorts",
+    "Crop Jersey",
+];
+
+/* =========================================================
+   STOCK NORMALIZATION
+========================================================= */
+
 const normalizeStockObject = (stock = {}) => {
-  const stockObj = typeof stock === "string" ? JSON.parse(stock) : stock || {};
-  const normalized = {};
-
-  SIZE_ORDER.forEach((size) => {
-    const matchingKey = Object.keys(stockObj).find(
-      (key) => String(key).toUpperCase() === size
-    );
-
-    normalized[size] = Number(matchingKey ? stockObj[matchingKey] : 0);
-  });
-
-  return normalized;
-};
-
-const getAvailableStockForSize = (product, size) => {
-  const normalizedSize = String(size || "").toUpperCase();
-
-  const actualStock = Number(product?.stock?.[normalizedSize] || 0);
-  const preorderStock = Number(product?.preorderStock?.[normalizedSize] || 0);
-  const preorderEnabled = product?.preorderEnabled !== false;
-  const preorderThreshold = Number(product?.preorderThreshold ?? 5);
-
-  const isPreorderSize =
-    preorderEnabled && actualStock <= preorderThreshold && preorderStock > 0;
-
-  return {
-    availableStock: isPreorderSize ? preorderStock : actualStock,
-    isPreorderSize,
-  };
-};
-
-const ShopContextProvider = ({ children }) => {
-  const currency = "₱";
-  const delivery_fee = 10;
-  const backendUrl =
-    import.meta.env.VITE_BACKEND_URL?.trim() || "http://localhost:4000";
-
-  const [search, setSearch] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const [cartItems, setCartItems] = useState({});
-  const [cartCount, setCartCount] = useState(0);
-  const [products, setProducts] = useState([]);
-  const [categoryOptions, setCategoryOptions] = useState(DEFAULT_CATEGORIES);
-  const [token, setToken] = useState("");
-  const [user, setUser] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
-
-  const navigate = useNavigate();
-  const pollingRef = useRef(null);
-
-  const getAuthHeaders = useCallback((userToken) => {
-    if (!userToken) return {};
-    return {
-      token: userToken,
-      Authorization: `Bearer ${userToken}`,
-    };
-  }, []);
-
-  const clearAuthData = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken("");
-    setUser(null);
-    setCartItems({});
-    setCartCount(0);
-  }, []);
-
-  const getCategoriesData = useCallback(
-    async (currentProducts = products) => {
-      try {
-        const response = await axios.get(`${backendUrl}/api/category/list`);
-
-        if (response.data.success) {
-          const backendCategories = (response.data.categories || [])
-            .map((item) => item.name)
-            .filter(Boolean);
-
-          const productCategories = (currentProducts || [])
-            .map((item) => item.category)
-            .filter(Boolean);
-
-          setCategoryOptions(
-            Array.from(
-              new Set([
-                ...DEFAULT_CATEGORIES,
-                ...backendCategories,
-                ...productCategories,
-              ])
-            )
-          );
-        }
-      } catch (error) {
-        console.log(
-          "Category fetch error:",
-          error.response?.data || error.message
-        );
-
-        const productCategories = (currentProducts || [])
-          .map((item) => item.category)
-          .filter(Boolean);
-
-        setCategoryOptions(
-          Array.from(new Set([...DEFAULT_CATEGORIES, ...productCategories]))
-        );
-      }
-    },
-    [backendUrl, products]
-  );
-
-  const fetchCurrentUser = useCallback(
-    async (userToken = token) => {
-      if (!userToken) return null;
-
-      try {
-        const response = await axios.post(
-          `${backendUrl}/api/user/me`,
-          {},
-          {
-            headers: getAuthHeaders(userToken),
-          }
-        );
-
-        if (response.data.success && response.data.user) {
-          setUser(response.data.user);
-          localStorage.setItem("user", JSON.stringify(response.data.user));
-          return response.data.user;
-        }
-
-        return null;
-      } catch (error) {
-        console.log(
-          "Fetch current user error:",
-          error.response?.data || error.message
-        );
-
-        if (error.response?.status === 401) {
-          clearAuthData();
-        }
-
-        return null;
-      }
-    },
-    [backendUrl, token, getAuthHeaders, clearAuthData]
-  );
-
-  const getProductsData = useCallback(async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/product/list`);
+        const stockObj =
+            typeof stock === "string"
+                ? JSON.parse(stock)
+                : stock || {};
 
-      if (response.data.success) {
-        const productsData = (response.data.products || []).map((p) => {
-          return {
-            ...p,
-            stock: normalizeStockObject(p.stock),
-            preorderStock: normalizeStockObject(p.preorderStock),
-          };
+        const normalized = {};
+
+        SIZE_ORDER.forEach((size) => {
+            const matchingKey = Object.keys(
+                stockObj
+            ).find(
+                (key) =>
+                    String(key).toUpperCase() ===
+                    size
+            );
+
+            normalized[size] = Number(
+                matchingKey
+                    ? stockObj[matchingKey]
+                    : 0
+            );
         });
 
-        const reversedProducts = productsData.reverse();
-
-        setProducts(reversedProducts);
-        await getCategoriesData(reversedProducts);
-      } else {
-        setProducts([]);
-        await getCategoriesData([]);
-      }
+        return normalized;
     } catch (error) {
-      toast.error("Failed to fetch products: " + error.message);
-      setProducts([]);
-      await getCategoriesData([]);
-    }
-  }, [backendUrl, getCategoriesData]);
-
-  const calculateCartCount = useCallback((cart) => {
-    return Object.values(cart || {}).reduce((acc, sizes) => {
-      const sizeTotal = Object.values(sizes || {}).reduce(
-        (sum, qty) => sum + (Number(qty) || 0),
-        0
-      );
-      return acc + sizeTotal;
-    }, 0);
-  }, []);
-
-  const fetchCart = useCallback(
-    async (userToken, userId, silent = true) => {
-      if (!userToken || !userId) return;
-
-      try {
-        const response = await axios.post(
-          `${backendUrl}/api/cart/get`,
-          {},
-          { headers: getAuthHeaders(userToken) }
+        console.log(
+            "Stock normalization error:",
+            error
         );
 
-        if (response.data.success) {
-          const backendCart = response.data.cartData || {};
+        return {
+            S: 0,
+            M: 0,
+            L: 0,
+            XL: 0,
+            "2XL": 0,
+            "3XL": 0,
+        };
+    }
+};
 
-          setCartItems((prev) => {
-            const prevString = JSON.stringify(prev);
-            const nextString = JSON.stringify(backendCart);
+/* =========================================================
+   AVAILABLE STOCK
+========================================================= */
 
-            if (prevString !== nextString) {
-              localStorage.setItem(
-                `cart_${userId}`,
-                JSON.stringify(backendCart)
-              );
-              setCartCount(calculateCartCount(backendCart));
-              return backendCart;
+const getAvailableStockForSize = (
+    product,
+    size
+) => {
+    const normalizedSize =
+        String(size || "").toUpperCase();
+
+    const actualStock = Number(
+        product?.stock?.[normalizedSize] || 0
+    );
+
+    const preorderStock = Number(
+        product?.preorderStock?.[
+            normalizedSize
+        ] || 0
+    );
+
+    const preorderEnabled =
+        product?.preorderEnabled !== false;
+
+    const preorderThreshold = Number(
+        product?.preorderThreshold ?? 5
+    );
+
+    const isPreorderSize =
+        preorderEnabled &&
+        actualStock <= preorderThreshold &&
+        preorderStock > 0;
+
+    return {
+        availableStock: isPreorderSize
+            ? preorderStock
+            : actualStock,
+
+        isPreorderSize,
+
+        actualStock,
+
+        preorderStock,
+
+        preorderEnabled,
+
+        preorderThreshold,
+    };
+};
+
+/* =========================================================
+   PROVIDER
+========================================================= */
+
+const ShopContextProvider = ({
+    children,
+}) => {
+    const currency = "₱";
+    const delivery_fee = 10;
+
+    /* =====================================================
+       BACKEND URL
+
+       .env:
+       VITE_BACKEND_URL=https://saint-clothing-backend-lzs6.onrender.com
+    ===================================================== */
+
+    const backendUrl =
+        import.meta.env.VITE_BACKEND_URL?.trim() ||
+        "http://localhost:4000";
+
+    const [search, setSearch] = useState("");
+
+    const [showSearch, setShowSearch] =
+        useState(false);
+
+    const [cartItems, setCartItems] =
+        useState({});
+
+    const [cartCount, setCartCount] =
+        useState(0);
+
+    const [products, setProducts] =
+        useState([]);
+
+    const [
+        categoryOptions,
+        setCategoryOptions,
+    ] = useState(DEFAULT_CATEGORIES);
+
+    const [token, setToken] =
+        useState("");
+
+    const [user, setUser] =
+        useState(null);
+
+    const [authReady, setAuthReady] =
+        useState(false);
+
+    const navigate = useNavigate();
+
+    const pollingRef = useRef(null);
+
+    /* =====================================================
+       AUTH HEADERS
+    ===================================================== */
+
+    const getAuthHeaders = useCallback(
+        (userToken) => {
+            if (!userToken) {
+                return {};
             }
 
-            setCartCount(calculateCartCount(prev));
-            return prev;
-          });
-        }
-      } catch (err) {
-        console.log("Failed to fetch cart:", err);
+            return {
+                Authorization: `Bearer ${userToken}`,
+            };
+        },
+        []
+    );
 
-        if (err.response?.status === 401) {
-          clearAuthData();
-        } else if (!silent) {
-          toast.error("Failed to refresh cart");
-        }
-      }
-    },
-    [backendUrl, getAuthHeaders, calculateCartCount, clearAuthData]
-  );
+    /* =====================================================
+       CLEAR AUTH
+    ===================================================== */
 
-  const startCartPolling = useCallback(() => {
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    if (!token || !user?._id) return;
+    const clearAuthData = useCallback(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
 
-    pollingRef.current = setInterval(() => {
-      fetchCart(token, user._id, true);
-    }, 4000);
-  }, [token, user, fetchCart]);
-
-  const stopCartPolling = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
-  }, []);
-
-  const addToCart = useCallback(
-    async (itemId, size, quantity = 1) => {
-      if (!token || !user?._id) {
-        toast.error("Please login to add items to cart");
-        navigate("/login");
-        return;
-      }
-
-      if (!size) {
-        toast.error("Please select a size");
-        return;
-      }
-
-      const normalizedSize = String(size).toUpperCase();
-      const product = products.find((p) => p._id === itemId);
-
-      if (!product) {
-        toast.error("Product not found");
-        return;
-      }
-
-      const { availableStock, isPreorderSize } = getAvailableStockForSize(
-        product,
-        normalizedSize
-      );
-
-      const currentQty = Number(cartItems[itemId]?.[normalizedSize] || 0);
-
-      if (currentQty + quantity > availableStock) {
-        toast.error(
-          isPreorderSize
-            ? "Cannot exceed available pre-order slots"
-            : "Cannot exceed available stock"
-        );
-        return;
-      }
-
-      try {
-        const response = await axios.post(
-          `${backendUrl}/api/cart/add`,
-          { itemId, size: normalizedSize, quantity },
-          { headers: getAuthHeaders(token) }
-        );
-
-        if (response.data.success) {
-          const updatedCart = response.data.cartData || {};
-          setCartItems(updatedCart);
-          setCartCount(calculateCartCount(updatedCart));
-          localStorage.setItem(`cart_${user._id}`, JSON.stringify(updatedCart));
-
-          toast.success(isPreorderSize ? "Pre-order added to cart" : "Added to cart");
-        } else {
-          toast.error(response.data.message || "Failed to add to cart");
-        }
-      } catch (error) {
-        if (error.response?.status === 401) {
-          clearAuthData();
-          toast.error("Session expired. Please login again.");
-          navigate("/login");
-          return;
-        }
-
-        toast.error(error.response?.data?.message || "Failed to add to cart");
-      }
-    },
-    [
-      token,
-      user,
-      products,
-      cartItems,
-      backendUrl,
-      navigate,
-      getAuthHeaders,
-      calculateCartCount,
-      clearAuthData,
-    ]
-  );
-
-  const updateQuantity = useCallback(
-    async (itemId, size, quantity) => {
-      if (!token || !user?._id) return;
-
-      const normalizedSize = String(size).toUpperCase();
-      const product = products.find((p) => p._id === itemId);
-      if (!product) return;
-
-      const { availableStock, isPreorderSize } = getAvailableStockForSize(
-        product,
-        normalizedSize
-      );
-
-      if (quantity > availableStock) {
-        toast.error(
-          isPreorderSize
-            ? "Cannot exceed available pre-order slots"
-            : "Cannot exceed available stock"
-        );
-        return;
-      }
-
-      try {
-        const response = await axios.post(
-          `${backendUrl}/api/cart/update`,
-          { itemId, size: normalizedSize, quantity },
-          { headers: getAuthHeaders(token) }
-        );
-
-        if (response.data.success) {
-          const updatedCart = response.data.cartData || {};
-          setCartItems(updatedCart);
-          setCartCount(calculateCartCount(updatedCart));
-          localStorage.setItem(`cart_${user._id}`, JSON.stringify(updatedCart));
-        } else {
-          toast.error(response.data.message || "Failed to update cart");
-        }
-      } catch (error) {
-        if (error.response?.status === 401) {
-          clearAuthData();
-          toast.error("Session expired. Please login again.");
-          navigate("/login");
-          return;
-        }
-
-        toast.error(error.response?.data?.message || "Failed to update cart");
-      }
-    },
-    [
-      token,
-      user,
-      products,
-      backendUrl,
-      getAuthHeaders,
-      calculateCartCount,
-      clearAuthData,
-      navigate,
-    ]
-  );
-
-  const clearCart = useCallback(async () => {
-    if (!token || !user?._id) return;
-
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/cart/clear`,
-        {},
-        { headers: getAuthHeaders(token) }
-      );
-
-      if (response.data.success) {
+        setToken("");
+        setUser(null);
         setCartItems({});
         setCartCount(0);
-        localStorage.removeItem(`cart_${user._id}`);
-      } else {
-        toast.error(response.data.message || "Failed to clear cart");
-      }
-    } catch (error) {
-      console.log("Clear cart error:", error);
+    }, []);
 
-      if (error.response?.status === 401) {
-        clearAuthData();
-        toast.error("Session expired. Please login again.");
-        navigate("/login");
-        return;
-      }
+    /* =====================================================
+       CATEGORIES
+    ===================================================== */
 
-      toast.error(error.response?.data?.message || "Failed to clear cart");
-    }
-  }, [token, user, backendUrl, getAuthHeaders, clearAuthData, navigate]);
+    const getCategoriesData = useCallback(
+        async (currentProducts = []) => {
+            try {
+                const response =
+                    await axios.get(
+                        `${backendUrl}/api/category/list`,
+                        {
+                            timeout: 20000,
+                        }
+                    );
 
-  useEffect(() => {
-    const loadAppData = async () => {
-      const savedToken = localStorage.getItem("token");
-      const savedUser = localStorage.getItem("user");
+                if (
+                    response.data?.success
+                ) {
+                    const backendCategories =
+                        (
+                            response.data
+                                .categories ||
+                            []
+                        )
+                            .map(
+                                (item) =>
+                                    item.name
+                            )
+                            .filter(Boolean);
 
-      let activeUser = null;
+                    const productCategories =
+                        (
+                            currentProducts ||
+                            []
+                        )
+                            .map(
+                                (item) =>
+                                    item.category
+                            )
+                            .filter(Boolean);
 
-      if (savedToken) {
-        setToken(savedToken);
+                    setCategoryOptions(
+                        Array.from(
+                            new Set([
+                                ...DEFAULT_CATEGORIES,
+                                ...backendCategories,
+                                ...productCategories,
+                            ])
+                        )
+                    );
+                }
+            } catch (error) {
+                console.log(
+                    "Category fetch error:",
+                    error.response?.data ||
+                        error.message
+                );
 
-        if (savedUser) {
-          try {
-            const parsedUser = JSON.parse(savedUser);
-            setUser(parsedUser);
-            activeUser = parsedUser;
-          } catch {
-            clearAuthData();
-          }
+                const productCategories =
+                    (
+                        currentProducts ||
+                        []
+                    )
+                        .map(
+                            (item) =>
+                                item.category
+                        )
+                        .filter(Boolean);
+
+                setCategoryOptions(
+                    Array.from(
+                        new Set([
+                            ...DEFAULT_CATEGORIES,
+                            ...productCategories,
+                        ])
+                    )
+                );
+            }
+        },
+        [backendUrl]
+    );
+
+    /* =====================================================
+       CURRENT USER
+
+       This verifies the token against Render.
+    ===================================================== */
+
+    const fetchCurrentUser = useCallback(
+        async (userToken) => {
+            if (!userToken) {
+                return null;
+            }
+
+            try {
+                const response =
+                    await axios.post(
+                        `${backendUrl}/api/user/me`,
+                        {},
+                        {
+                            headers:
+                                getAuthHeaders(
+                                    userToken
+                                ),
+                            timeout: 20000,
+                        }
+                    );
+
+                if (
+                    response.data?.success &&
+                    response.data?.user
+                ) {
+                    const currentUser =
+                        response.data.user;
+
+                    setUser(currentUser);
+
+                    localStorage.setItem(
+                        "user",
+                        JSON.stringify(
+                            currentUser
+                        )
+                    );
+
+                    return currentUser;
+                }
+
+                return null;
+            } catch (error) {
+                console.log(
+                    "Fetch current user error:",
+                    error.response?.data ||
+                        error.message
+                );
+
+                if (
+                    error.response?.status ===
+                    401
+                ) {
+                    clearAuthData();
+                }
+
+                return null;
+            }
+        },
+        [
+            backendUrl,
+            getAuthHeaders,
+            clearAuthData,
+        ]
+    );
+
+    /* =====================================================
+       PRODUCTS
+    ===================================================== */
+
+    const getProductsData = useCallback(
+        async () => {
+            try {
+                const response =
+                    await axios.get(
+                        `${backendUrl}/api/product/list`,
+                        {
+                            timeout: 20000,
+                        }
+                    );
+
+                if (
+                    response.data?.success
+                ) {
+                    const productsData =
+                        (
+                            response.data
+                                .products ||
+                            []
+                        ).map((p) => ({
+                            ...p,
+
+                            stock:
+                                normalizeStockObject(
+                                    p.stock
+                                ),
+
+                            preorderStock:
+                                normalizeStockObject(
+                                    p.preorderStock
+                                ),
+
+                            preorderEnabled:
+                                p.preorderEnabled !==
+                                false,
+
+                            preorderThreshold:
+                                Number(
+                                    p.preorderThreshold ??
+                                        5
+                                ),
+
+                            preorderRestockDate:
+                                p.preorderRestockDate ||
+                                null,
+
+                            preorderNote:
+                                p.preorderNote ||
+                                "",
+
+                            onSale:
+                                !!p.onSale,
+
+                            salePercent:
+                                Number(
+                                    p.salePercent ||
+                                        0
+                                ),
+
+                            price:
+                                Number(
+                                    p.price ||
+                                        0
+                                ),
+                        }));
+
+                    const reversedProducts = [
+                        ...productsData,
+                    ].reverse();
+
+                    setProducts(
+                        reversedProducts
+                    );
+
+                    await getCategoriesData(
+                        reversedProducts
+                    );
+                } else {
+                    setProducts([]);
+
+                    await getCategoriesData(
+                        []
+                    );
+                }
+            } catch (error) {
+                console.log(
+                    "Products fetch error:",
+                    error.response?.data ||
+                        error.message
+                );
+
+                toast.error(
+                    "Failed to fetch products: " +
+                        error.message
+                );
+
+                setProducts([]);
+
+                await getCategoriesData(
+                    []
+                );
+            }
+        },
+        [
+            backendUrl,
+            getCategoriesData,
+        ]
+    );
+
+    /* =====================================================
+       CART COUNT
+    ===================================================== */
+
+    const calculateCartCount = useCallback(
+        (cart) => {
+            return Object.values(
+                cart || {}
+            ).reduce(
+                (acc, sizes) => {
+                    const sizeTotal =
+                        Object.values(
+                            sizes || {}
+                        ).reduce(
+                            (
+                                sum,
+                                qty
+                            ) =>
+                                sum +
+                                (Number(
+                                    qty
+                                ) || 0),
+                            0
+                        );
+
+                    return (
+                        acc + sizeTotal
+                    );
+                },
+                0
+            );
+        },
+        []
+    );
+
+    /* =====================================================
+       FETCH CART
+    ===================================================== */
+
+    const fetchCart = useCallback(
+        async (
+            userToken,
+            userId,
+            silent = true
+        ) => {
+            if (
+                !userToken ||
+                !userId
+            ) {
+                return;
+            }
+
+            try {
+                const response =
+                    await axios.post(
+                        `${backendUrl}/api/cart/get`,
+                        {},
+                        {
+                            headers:
+                                getAuthHeaders(
+                                    userToken
+                                ),
+                            timeout: 20000,
+                        }
+                    );
+
+                if (
+                    response.data?.success
+                ) {
+                    const backendCart =
+                        response.data
+                            .cartData || {};
+
+                    setCartItems(
+                        (previous) => {
+                            const previousString =
+                                JSON.stringify(
+                                    previous
+                                );
+
+                            const nextString =
+                                JSON.stringify(
+                                    backendCart
+                                );
+
+                            if (
+                                previousString !==
+                                nextString
+                            ) {
+                                localStorage.setItem(
+                                    `cart_${userId}`,
+                                    JSON.stringify(
+                                        backendCart
+                                    )
+                                );
+
+                                setCartCount(
+                                    calculateCartCount(
+                                        backendCart
+                                    )
+                                );
+
+                                return backendCart;
+                            }
+
+                            setCartCount(
+                                calculateCartCount(
+                                    previous
+                                )
+                            );
+
+                            return previous;
+                        }
+                    );
+                }
+            } catch (error) {
+                console.log(
+                    "Failed to fetch cart:",
+                    error.response?.data ||
+                        error.message
+                );
+
+                if (
+                    error.response?.status ===
+                    401
+                ) {
+                    clearAuthData();
+                } else if (!silent) {
+                    toast.error(
+                        "Failed to refresh cart"
+                    );
+                }
+            }
+        },
+        [
+            backendUrl,
+            getAuthHeaders,
+            calculateCartCount,
+            clearAuthData,
+        ]
+    );
+
+    /* =====================================================
+       CART POLLING
+    ===================================================== */
+
+    const startCartPolling =
+        useCallback(() => {
+            if (pollingRef.current) {
+                clearInterval(
+                    pollingRef.current
+                );
+            }
+
+            if (
+                !token ||
+                !user?._id
+            ) {
+                return;
+            }
+
+            pollingRef.current =
+                setInterval(() => {
+                    fetchCart(
+                        token,
+                        user._id,
+                        true
+                    );
+                }, 4000);
+        }, [
+            token,
+            user,
+            fetchCart,
+        ]);
+
+    const stopCartPolling =
+        useCallback(() => {
+            if (pollingRef.current) {
+                clearInterval(
+                    pollingRef.current
+                );
+
+                pollingRef.current =
+                    null;
+            }
+        }, []);
+
+    /* =====================================================
+       ADD TO CART
+    ===================================================== */
+
+    const addToCart = useCallback(
+        async (
+            itemId,
+            size,
+            quantity = 1
+        ) => {
+            if (
+                !token ||
+                !user?._id
+            ) {
+                toast.error(
+                    "Please login to add items to cart"
+                );
+
+                navigate("/login");
+
+                return false;
+            }
+
+            if (!size) {
+                toast.error(
+                    "Please select a size"
+                );
+
+                return false;
+            }
+
+            const normalizedSize =
+                String(
+                    size
+                ).toUpperCase();
+
+            const qty = Number(
+                quantity || 1
+            );
+
+            const product =
+                products.find(
+                    (p) =>
+                        String(
+                            p._id
+                        ) ===
+                        String(itemId)
+                );
+
+            if (!product) {
+                toast.error(
+                    "Product not found"
+                );
+
+                return false;
+            }
+
+            const {
+                availableStock,
+                isPreorderSize,
+            } =
+                getAvailableStockForSize(
+                    product,
+                    normalizedSize
+                );
+
+            const currentQty =
+                Number(
+                    cartItems[itemId]?.[
+                        normalizedSize
+                    ] || 0
+                );
+
+            if (
+                currentQty + qty >
+                availableStock
+            ) {
+                toast.error(
+                    isPreorderSize
+                        ? "Cannot exceed available pre-order slots"
+                        : "Cannot exceed available stock"
+                );
+
+                return false;
+            }
+
+            try {
+                const response =
+                    await axios.post(
+                        `${backendUrl}/api/cart/add`,
+                        {
+                            itemId,
+                            size: normalizedSize,
+                            quantity: qty,
+                        },
+                        {
+                            headers:
+                                getAuthHeaders(
+                                    token
+                                ),
+                            timeout: 20000,
+                        }
+                    );
+
+                if (
+                    response.data?.success
+                ) {
+                    const updatedCart =
+                        response.data
+                            .cartData || {};
+
+                    setCartItems(
+                        updatedCart
+                    );
+
+                    setCartCount(
+                        calculateCartCount(
+                            updatedCart
+                        )
+                    );
+
+                    localStorage.setItem(
+                        `cart_${user._id}`,
+                        JSON.stringify(
+                            updatedCart
+                        )
+                    );
+
+                    toast.success(
+                        isPreorderSize
+                            ? "Pre-order added to cart"
+                            : "Added to cart"
+                    );
+
+                    return true;
+                }
+
+                toast.error(
+                    response.data
+                        ?.message ||
+                        "Failed to add to cart"
+                );
+
+                return false;
+            } catch (error) {
+                console.log(
+                    "Add to cart error:",
+                    error.response?.data ||
+                        error.message
+                );
+
+                if (
+                    error.response?.status ===
+                    401
+                ) {
+                    clearAuthData();
+
+                    toast.error(
+                        "Session expired. Please login again."
+                    );
+
+                    navigate("/login");
+
+                    return false;
+                }
+
+                toast.error(
+                    error.response?.data
+                        ?.message ||
+                        "Failed to add to cart"
+                );
+
+                return false;
+            }
+        },
+        [
+            token,
+            user,
+            products,
+            cartItems,
+            backendUrl,
+            navigate,
+            getAuthHeaders,
+            calculateCartCount,
+            clearAuthData,
+        ]
+    );
+
+    /* =====================================================
+       UPDATE CART
+    ===================================================== */
+
+    const updateQuantity =
+        useCallback(
+            async (
+                itemId,
+                size,
+                quantity
+            ) => {
+                if (
+                    !token ||
+                    !user?._id
+                ) {
+                    return;
+                }
+
+                const normalizedSize =
+                    String(
+                        size
+                    ).toUpperCase();
+
+                const nextQuantity =
+                    Number(
+                        quantity || 0
+                    );
+
+                const product =
+                    products.find(
+                        (p) =>
+                            String(
+                                p._id
+                            ) ===
+                            String(
+                                itemId
+                            )
+                    );
+
+                if (!product) {
+                    return;
+                }
+
+                const {
+                    availableStock,
+                    isPreorderSize,
+                } =
+                    getAvailableStockForSize(
+                        product,
+                        normalizedSize
+                    );
+
+                if (
+                    nextQuantity >
+                    availableStock
+                ) {
+                    toast.error(
+                        isPreorderSize
+                            ? "Cannot exceed available pre-order slots"
+                            : "Cannot exceed available stock"
+                    );
+
+                    return;
+                }
+
+                try {
+                    const response =
+                        await axios.post(
+                            `${backendUrl}/api/cart/update`,
+                            {
+                                itemId,
+                                size: normalizedSize,
+                                quantity:
+                                    nextQuantity,
+                            },
+                            {
+                                headers:
+                                    getAuthHeaders(
+                                        token
+                                    ),
+                                timeout: 20000,
+                            }
+                        );
+
+                    if (
+                        response.data
+                            ?.success
+                    ) {
+                        const updatedCart =
+                            response.data
+                                .cartData ||
+                            {};
+
+                        setCartItems(
+                            updatedCart
+                        );
+
+                        setCartCount(
+                            calculateCartCount(
+                                updatedCart
+                            )
+                        );
+
+                        localStorage.setItem(
+                            `cart_${user._id}`,
+                            JSON.stringify(
+                                updatedCart
+                            )
+                        );
+                    } else {
+                        toast.error(
+                            response
+                                .data
+                                ?.message ||
+                                "Failed to update cart"
+                        );
+                    }
+                } catch (error) {
+                    console.log(
+                        "Update cart error:",
+                        error.response
+                            ?.data ||
+                            error.message
+                    );
+
+                    if (
+                        error.response
+                            ?.status ===
+                        401
+                    ) {
+                        clearAuthData();
+
+                        toast.error(
+                            "Session expired. Please login again."
+                        );
+
+                        navigate(
+                            "/login"
+                        );
+
+                        return;
+                    }
+
+                    toast.error(
+                        error.response
+                            ?.data
+                            ?.message ||
+                            "Failed to update cart"
+                    );
+                }
+            },
+            [
+                token,
+                user,
+                products,
+                backendUrl,
+                getAuthHeaders,
+                calculateCartCount,
+                clearAuthData,
+                navigate,
+            ]
+        );
+
+    /* =====================================================
+       CLEAR CART
+    ===================================================== */
+
+    const clearCart =
+        useCallback(
+            async () => {
+                if (
+                    !token ||
+                    !user?._id
+                ) {
+                    return;
+                }
+
+                try {
+                    const response =
+                        await axios.post(
+                            `${backendUrl}/api/cart/clear`,
+                            {},
+                            {
+                                headers:
+                                    getAuthHeaders(
+                                        token
+                                    ),
+                                timeout: 20000,
+                            }
+                        );
+
+                    if (
+                        response.data
+                            ?.success
+                    ) {
+                        setCartItems(
+                            {}
+                        );
+
+                        setCartCount(
+                            0
+                        );
+
+                        localStorage.removeItem(
+                            `cart_${user._id}`
+                        );
+                    } else {
+                        toast.error(
+                            response
+                                .data
+                                ?.message ||
+                                "Failed to clear cart"
+                        );
+                    }
+                } catch (error) {
+                    console.log(
+                        "Clear cart error:",
+                        error
+                    );
+
+                    if (
+                        error.response
+                            ?.status ===
+                        401
+                    ) {
+                        clearAuthData();
+
+                        toast.error(
+                            "Session expired. Please login again."
+                        );
+
+                        navigate(
+                            "/login"
+                        );
+
+                        return;
+                    }
+
+                    toast.error(
+                        error.response
+                            ?.data
+                            ?.message ||
+                            "Failed to clear cart"
+                    );
+                }
+            },
+            [
+                token,
+                user,
+                backendUrl,
+                getAuthHeaders,
+                clearAuthData,
+                navigate,
+            ]
+        );
+
+    /* =====================================================
+       INITIAL APP LOAD
+
+       IMPORTANT:
+       This is the ONLY place where initial
+       authentication is checked.
+    ===================================================== */
+
+    useEffect(() => {
+        let mounted = true;
+
+        const initializeApp =
+            async () => {
+                try {
+                    const savedToken =
+                        localStorage.getItem(
+                            "token"
+                        );
+
+                    const savedUser =
+                        localStorage.getItem(
+                            "user"
+                        );
+
+                    let activeUser =
+                        null;
+
+                    /* ---------------------------------
+                       RESTORE AUTH
+                    --------------------------------- */
+
+                    if (
+                        savedToken
+                    ) {
+                        setToken(
+                            savedToken
+                        );
+
+                        if (
+                            savedUser
+                        ) {
+                            try {
+                                const parsedUser =
+                                    JSON.parse(
+                                        savedUser
+                                    );
+
+                                setUser(
+                                    parsedUser
+                                );
+
+                                activeUser =
+                                    parsedUser;
+                            } catch (
+                                error
+                            ) {
+                                console.log(
+                                    "Saved user parse error:",
+                                    error
+                                );
+
+                                localStorage.removeItem(
+                                    "user"
+                                );
+                            }
+                        }
+
+                        /* -----------------------------
+                           VERIFY TOKEN
+                        ----------------------------- */
+
+                        try {
+                            const response =
+                                await axios.post(
+                                    `${backendUrl}/api/user/me`,
+                                    {},
+                                    {
+                                        headers:
+                                            getAuthHeaders(
+                                                savedToken
+                                            ),
+                                        timeout: 20000,
+                                    }
+                                );
+
+                            if (
+                                response
+                                    .data
+                                    ?.success &&
+                                response
+                                    .data
+                                    ?.user
+                            ) {
+                                activeUser =
+                                    response
+                                        .data
+                                        .user;
+
+                                setUser(
+                                    activeUser
+                                );
+
+                                localStorage.setItem(
+                                    "user",
+                                    JSON.stringify(
+                                        activeUser
+                                    )
+                                );
+                            } else {
+                                clearAuthData();
+
+                                activeUser =
+                                    null;
+                            }
+                        } catch (
+                            error
+                        ) {
+                            console.log(
+                                "Authentication verification error:",
+                                error
+                                    .response
+                                    ?.data ||
+                                    error.message
+                            );
+
+                            if (
+                                error
+                                    .response
+                                    ?.status ===
+                                401
+                            ) {
+                                clearAuthData();
+
+                                activeUser =
+                                    null;
+                            }
+                        }
+                    } else {
+                        setToken("");
+                        setUser(null);
+                    }
+
+                    /* ---------------------------------
+                       LOAD PRODUCTS
+                    --------------------------------- */
+
+                    await getProductsData();
+
+                    /* ---------------------------------
+                       LOAD CART
+                    --------------------------------- */
+
+                    if (
+                        savedToken &&
+                        activeUser?._id
+                    ) {
+                        await fetchCart(
+                            savedToken,
+                            activeUser._id,
+                            true
+                        );
+                    }
+                } catch (error) {
+                    console.log(
+                        "Initial app load error:",
+                        error
+                    );
+                } finally {
+                    if (
+                        mounted
+                    ) {
+                        setAuthReady(
+                            true
+                        );
+                    }
+                }
+            };
+
+        initializeApp();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    /* =====================================================
+       AUTH / CART EFFECT
+
+       Runs AFTER authentication is ready.
+    ===================================================== */
+
+    useEffect(() => {
+        if (!authReady) {
+            return;
         }
 
-        const freshUser = await fetchCurrentUser(savedToken);
-        if (freshUser) {
-          activeUser = freshUser;
-        }
-      }
+        if (
+            token &&
+            user?._id
+        ) {
+            fetchCart(
+                token,
+                user._id,
+                true
+            );
 
-      await getProductsData();
+            startCartPolling();
+        } else {
+            stopCartPolling();
 
-      if (savedToken && activeUser?._id) {
-        await fetchCart(savedToken, activeUser._id, true);
-      }
-
-      setAuthReady(true);
-    };
-
-    loadAppData();
-  }, [getProductsData, fetchCart, fetchCurrentUser, clearAuthData]);
-
-  useEffect(() => {
-    if (token && user?._id) {
-      fetchCurrentUser(token);
-      fetchCart(token, user._id, true);
-      startCartPolling();
-    } else {
-      stopCartPolling();
-    }
-
-    return () => stopCartPolling();
-  }, [
-    token,
-    user?._id,
-    fetchCurrentUser,
-    fetchCart,
-    startCartPolling,
-    stopCartPolling,
-  ]);
-
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        if (token && user?._id) {
-          fetchCurrentUser(token);
-          fetchCart(token, user._id, true);
+            setCartItems({});
+            setCartCount(0);
         }
 
-        getProductsData();
-      }
+        return () => {
+            stopCartPolling();
+        };
+    }, [
+        authReady,
+        token,
+        user?._id,
+        fetchCart,
+        startCartPolling,
+        stopCartPolling,
+    ]);
+
+    /* =====================================================
+       VISIBILITY / FOCUS
+    ===================================================== */
+
+    useEffect(() => {
+        const handleVisibility =
+            () => {
+                if (
+                    document.visibilityState ===
+                    "visible"
+                ) {
+                    if (
+                        token &&
+                        user?._id
+                    ) {
+                        fetchCart(
+                            token,
+                            user._id,
+                            true
+                        );
+                    }
+
+                    getProductsData();
+                }
+            };
+
+        const handleStorage =
+            () => {
+                if (
+                    token &&
+                    user?._id
+                ) {
+                    fetchCurrentUser(
+                        token
+                    );
+
+                    fetchCart(
+                        token,
+                        user._id,
+                        true
+                    );
+                }
+            };
+
+        document.addEventListener(
+            "visibilitychange",
+            handleVisibility
+        );
+
+        window.addEventListener(
+            "storage",
+            handleStorage
+        );
+
+        window.addEventListener(
+            "focus",
+            handleVisibility
+        );
+
+        return () => {
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibility
+            );
+
+            window.removeEventListener(
+                "storage",
+                handleStorage
+            );
+
+            window.removeEventListener(
+                "focus",
+                handleVisibility
+            );
+        };
+    }, [
+        token,
+        user?._id,
+        fetchCurrentUser,
+        fetchCart,
+        getProductsData,
+    ]);
+
+    /* =====================================================
+       CART AMOUNT
+    ===================================================== */
+
+    const getCartAmount =
+        useCallback(() => {
+            return Object.entries(
+                cartItems || {}
+            ).reduce(
+                (
+                    total,
+                    [
+                        itemId,
+                        sizes,
+                    ]
+                ) => {
+                    const product =
+                        products.find(
+                            (p) =>
+                                String(
+                                    p._id
+                                ) ===
+                                String(
+                                    itemId
+                                )
+                        );
+
+                    if (!product) {
+                        return total;
+                    }
+
+                    const basePrice =
+                        Number(
+                            product.price ||
+                                0
+                        );
+
+                    const salePercent =
+                        Number(
+                            product.salePercent ||
+                                0
+                        );
+
+                    const finalPrice =
+                        product.onSale &&
+                        salePercent > 0
+                            ? Math.max(
+                                  basePrice -
+                                      (basePrice *
+                                          salePercent) /
+                                          100,
+                                  0
+                              )
+                            : basePrice;
+
+                    const totalForProduct =
+                        Object.values(
+                            sizes || {}
+                        ).reduce(
+                            (
+                                sum,
+                                qty
+                            ) =>
+                                sum +
+                                Number(
+                                    qty ||
+                                        0
+                                ) *
+                                    finalPrice,
+                            0
+                        );
+
+                    return (
+                        total +
+                        totalForProduct
+                    );
+                },
+                0
+            );
+        }, [
+            cartItems,
+            products,
+        ]);
+
+    /* =====================================================
+       CONTEXT VALUE
+    ===================================================== */
+
+    const value = {
+        products,
+
+        categoryOptions,
+
+        currency,
+
+        delivery_fee,
+
+        search,
+        setSearch,
+
+        showSearch,
+        setShowSearch,
+
+        cartItems,
+        cartCount,
+
+        setCartItems,
+
+        addToCart,
+        updateQuantity,
+        clearCart,
+
+        getCartCount: () =>
+            cartCount,
+
+        getCartAmount,
+
+        navigate,
+
+        backendUrl,
+
+        token,
+        setToken,
+
+        user,
+        setUser,
+
+        authReady,
+
+        fetchCart,
+        fetchCurrentUser,
+
+        getProductsData,
+        getCategoriesData,
+
+        clearAuthData,
+
+        getAuthHeaders,
+
+        getAvailableStockForSize,
     };
 
-    const handleStorage = () => {
-      if (token && user?._id) {
-        fetchCurrentUser(token);
-        fetchCart(token, user._id, true);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("focus", handleVisibility);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("focus", handleVisibility);
-    };
-  }, [token, user?._id, fetchCurrentUser, fetchCart, getProductsData]);
-
-  const getCartAmount = useCallback(() => {
-    return Object.entries(cartItems).reduce((acc, [itemId, sizes]) => {
-      const product = products.find((p) => p._id === itemId);
-      if (!product) return acc;
-
-      const basePrice = Number(product.price || 0);
-      const salePercent = Number(product.salePercent || 0);
-
-      const finalPrice =
-        product.onSale && salePercent > 0
-          ? basePrice - (basePrice * salePercent) / 100
-          : basePrice;
-
-      const totalForProduct = Object.values(sizes || {}).reduce(
-        (sum, qty) => sum + (Number(qty) || 0) * finalPrice,
-        0
-      );
-
-      return acc + totalForProduct;
-    }, 0);
-  }, [cartItems, products]);
-
-  const value = {
-    products,
-    categoryOptions,
-    currency,
-    delivery_fee,
-    search,
-    setSearch,
-    showSearch,
-    setShowSearch,
-    cartItems,
-    cartCount,
-    setCartItems,
-    addToCart,
-    updateQuantity,
-    clearCart,
-    getCartCount: () => cartCount,
-    getCartAmount,
-    navigate,
-    backendUrl,
-    token,
-    setToken,
-    user,
-    setUser,
-    authReady,
-    fetchCart,
-    fetchCurrentUser,
-    getProductsData,
-    getCategoriesData,
-    clearAuthData,
-    getAuthHeaders,
-    getAvailableStockForSize,
-  };
-
-  return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
+    return (
+        <ShopContext.Provider
+            value={value}
+        >
+            {children}
+        </ShopContext.Provider>
+    );
 };
 
 export default ShopContextProvider;

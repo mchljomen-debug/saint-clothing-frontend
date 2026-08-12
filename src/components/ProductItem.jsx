@@ -116,22 +116,22 @@ const ProductItem = ({
         arr.findIndex(
           (x) =>
             String(x.color || "").toLowerCase() ===
-              String(item.color || "").toLowerCase() &&
+            String(item.color || "").toLowerCase() &&
             String(x.colorHex || "").toLowerCase() ===
-              String(item.colorHex || "").toLowerCase()
+            String(item.colorHex || "").toLowerCase()
         )
     );
 
     return uniqueVariants.length
       ? uniqueVariants
       : [
-          {
-            _id: productId,
-            color,
-            colorHex,
-            images,
-          },
-        ];
+        {
+          _id: productId,
+          color,
+          colorHex,
+          images,
+        },
+      ];
   }, [
     products,
     groupCode,
@@ -146,7 +146,7 @@ const ProductItem = ({
 
   const hiddenColorCount = Math.max(
     colorVariants.length -
-      visibleColorVariants.length,
+    visibleColorVariants.length,
     0
   );
 
@@ -160,9 +160,9 @@ const ProductItem = ({
 
   const finalPrice = hasDiscount
     ? (
-        safePrice -
-        (safePrice * safeSalePercent) / 100
-      ).toFixed(2)
+      safePrice -
+      (safePrice * safeSalePercent) / 100
+    ).toFixed(2)
     : safePrice.toFixed(2);
 
   const handleNavigateToProduct = () => {
@@ -176,165 +176,139 @@ const ProductItem = ({
   return (
     <div
       onClick={handleNavigateToProduct}
-      className={`group relative cursor-pointer overflow-hidden rounded-[5px] border bg-white transition-all duration-300 ${
-        isOutOfStock
-          ? "border-black/10 opacity-90"
-          : "border-black/10 hover:-translate-y-1 hover:border-black hover:shadow-[0_18px_45px_rgba(0,0,0,0.12)]"
-      }`}
+      className="group relative cursor-pointer transition-all duration-300"
     >
       {/* ================= IMAGE ================= */}
 
       <div
-        className="relative aspect-[4/5] overflow-hidden bg-[radial-gradient(circle_at_center,#ffffff_0%,#f6f6f3_48%,#ededeb_100%)]"
-        onMouseEnter={() =>
-          setPreviewImage(hoverImage)
-        }
-        onMouseLeave={() =>
-          setPreviewImage(defaultImage)
-        }
+        className="relative aspect-[4/5] overflow-hidden bg-[#f5f5f2]"
+        onMouseEnter={() => setPreviewImage(hoverImage)}
+        onMouseLeave={() => setPreviewImage(defaultImage)}
       >
-        <div className="absolute inset-x-4 bottom-4 top-8 rounded-[5px] bg-white/45 blur-2xl transition-opacity duration-300 group-hover:opacity-80" />
+        {/* FLOOR SHADOW */}
+
+        {!isOutOfStock && (
+          <div className="absolute bottom-5 left-1/2 h-6 w-40 -translate-x-1/2 rounded-full bg-black/10 blur-2xl transition-all duration-500 group-hover:w-44 group-hover:opacity-80" />
+        )}
 
         {/* BADGES */}
 
         {badgeMode !== "none" && (
-          <div className="absolute left-2 top-2 z-30 flex flex-col gap-1.5">
+          <div className="absolute left-3 top-3 z-30 flex flex-col gap-2">
             {hasDiscount && (
-              <span className="w-fit rounded-[5px] bg-red-600 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-sm">
+              <span className="rounded bg-red-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                 -{safeSalePercent}%
               </span>
             )}
 
             {!hasDiscount && newArrival && (
-              <span className="w-fit rounded-[5px] bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-sm">
+              <span className="rounded bg-black px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                 New
               </span>
             )}
 
-            {!hasDiscount &&
-              !newArrival &&
-              bestseller && (
-                <span className="w-fit rounded-[5px] bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white shadow-sm">
-                  Best
-                </span>
-              )}
+            {!hasDiscount && !newArrival && bestseller && (
+              <span className="rounded bg-black px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                Best
+              </span>
+            )}
           </div>
         )}
 
         {/* OUT OF STOCK */}
 
         {isOutOfStock && (
-          <div className="absolute right-2 top-2 z-30 rounded-[5px] bg-black/85 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white">
+          <div className="absolute right-3 top-3 z-30 rounded bg-black px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
             Out of Stock
           </div>
         )}
 
-        {/* IMAGE */}
+        {/* PRODUCT IMAGE */}
 
         <img
           src={previewImage}
           alt={name}
-          className={`relative z-10 h-full w-full object-contain px-3 py-4 transition-all duration-500 ${
-            isOutOfStock
+          className={`relative z-10 h-full w-full object-contain p-1 transition-all duration-500 ${isOutOfStock
               ? "grayscale opacity-60"
-              : "group-hover:scale-[1.06]"
-          }`}
+              : "scale-105 group-hover:scale-110"
+            }`}
+          style={{
+            filter: isOutOfStock
+              ? undefined
+              : "drop-shadow(0 18px 24px rgba(0,0,0,0.14))",
+          }}
         />
 
-        <div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-t from-black/[0.06] via-transparent to-white/20" />
-
-        {/* ================= COLOR DOTS ================= */}
+        {/* COLOR DOTS */}
 
         {colorVariants.length > 0 && (
           <div
-            className="absolute bottom-2 left-2 z-30 flex items-center gap-1.5 rounded-[5px] border border-black/10 bg-white/90 px-2 py-1.5 shadow-sm backdrop-blur-md"
-            onMouseLeave={() =>
-              setPreviewImage(defaultImage)
-            }
-            onClick={(e) =>
-              e.stopPropagation()
-            }
+            className="absolute bottom-3 left-3 z-30 flex items-center gap-2 rounded-full bg-white/80 px-2 py-1 backdrop-blur-sm"
+            onMouseLeave={() => setPreviewImage(defaultImage)}
+            onClick={(e) => e.stopPropagation()}
           >
-            {visibleColorVariants.map(
-              (variant) => {
-                const variantImage =
-                  variant.images?.length > 0
-                    ? normalizeImage(
-                        variant.images[0]
-                      )
-                    : defaultImage;
+            {visibleColorVariants.map((variant) => {
+              const variantImage =
+                variant.images?.length > 0
+                  ? normalizeImage(variant.images[0])
+                  : defaultImage;
 
-                return (
-                  <button
-                    key={variant._id}
-                    type="button"
-                    title={getColorLabel({
-                      color: variant.color,
-                      colorHex:
-                        variant.colorHex,
-                    })}
-                    onClick={() => {
-                      if (!variant._id) return;
+              return (
+                <button
+                  key={variant._id}
+                  type="button"
+                  title={getColorLabel({
+                    color: variant.color,
+                    colorHex: variant.colorHex,
+                  })}
+                  onClick={() => {
+                    if (!variant._id) return;
 
-                      navigate(
-                        `/product/${variant._id}`
-                      );
-
-                      window.scrollTo(0, 0);
-                    }}
-                    onMouseEnter={() =>
-                      setPreviewImage(
-                        variantImage
-                      )
-                    }
-                    className={`h-4 w-4 rounded-full border transition-all ${
-                      String(variant._id) ===
-                      String(productId)
-                        ? "scale-110 border-black ring-1 ring-black"
-                        : "border-black/20 hover:border-black"
+                    navigate(`/product/${variant._id}`);
+                    window.scrollTo(0, 0);
+                  }}
+                  onMouseEnter={() => setPreviewImage(variantImage)}
+                  className={`h-4 w-4 rounded-full transition-all ${String(variant._id) === String(productId)
+                      ? "scale-125 ring-2 ring-black"
+                      : "hover:scale-110"
                     }`}
-                    style={{
-                      backgroundColor:
-                        variant.colorHex ||
-                        "#d1d5db",
-                    }}
-                  />
-                );
-              }
-            )}
+                  style={{
+                    backgroundColor: variant.colorHex || "#d1d5db",
+                  }}
+                />
+              );
+            })}
 
             {hiddenColorCount > 0 && (
-              <div className="flex h-4 items-center justify-center rounded-[5px] bg-black px-1.5 text-[8px] font-black text-white">
+              <span className="text-[10px] font-semibold text-gray-500">
                 +{hiddenColorCount}
-              </div>
+              </span>
             )}
           </div>
         )}
 
-        {/* VIEW BUTTON */}
+        {/* ARROW */}
 
-        <div className="absolute bottom-2 right-2 z-30 flex h-8 w-8 translate-y-2 items-center justify-center rounded-[5px] border border-black/10 bg-white text-sm font-black text-black opacity-0 shadow-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="absolute bottom-4 right-4 z-30 text-lg font-light opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
           →
         </div>
       </div>
 
       {/* ================= DETAILS ================= */}
 
-      <div className="flex min-h-[128px] flex-col border-t border-black/10 bg-white p-3 text-left">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">
-              Saint Clothing
-            </p>
+      <div className="pt-5 pb-2">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+          Saint Clothing
+        </p>
 
-            <p className="mt-1 line-clamp-2 text-[13px] font-black uppercase leading-5 text-black">
-              {name}
-            </p>
-          </div>
+        <div className="mt-2 flex items-start justify-between gap-2">
+          <h3 className="line-clamp-2 flex-1 text-[15px] font-semibold leading-5 text-black">
+            {name}
+          </h3>
 
           {colorHex && (
             <span
-              className="mt-1 h-4 w-4 shrink-0 rounded-full border border-black/20"
+              className="mt-1 h-4 w-4 rounded-full border border-black/10"
               style={{
                 backgroundColor: colorHex,
               }}
@@ -342,44 +316,42 @@ const ProductItem = ({
           )}
         </div>
 
-        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">
+        <p className="mt-2 text-xs text-gray-500">
           {getColorLabel({
             color,
             colorHex,
           })}
         </p>
 
-        <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+        <div className="mt-4 flex items-end justify-between">
           {isLoggedIn ? (
-            <div className="min-w-0">
-              {hasDiscount ? (
-                <>
-                  <p className="text-[11px] font-bold text-gray-400 line-through">
-                    {currency}
-                    {safePrice.toFixed(2)}
-                  </p>
-
-                  <p className="text-base font-black leading-none text-red-600">
-                    {currency}
-                    {finalPrice}
-                  </p>
-                </>
-              ) : (
-                <p className="text-base font-black leading-none text-black">
+            hasDiscount ? (
+              <div>
+                <p className="text-sm text-gray-400 line-through">
                   {currency}
                   {safePrice.toFixed(2)}
                 </p>
-              )}
-            </div>
+
+                <p className="text-lg font-bold text-red-600">
+                  {currency}
+                  {finalPrice}
+                </p>
+              </div>
+            ) : (
+              <p className="text-lg font-bold text-black">
+                {currency}
+                {safePrice.toFixed(2)}
+              </p>
+            )
           ) : (
-            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
               Login to see price
             </p>
           )}
 
-          <div className="hidden rounded-[5px] border border-black/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-gray-500 sm:block">
-            View
-          </div>
+          <span className="text-lg transition-transform duration-300 group-hover:translate-x-1">
+            →
+          </span>
         </div>
       </div>
     </div>

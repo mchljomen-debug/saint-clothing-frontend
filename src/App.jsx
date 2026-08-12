@@ -1,5 +1,12 @@
-import React, { useContext } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, {
+    useContext,
+} from "react";
+
+import {
+    Routes,
+    Route,
+    Navigate,
+} from "react-router-dom";
 
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
@@ -33,124 +40,282 @@ import { ShopContext } from "./context/ShopContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+/* =========================================================
+   BACKEND URL
+========================================================= */
+
 export const backendUrl =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+    import.meta.env.VITE_BACKEND_URL?.trim() ||
+    "http://localhost:4000";
 
 export const currency = "₱";
 
-const ProtectedRoute = ({ children }) => {
-  const { token, authReady } = useContext(ShopContext);
+/* =========================================================
+   PROTECTED ROUTE
+========================================================= */
 
-  if (!authReady) {
-    return null;
-  }
+const ProtectedRoute = ({
+    children,
+}) => {
+    const {
+        token,
+        authReady,
+    } = useContext(ShopContext);
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+    /*
+     * Wait until ShopContext finishes
+     * checking localStorage/backend.
+     */
+    if (!authReady) {
+        return (
+            <div className="flex min-h-[50vh] items-center justify-center bg-white">
+                <div className="text-sm text-gray-500">
+                    Loading...
+                </div>
+            </div>
+        );
+    }
 
-  return children;
+    /*
+     * No token = send user to login.
+     */
+    if (!token) {
+        return (
+            <Navigate
+                to="/login"
+                replace
+            />
+        );
+    }
+
+    /*
+     * Logged in = allow page.
+     */
+    return children;
 };
+
+/* =========================================================
+   APP
+========================================================= */
 
 const App = () => {
-  return (
-    <div className="w-full overflow-x-hidden pt-[72px] md:pt-[80px]">
-      <ToastContainer />
-      <ScrollToTop />
-      <Navbar />
-      <SearchBar />
+    return (
+        <div className="w-full overflow-x-hidden pt-[72px] md:pt-[55px]">
+            <ToastContainer />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/collection" element={<Collection />} />
-        <Route path="/latest" element={<LatestCollection />} />
-        <Route path="/best-sellers" element={<BestSeller />} />
-        <Route path="/style-builder" element={<StyleBuilder />} />
+            <ScrollToTop />
 
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/product/:productId" element={<Product />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/verify" element={<Verify />} />
-        <Route path="/policies" element={<Policies />} />
+            <Navbar />
 
-        <Route
-          path="/place-order"
-          element={
-            <ProtectedRoute>
-              <PlaceOrder />
-            </ProtectedRoute>
-          }
-        />
+            <SearchBar />
 
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <Orders />
-            </ProtectedRoute>
-          }
-        />
+            <Routes>
+                {/* =========================================
+                    PUBLIC ROUTES
+                ========================================= */}
 
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
+                <Route
+                    path="/"
+                    element={<Home />}
+                />
 
-        <Route
-          path="/myaccount"
-          element={
-            <ProtectedRoute>
-              <MyAccount />
-            </ProtectedRoute>
-          }
-        />
+                <Route
+                    path="/collection"
+                    element={<Collection />}
+                />
 
-        <Route
-          path="/preferences"
-          element={
-            <ProtectedRoute>
-              <Preferences />
-            </ProtectedRoute>
-          }
-        />
+                <Route
+                    path="/latest"
+                    element={
+                        <LatestCollection />
+                    }
+                />
 
-        <Route
-          path="/support"
-          element={
-            <ProtectedRoute>
-              <Support />
-            </ProtectedRoute>
-          }
-        />
+                <Route
+                    path="/best-sellers"
+                    element={
+                        <BestSeller />
+                    }
+                />
 
-        <Route
-          path="/manual-payment/:orderId"
-          element={
-            <ProtectedRoute>
-              <ManualPayment />
-            </ProtectedRoute>
-          }
-        />
+                <Route
+                    path="/style-builder"
+                    element={
+                        <StyleBuilder />
+                    }
+                />
 
-        <Route
-          path="/payment-submitted"
-          element={
-            <ProtectedRoute>
-              <PaymentSubmitted />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+                <Route
+                    path="/about"
+                    element={<About />}
+                />
 
-      <Footer />
-    </div>
-  );
+                <Route
+                    path="/contact"
+                    element={<Contact />}
+                />
+
+                <Route
+                    path="/product/:productId"
+                    element={<Product />}
+                />
+
+                <Route
+                    path="/login"
+                    element={<Login />}
+                />
+
+                <Route
+                    path="/verify"
+                    element={<Verify />}
+                />
+
+                <Route
+                    path="/policies"
+                    element={<Policies />}
+                />
+
+                {/* =========================================
+                    PROTECTED CART
+
+                    Not logged in:
+                    /cart -> /login
+
+                    Logged in:
+                    /cart -> Cart page
+                ========================================= */}
+
+                <Route
+                    path="/cart"
+                    element={
+                        <ProtectedRoute>
+                            <Cart />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED PLACE ORDER
+                ========================================= */}
+
+                <Route
+                    path="/place-order"
+                    element={
+                        <ProtectedRoute>
+                            <PlaceOrder />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED ORDERS
+                ========================================= */}
+
+                <Route
+                    path="/orders"
+                    element={
+                        <ProtectedRoute>
+                            <Orders />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED PROFILE
+                ========================================= */}
+
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute>
+                            <Profile />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED MY ACCOUNT
+                ========================================= */}
+
+                <Route
+                    path="/myaccount"
+                    element={
+                        <ProtectedRoute>
+                            <MyAccount />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED PREFERENCES
+                ========================================= */}
+
+                <Route
+                    path="/preferences"
+                    element={
+                        <ProtectedRoute>
+                            <Preferences />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED SUPPORT
+                ========================================= */}
+
+                <Route
+                    path="/support"
+                    element={
+                        <ProtectedRoute>
+                            <Support />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED MANUAL PAYMENT
+                ========================================= */}
+
+                <Route
+                    path="/manual-payment/:orderId"
+                    element={
+                        <ProtectedRoute>
+                            <ManualPayment />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    PROTECTED PAYMENT SUBMITTED
+                ========================================= */}
+
+                <Route
+                    path="/payment-submitted"
+                    element={
+                        <ProtectedRoute>
+                            <PaymentSubmitted />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* =========================================
+                    FALLBACK
+                ========================================= */}
+
+                <Route
+                    path="*"
+                    element={
+                        <Navigate
+                            to="/"
+                            replace
+                        />
+                    }
+                />
+            </Routes>
+
+            <Footer />
+        </div>
+    );
 };
 
-export default App; 
+export default App;

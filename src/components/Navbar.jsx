@@ -1,11 +1,12 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const {
     setShowSearch,
@@ -13,242 +14,418 @@ const Navbar = () => {
     token,
     setToken,
     setCartItems,
-    authReady,
     setUser,
   } = useContext(ShopContext);
 
-  const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
+  /* =========================================================
+     CART COUNT
+  ========================================================= */
   useEffect(() => {
     let count = 0;
-    for (const productId in cartItems) {
-      for (const size in cartItems[productId]) {
-        count += cartItems[productId][size];
+
+    for (const productId in cartItems || {}) {
+      for (const size in cartItems[productId] || {}) {
+        count += cartItems[productId][size] || 0;
       }
     }
+
     setCartCount(count);
   }, [cartItems]);
 
+  /* =========================================================
+     CLOSE MOBILE MENU WHEN ROUTE CHANGES
+  ========================================================= */
   useEffect(() => {
     setVisible(false);
   }, [location.pathname]);
 
+  /* =========================================================
+     PROFILE NAVIGATION
+     
+     Logged in     -> /profile
+     Not logged in -> /login
+  ========================================================= */
+  const goToProfile = () => {
+    if (token) {
+      navigate("/profile");
+    } else {
+      navigate("/login");
+    }
+
+    setVisible(false);
+  };
+
+  /* =========================================================
+     ORDERS NAVIGATION
+     
+     Logged in     -> /orders
+     Not logged in -> /login
+  ========================================================= */
+  const goToOrders = () => {
+    if (token) {
+      navigate("/orders");
+    } else {
+      navigate("/login");
+    }
+
+    setVisible(false);
+  };
+
+  /* =========================================================
+     CART NAVIGATION
+     
+     Logged in     -> /cart
+     Not logged in -> /login
+  ========================================================= */
+  const goToCart = () => {
+    if (token) {
+      navigate("/cart");
+    } else {
+      navigate("/login");
+    }
+
+    setVisible(false);
+  };
+
+  /* =========================================================
+     LOGOUT
+  ========================================================= */
   const logout = () => {
     setUser(null);
     setToken("");
     setCartItems({});
+
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     toast.success("Logged out");
+
     navigate("/");
     setVisible(false);
   };
 
-  // ✅ UPDATED: BUILD FIT only if logged in
+  /* =========================================================
+     NAVIGATION ITEMS
+  ========================================================= */
   const navItems = [
-    { label: "HOME", path: "/" },
-    { label: "COLLECTION", path: "/collection" },
-    ...(token ? [{ label: "BUILD FIT", path: "/style-builder" }] : []),
-    { label: "ABOUT", path: "/about" },
-    { label: "CONTACT", path: "/contact" },
+    {
+      label: "HOME",
+      path: "/",
+    },
+    {
+      label: "COLLECTION",
+      path: "/collection",
+    },
+
+    ...(token
+      ? [
+          {
+            label: "BUILD FIT",
+            path: "/style-builder",
+          },
+        ]
+      : []),
+
+    {
+      label: "ABOUT",
+      path: "/about",
+    },
+    {
+      label: "CONTACT",
+      path: "/contact",
+    },
   ];
 
   return (
     <>
+      {/* =====================================================
+          MAIN NAVBAR
+      ===================================================== */}
       <div
         data-navbar="true"
-        className="fixed top-0 left-0 w-full z-[100] border-b border-white/10 backdrop-blur-md"
+        className="fixed left-0 top-0 z-[100] w-full border-b border-white/5 backdrop-blur-xl"
         style={{
           background:
-            "linear-gradient(90deg, #0A0A0A 0%, #1A1A1A 50%, #0F0F0F 100%)",
+            "linear-gradient(90deg,#0A0A0A 0%,#141414 50%,#0A0A0A 100%)",
         }}
       >
-        <div className="flex items-center justify-between py-4 sm:py-6 px-4 sm:px-5 md:px-8 lg:px-10 max-w-[1440px] mx-auto">
-          
-          {/* LOGO */}
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
+        <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-5 lg:px-10">
+
+          {/* =================================================
+              LOGO
+          ================================================= */}
+          <Link
+            to="/"
+            className="group flex items-center gap-1"
+          >
             <img
               src={assets.logo}
               alt="Saint Clothing"
-              className="w-8 h-8 sm:w-9 sm:h-9 object-contain invert brightness-110 contrast-125 transition-transform duration-300 group-hover:scale-110 shrink-0"
+              className="h-[90px] w-[90px] object-contain invert brightness-110 contrast-125 transition-transform duration-300 group-hover:scale-110"
             />
-            <h1 className="font-black text-[13px] sm:text-lg md:text-xl text-white tracking-[0.14em] sm:tracking-[0.2em] uppercase group-hover:tracking-[0.24em] sm:group-hover:tracking-[0.3em] transition-all duration-300 truncate">
+
+            <h1 className="truncate text-[20px] font-black uppercase tracking-[0.05em] text-white transition-all duration-300 group-hover:tracking-[0.12em]">
               Saint Clothing
             </h1>
           </Link>
 
-          {/* DESKTOP NAV */}
-          <ul className="hidden md:flex gap-8 lg:gap-12 text-white mx-auto">
+          {/* =================================================
+              DESKTOP NAVIGATION
+          ================================================= */}
+          <ul className="mx-auto hidden items-center gap-8 md:flex">
             {navItems.map((item) => (
-              <NavLink key={item.label} to={item.path}>
+              <NavLink
+                key={item.label}
+                to={item.path}
+              >
                 {({ isActive }) => (
-                  <div className="flex flex-col items-center gap-1 group transition-all duration-300">
+                  <div className="group relative py-1">
                     <p
-                      className={`text-[12px] lg:text-[13px] tracking-[0.28em] uppercase font-medium ${
-                        isActive ? "text-white" : "text-gray-400"
+                      className={`text-[12px] font-medium uppercase tracking-[0.18em] transition ${
+                        isActive
+                          ? "text-white"
+                          : "text-gray-400 group-hover:text-white"
                       }`}
                     >
                       {item.label}
                     </p>
 
                     <span
-                      className={`block h-[1px] bg-white transition-all duration-300 ${
-                        isActive ? "w-full" : "w-0 group-hover:w-full"
+                      className={`absolute -bottom-1 left-0 h-[1px] bg-white transition-all duration-300 ${
+                        isActive
+                          ? "w-full"
+                          : "w-0 group-hover:w-full"
                       }`}
-                    ></span>
+                    />
                   </div>
                 )}
               </NavLink>
             ))}
           </ul>
 
-          {/* RIGHT SIDE */}
-          <div className="flex items-center gap-3 sm:gap-5 md:gap-6 shrink-0">
-            
-            {/* SEARCH */}
+          {/* =================================================
+              RIGHT SIDE
+          ================================================= */}
+          <div className="flex items-center gap-4">
+
+            {/* =================================================
+                SEARCH
+            ================================================= */}
             <button
               type="button"
               onClick={() => {
                 setShowSearch(true);
                 navigate("/collection");
+                setVisible(false);
               }}
-              className="p-1"
+              className="cursor-pointer p-1"
+              aria-label="Search"
             >
               <img
                 src={assets.search_icon}
-                className="w-4 sm:w-5 cursor-pointer invert opacity-80 hover:opacity-100 transition"
                 alt="search"
+                className="w-5 invert opacity-80 transition hover:opacity-100"
               />
             </button>
 
-            {/* PROFILE */}
+            {/* =================================================
+                PROFILE
+            ================================================= */}
             <div className="group relative hidden md:block">
               <button
                 type="button"
-                onClick={() => {
-                  if (!authReady) return;
-                  if (token) navigate("/profile");
-                  else navigate("/login");
-                }}
-                className="p-1"
+                onClick={goToProfile}
+                className="cursor-pointer p-1"
+                aria-label="Profile"
               >
                 <img
-                  className="w-4 sm:w-5 cursor-pointer invert opacity-80 hover:opacity-100 transition"
                   src={assets.profile_icon}
                   alt="profile"
+                  className="w-5 invert opacity-80 transition hover:opacity-100"
                 />
               </button>
 
+              {/* PROFILE DROPDOWN
+                  ONLY WHEN LOGGED IN
+              */}
               {token && (
-                <div className="group-hover:block hidden absolute right-0 pt-4 z-50">
-                  <div className="flex flex-col gap-2 w-44 py-3 px-5 bg-black border border-white/10 text-white">
-                    <p
-                      onClick={() => navigate("/profile")}
-                      className={`cursor-pointer hover:text-white/70 ${
-                        location.pathname === "/profile"
-                          ? "text-white"
-                          : "text-gray-400"
-                      }`}
+                <div className="absolute right-0 hidden pt-3 group-hover:block">
+                  <div className="w-48 rounded-md border border-white/10 bg-[#111] py-3 shadow-xl">
+
+                    <button
+                      type="button"
+                      onClick={goToProfile}
+                      className="block w-full cursor-pointer px-5 py-2 text-left text-sm text-gray-300 transition hover:bg-white/5 hover:text-white"
                     >
                       My Profile
-                    </p>
+                    </button>
 
-                    <p
-                      onClick={() => navigate("/orders")}
-                      className={`cursor-pointer hover:text-white/70 ${
-                        location.pathname === "/orders"
-                          ? "text-white"
-                          : "text-gray-400"
-                      }`}
+                    <button
+                      type="button"
+                      onClick={goToOrders}
+                      className="block w-full cursor-pointer px-5 py-2 text-left text-sm text-gray-300 transition hover:bg-white/5 hover:text-white"
                     >
                       Orders
-                    </p>
+                    </button>
 
-                    <hr className="border-white/10" />
+                    <div className="my-2 border-t border-white/10" />
 
-                    <p
+                    <button
+                      type="button"
                       onClick={logout}
-                      className="cursor-pointer hover:text-white/70"
+                      className="block w-full cursor-pointer px-5 py-2 text-left text-sm text-gray-300 transition hover:bg-white/5 hover:text-white"
                     >
                       Logout
-                    </p>
+                    </button>
+
                   </div>
                 </div>
               )}
             </div>
 
-            {/* CART */}
-            <Link to="/cart" id="cart-icon-target" className="relative p-1">
+            {/* =================================================
+                CART
+            ================================================= */}
+            <button
+              type="button"
+              onClick={goToCart}
+              className="relative cursor-pointer p-1"
+              aria-label="Cart"
+            >
               <img
                 src={assets.cart_icon}
-                className="w-4 sm:w-5 invert opacity-80 hover:opacity-100 transition"
                 alt="cart"
+                className="w-5 invert opacity-80 transition hover:opacity-100"
               />
 
-              {cartCount > 0 && (
-                <p className="absolute right-[-3px] bottom-[-3px] w-4 h-4 flex items-center justify-center bg-white text-black text-[9px] font-bold rounded-full">
+              {token && cartCount > 0 && (
+                <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[8px] font-bold text-black">
                   {cartCount}
-                </p>
+                </span>
               )}
-            </Link>
+            </button>
 
-            {/* MOBILE MENU BUTTON */}
+            {/* =================================================
+                MOBILE MENU BUTTON
+            ================================================= */}
             <button
               type="button"
               onClick={() => setVisible(true)}
-              className="md:hidden p-1"
+              className="cursor-pointer p-1 md:hidden"
+              aria-label="Open menu"
             >
               <img
                 src={assets.menu_icon}
-                className="w-5 sm:w-6 cursor-pointer invert opacity-80 hover:opacity-100 transition"
                 alt="menu"
+                className="w-6 invert opacity-80 transition hover:opacity-100"
               />
             </button>
+
           </div>
         </div>
       </div>
 
-      {/* MOBILE MENU */}
+      {/* =====================================================
+          MOBILE MENU
+      ===================================================== */}
       <div
-        className={`fixed inset-0 z-[120] md:hidden transition-all duration-300 ${
-          visible ? "pointer-events-auto" : "pointer-events-none"
+        className={`fixed inset-0 z-[120] transition-all duration-300 md:hidden ${
+          visible
+            ? "pointer-events-auto"
+            : "pointer-events-none"
         }`}
       >
+        {/* BACKDROP */}
         <div
           onClick={() => setVisible(false)}
-          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
-            visible ? "opacity-100" : "opacity-0"
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
+            visible
+              ? "opacity-100"
+              : "opacity-0"
           }`}
         />
 
+        {/* MENU PANEL */}
         <div
-          className={`absolute top-0 right-0 h-full w-[84%] max-w-[340px] bg-[#0A0A0A] border-l border-white/10 shadow-[-10px_0_30px_rgba(0,0,0,0.35)] transition-transform duration-300 ${
-            visible ? "translate-x-0" : "translate-x-full"
+          className={`absolute right-0 top-0 h-full w-[82%] max-w-[320px] border-l border-white/10 bg-[#0A0A0A] transition-transform duration-300 ${
+            visible
+              ? "translate-x-0"
+              : "translate-x-full"
           }`}
         >
-          <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-            <h2 className="text-white text-sm font-black uppercase tracking-[0.18em]">
+          {/* HEADER */}
+          <div className="flex h-14 items-center justify-between border-b border-white/10 px-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.22em] text-white">
               Saint Clothing
             </h2>
 
-            <button onClick={() => setVisible(false)}>×</button>
+            <button
+              type="button"
+              onClick={() => setVisible(false)}
+              className="cursor-pointer text-2xl text-white"
+            >
+              ×
+            </button>
           </div>
 
-          <div className="px-5 py-5">
+          {/* MOBILE NAV */}
+          <div className="px-6 py-5">
+
             {navItems.map((item) => (
               <button
+                type="button"
                 key={item.label}
                 onClick={() => {
                   navigate(item.path);
                   setVisible(false);
                 }}
-                className="block w-full text-left py-3 text-white"
+                className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
               >
                 {item.label}
               </button>
             ))}
+
+            {/* PROFILE */}
+            <button
+              type="button"
+              onClick={goToProfile}
+              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
+            >
+              PROFILE
+            </button>
+
+            {/* CART */}
+            <button
+              type="button"
+              onClick={goToCart}
+              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
+            >
+              CART
+            </button>
+
+            {/* ORDERS */}
+            <button
+              type="button"
+              onClick={goToOrders}
+              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
+            >
+              ORDERS
+            </button>
+
+            {/* LOGOUT */}
+            {token && (
+              <button
+                type="button"
+                onClick={logout}
+                className="block w-full cursor-pointer py-4 text-left text-sm uppercase tracking-[0.18em] text-red-400"
+              >
+                LOGOUT
+              </button>
+            )}
+
           </div>
         </div>
       </div>

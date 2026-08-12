@@ -217,68 +217,108 @@ const Hero = () => {
       )}
 
       {/* ================= HERO ================= */}
-      <Carousel
-        arrows
-        infinite
-        autoplay
-        autoplaySpeed={3000}
-        speed={700}
-        effect="fade"
-        dots
-        pauseOnHover={false}
-      >
-        {heroData.slides.map((slide, index) => (
-          <div
-            key={index}
-            className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[720px]"
-          >
-            <img
-              className="w-full h-full object-cover"
-              src={slide.image}
-              alt={slide.title}
-            />
+      <div className="hero-container">
+        <Carousel
+          arrows
+          infinite
+          autoplay
+          autoplaySpeed={3000}
+          speed={700}
+          effect="fade"
+          dots
+          pauseOnHover={false}
+          className="hero-carousel"
+        >
+          {heroData.slides.map((slide, index) => (
+            <div
+              key={index}
+              className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[640px]"
+            >
+              <img
+                className="w-full h-full object-cover"
+                src={slide.image}
+                alt={slide.title}
+              />
 
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/20" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent" />
 
-            <div className="absolute inset-0 flex items-center px-5 sm:px-6 md:px-14 lg:px-24 z-10 pt-12 sm:pt-14">
-              <div className="max-w-3xl">
-                {slide.action === "ar" && (
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-md">
-                    <span className="h-2 w-2 rounded-full bg-white" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white">
-                      Mobile AR Feature
-                    </span>
-                  </div>
-                )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
-                <h1 className="text-white uppercase font-black text-3xl sm:text-5xl md:text-7xl leading-[0.95]">
-                  {slide.title}
-                </h1>
+              <div className="absolute inset-0 opacity-[0.12] mix-blend-overlay">
+                <div
+                  className="h-full w-full"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)",
+                    backgroundSize: "80px 80px",
+                  }}
+                />
+              </div>
 
-                {slide.subtitle && (
-                  <p className="mt-4 text-xs sm:text-sm md:text-base font-bold uppercase tracking-[0.22em] text-white/80">
-                    {slide.subtitle}
+              <div className="absolute inset-0 z-10 flex items-end px-5 pb-16 sm:px-8 sm:pb-20 md:px-14 md:pb-24 lg:px-24 lg:pb-28">
+                <div className="relative max-w-4xl">
+                  {slide.action === "ar" && (
+                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-md">
+                      <span className="h-2 w-2 rounded-full bg-white" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white">
+                        Mobile AR Feature
+                      </span>
+                    </div>
+                  )}
+
+                  <h1 className="max-w-4xl text-white uppercase font-black text-4xl sm:text-7xl md:text-7xl lg:text-[7rem] leading-[0.78] tracking-[-0.08em]">
+                    {slide.title}
+                  </h1>
+
+                  {slide.subtitle && (
+                    <div className="mt-7 flex items-center gap-4">
+                      <span className="h-px w-12 bg-white/70" />
+
+                      <p className="text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-[0.35em] text-white/75">
+                        {slide.subtitle}
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="mt-5 max-w-md text-xs sm:text-sm md:text-base leading-6 text-white/60">
+                    {slide.description}
                   </p>
-                )}
 
-                <p className="mt-4 text-sm md:text-base text-white/70 max-w-lg">
-                  {slide.description}
-                </p>
-
-                <button
-                  onClick={() => handleAction(slide.action)}
-                  className="mt-6 bg-white text-black px-8 py-3 uppercase tracking-[0.22em] text-xs font-bold border border-white hover:bg-transparent hover:text-white transition"
-                >
-                  {slide.cta}
-                </button>
+                  <button
+                    onClick={() => handleAction(slide.action)}
+                    className="group mt-7 inline-flex items-center gap-8 border border-white/40 bg-white px-7 py-4 text-[9px] font-black uppercase tracking-[0.28em] text-black transition-all duration-300 hover:bg-transparent hover:text-white"
+                  >
+                    <span>{slide.cta}</span>
+                    <span className="text-lg transition-transform duration-300 group-hover:translate-x-1">
+                      →
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </Carousel>
+          ))}
+        </Carousel>
+      </div>
 
       <style jsx="true">{`
+        .hero-carousel,
+        .hero-carousel .slick-list,
+        .hero-carousel .slick-track {
+          width: 100%;
+        }
+
+        .hero-carousel .slick-list {
+          overflow: hidden;
+        }
+
+        .hero-carousel .slick-slide {
+          height: auto !important;
+        }
+
+        .hero-carousel .slick-slide > div {
+          height: 100%;
+        }
+
         .ticker-wrap {
           position: absolute;
           top: 0;
@@ -303,7 +343,7 @@ const Hero = () => {
         .ticker-text {
           display: flex;
           white-space: nowrap;
-          padding: 10px 0;
+          padding: 3px 0;
         }
 
         .ticker-item {

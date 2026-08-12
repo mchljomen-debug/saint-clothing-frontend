@@ -1,48 +1,88 @@
-import React from 'react'
+import React from "react";
 
 const NewsletterBox = () => {
+const onSubmitHandler = (event) => {
+event.preventDefault();
+};
 
-    const onSubmitHandler = (event) => {
-        event.preventDefault();
-    }
+return ( <section className="relative overflow-hidden border border-black bg-[#f5f5f2]">
+{/* Background typography */} <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none"> <span className="text-[18vw] font-black uppercase leading-none tracking-[-0.12em] text-black/[0.025]">
+SAINT </span> </div>
 
-  return (
-    <div className='text-center pt-1 bg-white rounded-sm relative overflow-hidden border-b border-gray-100 mt-10'>
-      
-      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full opacity-[0.03] pointer-events-none select-none'>
-        <p className='text-[8rem] md:text-[12rem] font-black tracking-tighter uppercase'>SAINT</p>
-      </div>
+  {/* Technical lines */}
+  <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-px bg-black/[0.06]" />
+  <div className="pointer-events-none absolute bottom-0 left-[10%] top-0 w-px bg-black/[0.04]" />
+  <div className="pointer-events-none absolute bottom-0 right-[10%] top-0 w-px bg-black/[0.04]" />
 
-      <div className='relative z-10 px-4'>
-        <h2 className='text-2xl md:text-3xl font-extrabold text-black uppercase tracking-widest'>
-          Join the <span className='text-gray-500'>Inner Circle</span>
+  <div className="relative z-10 px-5 py-8 sm:px-8 sm:py-10 md:px-10 md:py-12">
+
+    {/* Header */}
+    <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+
+      <div>
+        <div className="mb-3 flex items-center gap-3">
+          <span className="h-px w-7 bg-black" />
+
+          <p className="text-[8px] font-black uppercase tracking-[0.4em] text-black/40">
+            Saint / Inner Circle
+          </p>
+        </div>
+
+        <h2 className="text-4xl font-black uppercase leading-[0.85] tracking-[-0.07em] text-black sm:text-5xl md:text-6xl">
+          Stay
+          <br />
+          Connected.
         </h2>
-        
-        <p className='text-gray-500 mt-4 text-xs md:text-sm font-semibold uppercase tracking-[0.3em]'>
-          Subscribe for exclusive access to new drops & <span className='text-black underline decoration-black underline-offset-8 font-bold'>10% OFF</span> your first order.
-        </p>
-
-        <form onSubmit={onSubmitHandler} className='w-full sm:w-[600px] flex flex-col sm:flex-row items-stretch gap-0 mx-auto mt-12 border border-black overflow-hidden shadow-sm'>
-          <input 
-            className='w-full sm:flex-1 outline-none bg-white py-5 px-6 text-sm font-medium placeholder:text-gray-400 placeholder:uppercase' 
-            type="email" 
-            placeholder='Enter your email address' 
-            required
-          />
-          <button 
-            type='submit' 
-            className='bg-black text-white text-[11px] font-bold tracking-[0.3em] px-12 py-5 sm:py-0 hover:bg-gray-800 transition-all duration-300 uppercase'
-          >
-            Subscribe
-          </button>
-        </form>
-        
-        <p className='text-[10px] text-gray-400 mt-8 font-medium uppercase tracking-widest'>
-          By subscribing, you agree to receive our latest updates and offers.
-        </p>
       </div>
-    </div>
-  )
-}
 
-export default NewsletterBox
+      <p className="max-w-sm text-[10px] font-medium uppercase leading-5 tracking-[0.12em] text-black/40 md:text-right">
+        New drops. Exclusive releases.
+        <br />
+        Saint updates.
+      </p>
+    </div>
+
+    {/* Form */}
+    <form
+      onSubmit={onSubmitHandler}
+      className="mt-8 flex flex-col border border-black bg-white sm:flex-row"
+    >
+      <input
+        className="min-w-0 flex-1 bg-transparent px-4 py-4 text-xs font-medium outline-none placeholder:text-black/30 sm:px-5"
+        type="email"
+        placeholder="ENTER YOUR EMAIL ADDRESS"
+        required
+      />
+
+      <button
+        type="submit"
+        className="group flex items-center justify-between gap-8 bg-black px-5 py-4 text-white transition hover:bg-[#222]"
+      >
+        <span className="text-[8px] font-black uppercase tracking-[0.28em]">
+          Subscribe
+        </span>
+
+        <span className="text-base transition-transform duration-300 group-hover:translate-x-1">
+          →
+        </span>
+      </button>
+    </form>
+
+    {/* Bottom information */}
+    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-[8px] font-black uppercase tracking-[0.25em] text-black/30">
+        10% off your first order
+      </p>
+
+      <p className="text-[8px] font-black uppercase tracking-[0.25em] text-black/30">
+        No spam / Unsubscribe anytime
+      </p>
+    </div>
+  </div>
+</section>
+
+
+);
+};
+
+export default NewsletterBox;
