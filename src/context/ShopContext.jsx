@@ -12,6 +12,10 @@ import axios from "axios";
 
 export const ShopContext = createContext();
 
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
 const SIZE_ORDER = [
     "S",
     "M",
@@ -30,6 +34,13 @@ const DEFAULT_CATEGORIES = [
 ];
 
 /* =========================================================
+   BACKEND URL
+========================================================= */
+
+const DEFAULT_BACKEND_URL =
+    "https://saint-clothing-backend-lzs6.onrender.com";
+
+/* =========================================================
    STOCK NORMALIZATION
 ========================================================= */
 
@@ -40,16 +51,24 @@ const normalizeStockObject = (stock = {}) => {
                 ? JSON.parse(stock)
                 : stock || {};
 
+        if (
+            typeof stockObj !== "object" ||
+            Array.isArray(stockObj)
+        ) {
+            throw new Error(
+                "Invalid stock object"
+            );
+        }
+
         const normalized = {};
 
         SIZE_ORDER.forEach((size) => {
-            const matchingKey = Object.keys(
-                stockObj
-            ).find(
-                (key) =>
-                    String(key).toUpperCase() ===
-                    size
-            );
+            const matchingKey =
+                Object.keys(stockObj).find(
+                    (key) =>
+                        String(key).toUpperCase() ===
+                        size
+                );
 
             normalized[size] = Number(
                 matchingKey
@@ -136,18 +155,25 @@ const ShopContextProvider = ({
     const currency = "₱";
     const delivery_fee = 10;
 
+    const navigate = useNavigate();
+
     /* =====================================================
        BACKEND URL
-
-       .env:
-       VITE_BACKEND_URL=https://saint-clothing-backend-lzs6.onrender.com
     ===================================================== */
 
-    const backendUrl =
-        import.meta.env.VITE_BACKEND_URL?.trim() ||
-        "http://localhost:4000";
+    const backendUrl = (
+        import.meta.env.VITE_BACKEND_URL ||
+        DEFAULT_BACKEND_URL
+    )
+        .trim()
+        .replace(/\/+$/, "");
 
-    const [search, setSearch] = useState("");
+    /* =====================================================
+       STATE
+    ===================================================== */
+
+    const [search, setSearch] =
+        useState("");
 
     const [showSearch, setShowSearch] =
         useState(false);
@@ -175,70 +201,133 @@ const ShopContextProvider = ({
     const [authReady, setAuthReady] =
         useState(false);
 
-    const navigate = useNavigate();
-
-    const pollingRef = useRef(null);
+    const pollingRef =
+        useRef(null);
 
     /* =====================================================
        AUTH HEADERS
     ===================================================== */
 
-    const getAuthHeaders = useCallback(
-        (userToken) => {
-            if (!userToken) {
+    const getAuthHeaders =
+        useCallback((userToken) => {
+            const cleanToken =
+                String(
+                    userToken || ""
+                ).trim();
+
+            if (!cleanToken) {
                 return {};
             }
 
             return {
-                Authorization: `Bearer ${userToken}`,
+                Authorization: `Bearer ${cleanToken}`,
             };
-        },
-        []
-    );
+        }, []);
 
     /* =====================================================
-       CLEAR AUTH
+       CLEAR AUTH DATA
     ===================================================== */
 
-    const clearAuthData = useCallback(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+    const clearAuthData =
+        useCallback(() => {
+            console.log(
+                "Clearing invalid authentication data."
+            );
 
-        setToken("");
-        setUser(null);
-        setCartItems({});
-        setCartCount(0);
-    }, []);
+            localStorage.removeItem(
+                "token"
+            );
+
+            localStorage.removeItem(
+                "user"
+            );
+
+            setToken("");
+            setUser(null);
+            setCartItems({});
+            setCartCount(0);
+
+            if (pollingRef.current) {
+                clearInterval(
+                    pollingRef.current
+                );
+
+                pollingRef.current =
+                    null;
+            }
+        }, []);
 
     /* =====================================================
        CATEGORIES
     ===================================================== */
 
-    const getCategoriesData = useCallback(
-        async (currentProducts = []) => {
-            try {
-                const response =
-                    await axios.get(
-                        `${backendUrl}/api/category/list`,
-                        {
-                            timeout: 20000,
-                        }
-                    );
+    const getCategoriesData =
+        useCallback(
+            async (
+                currentProducts = []
+            ) => {
+                try {
+                    const response =
+                        await axios.get(
+                            `${backendUrl}/api/category/list`,
+                            {
+                                timeout: 20000,
+                            }
+                        );
 
-                if (
-                    response.data?.success
-                ) {
-                    const backendCategories =
-                        (
-                            response.data
-                                .categories ||
-                            []
-                        )
-                            .map(
-                                (item) =>
-                                    item.name
+                    if (
+                        response.data
+                            ?.success
+                    ) {
+                        const backendCategories =
+                            (
+                                response
+                                    .data
+                                    .categories ||
+                                []
                             )
-                            .filter(Boolean);
+                                .map(
+                                    (
+                                        item
+                                    ) =>
+                                        item.name
+                                )
+                                .filter(
+                                    Boolean
+                                );
+
+                        const productCategories =
+                            (
+                                currentProducts ||
+                                []
+                            )
+                                .map(
+                                    (
+                                        item
+                                    ) =>
+                                        item.category
+                                )
+                                .filter(
+                                    Boolean
+                                );
+
+                        setCategoryOptions(
+                            Array.from(
+                                new Set([
+                                    ...DEFAULT_CATEGORIES,
+                                    ...backendCategories,
+                                    ...productCategories,
+                                ])
+                            )
+                        );
+                    }
+                } catch (error) {
+                    console.log(
+                        "Category fetch error:",
+                        error.response
+                            ?.data ||
+                            error.message
+                    );
 
                     const productCategories =
                         (
@@ -246,376 +335,437 @@ const ShopContextProvider = ({
                             []
                         )
                             .map(
-                                (item) =>
+                                (
+                                    item
+                                ) =>
                                     item.category
                             )
-                            .filter(Boolean);
+                            .filter(
+                                Boolean
+                            );
 
                     setCategoryOptions(
                         Array.from(
                             new Set([
                                 ...DEFAULT_CATEGORIES,
-                                ...backendCategories,
                                 ...productCategories,
                             ])
                         )
                     );
                 }
-            } catch (error) {
-                console.log(
-                    "Category fetch error:",
-                    error.response?.data ||
-                        error.message
-                );
-
-                const productCategories =
-                    (
-                        currentProducts ||
-                        []
-                    )
-                        .map(
-                            (item) =>
-                                item.category
-                        )
-                        .filter(Boolean);
-
-                setCategoryOptions(
-                    Array.from(
-                        new Set([
-                            ...DEFAULT_CATEGORIES,
-                            ...productCategories,
-                        ])
-                    )
-                );
-            }
-        },
-        [backendUrl]
-    );
+            },
+            [backendUrl]
+        );
 
     /* =====================================================
        CURRENT USER
-
-       This verifies the token against Render.
     ===================================================== */
 
-    const fetchCurrentUser = useCallback(
-        async (userToken) => {
-            if (!userToken) {
-                return null;
-            }
+    const fetchCurrentUser =
+        useCallback(
+            async (
+                userToken,
+                options = {}
+            ) => {
+                const {
+                    clearOn401 = true,
+                    silent = true,
+                } = options;
 
-            try {
-                const response =
-                    await axios.post(
-                        `${backendUrl}/api/user/me`,
-                        {},
-                        {
-                            headers:
-                                getAuthHeaders(
-                                    userToken
-                                ),
-                            timeout: 20000,
-                        }
+                const cleanToken =
+                    String(
+                        userToken || ""
+                    ).trim();
+
+                if (!cleanToken) {
+                    return null;
+                }
+
+                try {
+                    console.log(
+                        "Verifying user token..."
                     );
 
-                if (
-                    response.data?.success &&
-                    response.data?.user
-                ) {
-                    const currentUser =
-                        response.data.user;
+                    const response =
+                        await axios.post(
+                            `${backendUrl}/api/user/me`,
+                            {},
+                            {
+                                headers:
+                                    getAuthHeaders(
+                                        cleanToken
+                                    ),
+                                timeout: 20000,
+                            }
+                        );
 
-                    setUser(currentUser);
+                    if (
+                        response.data
+                            ?.success &&
+                        response.data
+                            ?.user
+                    ) {
+                        const currentUser =
+                            response.data
+                                .user;
 
-                    localStorage.setItem(
-                        "user",
-                        JSON.stringify(
+                        setUser(
                             currentUser
-                        )
+                        );
+
+                        localStorage.setItem(
+                            "user",
+                            JSON.stringify(
+                                currentUser
+                            )
+                        );
+
+                        console.log(
+                            "User token verified successfully."
+                        );
+
+                        return currentUser;
+                    }
+
+                    return null;
+                } catch (error) {
+                    const status =
+                        error.response
+                            ?.status;
+
+                    console.log(
+                        "Fetch current user error:",
+                        error.response
+                            ?.data ||
+                            error.message
                     );
 
-                    return currentUser;
+                    /*
+                     * IMPORTANT:
+                     *
+                     * 401 means the token is no
+                     * longer accepted by the backend.
+                     *
+                     * This is NOT a CORS error.
+                     */
+                    if (
+                        status === 401 &&
+                        clearOn401
+                    ) {
+                        clearAuthData();
+
+                        if (
+                            !silent
+                        ) {
+                            toast.error(
+                                "Your session has expired. Please login again."
+                            );
+                        }
+                    }
+
+                    return null;
                 }
-
-                return null;
-            } catch (error) {
-                console.log(
-                    "Fetch current user error:",
-                    error.response?.data ||
-                        error.message
-                );
-
-                if (
-                    error.response?.status ===
-                    401
-                ) {
-                    clearAuthData();
-                }
-
-                return null;
-            }
-        },
-        [
-            backendUrl,
-            getAuthHeaders,
-            clearAuthData,
-        ]
-    );
+            },
+            [
+                backendUrl,
+                getAuthHeaders,
+                clearAuthData,
+            ]
+        );
 
     /* =====================================================
        PRODUCTS
     ===================================================== */
 
-    const getProductsData = useCallback(
-        async () => {
-            try {
-                const response =
-                    await axios.get(
-                        `${backendUrl}/api/product/list`,
-                        {
-                            timeout: 20000,
-                        }
+    const getProductsData =
+        useCallback(
+            async () => {
+                try {
+                    const response =
+                        await axios.get(
+                            `${backendUrl}/api/product/list`,
+                            {
+                                timeout: 20000,
+                            }
+                        );
+
+                    if (
+                        response.data
+                            ?.success
+                    ) {
+                        const productsData =
+                            (
+                                response.data
+                                    .products ||
+                                []
+                            ).map(
+                                (p) => ({
+                                    ...p,
+
+                                    stock:
+                                        normalizeStockObject(
+                                            p.stock
+                                        ),
+
+                                    preorderStock:
+                                        normalizeStockObject(
+                                            p.preorderStock
+                                        ),
+
+                                    preorderEnabled:
+                                        p.preorderEnabled !==
+                                        false,
+
+                                    preorderThreshold:
+                                        Number(
+                                            p.preorderThreshold ??
+                                                5
+                                        ),
+
+                                    preorderRestockDate:
+                                        p.preorderRestockDate ||
+                                        null,
+
+                                    preorderNote:
+                                        p.preorderNote ||
+                                        "",
+
+                                    onSale:
+                                        !!p.onSale,
+
+                                    salePercent:
+                                        Number(
+                                            p.salePercent ||
+                                                0
+                                        ),
+
+                                    price:
+                                        Number(
+                                            p.price ||
+                                                0
+                                        ),
+                                })
+                            );
+
+                        const reversedProducts =
+                            [
+                                ...productsData,
+                            ].reverse();
+
+                        setProducts(
+                            reversedProducts
+                        );
+
+                        await getCategoriesData(
+                            reversedProducts
+                        );
+                    } else {
+                        setProducts(
+                            []
+                        );
+
+                        await getCategoriesData(
+                            []
+                        );
+                    }
+                } catch (error) {
+                    console.log(
+                        "Products fetch error:",
+                        error.response
+                            ?.data ||
+                            error.message
                     );
 
-                if (
-                    response.data?.success
-                ) {
-                    const productsData =
-                        (
-                            response.data
-                                .products ||
-                            []
-                        ).map((p) => ({
-                            ...p,
-
-                            stock:
-                                normalizeStockObject(
-                                    p.stock
-                                ),
-
-                            preorderStock:
-                                normalizeStockObject(
-                                    p.preorderStock
-                                ),
-
-                            preorderEnabled:
-                                p.preorderEnabled !==
-                                false,
-
-                            preorderThreshold:
-                                Number(
-                                    p.preorderThreshold ??
-                                        5
-                                ),
-
-                            preorderRestockDate:
-                                p.preorderRestockDate ||
-                                null,
-
-                            preorderNote:
-                                p.preorderNote ||
-                                "",
-
-                            onSale:
-                                !!p.onSale,
-
-                            salePercent:
-                                Number(
-                                    p.salePercent ||
-                                        0
-                                ),
-
-                            price:
-                                Number(
-                                    p.price ||
-                                        0
-                                ),
-                        }));
-
-                    const reversedProducts = [
-                        ...productsData,
-                    ].reverse();
+                    toast.error(
+                        "Failed to fetch products: " +
+                            error.message
+                    );
 
                     setProducts(
-                        reversedProducts
+                        []
                     );
-
-                    await getCategoriesData(
-                        reversedProducts
-                    );
-                } else {
-                    setProducts([]);
 
                     await getCategoriesData(
                         []
                     );
                 }
-            } catch (error) {
-                console.log(
-                    "Products fetch error:",
-                    error.response?.data ||
-                        error.message
-                );
-
-                toast.error(
-                    "Failed to fetch products: " +
-                        error.message
-                );
-
-                setProducts([]);
-
-                await getCategoriesData(
-                    []
-                );
-            }
-        },
-        [
-            backendUrl,
-            getCategoriesData,
-        ]
-    );
+            },
+            [
+                backendUrl,
+                getCategoriesData,
+            ]
+        );
 
     /* =====================================================
        CART COUNT
     ===================================================== */
 
-    const calculateCartCount = useCallback(
-        (cart) => {
-            return Object.values(
-                cart || {}
-            ).reduce(
-                (acc, sizes) => {
-                    const sizeTotal =
-                        Object.values(
-                            sizes || {}
-                        ).reduce(
-                            (
-                                sum,
-                                qty
-                            ) =>
-                                sum +
-                                (Number(
+    const calculateCartCount =
+        useCallback(
+            (cart) => {
+                return Object.values(
+                    cart || {}
+                ).reduce(
+                    (
+                        acc,
+                        sizes
+                    ) => {
+                        const sizeTotal =
+                            Object.values(
+                                sizes ||
+                                    {}
+                            ).reduce(
+                                (
+                                    sum,
                                     qty
-                                ) || 0),
-                            0
-                        );
+                                ) =>
+                                    sum +
+                                    (Number(
+                                        qty
+                                    ) || 0),
+                                0
+                            );
 
-                    return (
-                        acc + sizeTotal
-                    );
-                },
-                0
-            );
-        },
-        []
-    );
+                        return (
+                            acc +
+                            sizeTotal
+                        );
+                    },
+                    0
+                );
+            },
+            []
+        );
 
     /* =====================================================
        FETCH CART
     ===================================================== */
 
-    const fetchCart = useCallback(
-        async (
-            userToken,
-            userId,
-            silent = true
-        ) => {
-            if (
-                !userToken ||
-                !userId
-            ) {
-                return;
-            }
-
-            try {
-                const response =
-                    await axios.post(
-                        `${backendUrl}/api/cart/get`,
-                        {},
-                        {
-                            headers:
-                                getAuthHeaders(
-                                    userToken
-                                ),
-                            timeout: 20000,
-                        }
-                    );
+    const fetchCart =
+        useCallback(
+            async (
+                userToken,
+                userId,
+                silent = true
+            ) => {
+                const cleanToken =
+                    String(
+                        userToken || ""
+                    ).trim();
 
                 if (
-                    response.data?.success
+                    !cleanToken ||
+                    !userId
                 ) {
-                    const backendCart =
+                    return;
+                }
+
+                try {
+                    const response =
+                        await axios.post(
+                            `${backendUrl}/api/cart/get`,
+                            {},
+                            {
+                                headers:
+                                    getAuthHeaders(
+                                        cleanToken
+                                    ),
+                                timeout: 20000,
+                            }
+                        );
+
+                    if (
                         response.data
-                            .cartData || {};
+                            ?.success
+                    ) {
+                        const backendCart =
+                            response.data
+                                .cartData ||
+                            {};
 
-                    setCartItems(
-                        (previous) => {
-                            const previousString =
-                                JSON.stringify(
-                                    previous
-                                );
+                        setCartItems(
+                            (
+                                previous
+                            ) => {
+                                const previousString =
+                                    JSON.stringify(
+                                        previous
+                                    );
 
-                            const nextString =
-                                JSON.stringify(
-                                    backendCart
-                                );
-
-                            if (
-                                previousString !==
-                                nextString
-                            ) {
-                                localStorage.setItem(
-                                    `cart_${userId}`,
+                                const nextString =
                                     JSON.stringify(
                                         backendCart
-                                    )
-                                );
+                                    );
+
+                                if (
+                                    previousString !==
+                                    nextString
+                                ) {
+                                    localStorage.setItem(
+                                        `cart_${userId}`,
+                                        JSON.stringify(
+                                            backendCart
+                                        )
+                                    );
+
+                                    setCartCount(
+                                        calculateCartCount(
+                                            backendCart
+                                        )
+                                    );
+
+                                    return backendCart;
+                                }
 
                                 setCartCount(
                                     calculateCartCount(
-                                        backendCart
+                                        previous
                                     )
                                 );
 
-                                return backendCart;
+                                return previous;
                             }
-
-                            setCartCount(
-                                calculateCartCount(
-                                    previous
-                                )
-                            );
-
-                            return previous;
-                        }
+                        );
+                    }
+                } catch (error) {
+                    console.log(
+                        "Failed to fetch cart:",
+                        error.response
+                            ?.data ||
+                            error.message
                     );
-                }
-            } catch (error) {
-                console.log(
-                    "Failed to fetch cart:",
-                    error.response?.data ||
-                        error.message
-                );
 
-                if (
-                    error.response?.status ===
-                    401
-                ) {
-                    clearAuthData();
-                } else if (!silent) {
-                    toast.error(
-                        "Failed to refresh cart"
-                    );
+                    if (
+                        error.response
+                            ?.status ===
+                        401
+                    ) {
+                        clearAuthData();
+
+                        /*
+                         * Don't repeatedly show
+                         * session-expired errors
+                         * from cart polling.
+                         */
+                        return;
+                    }
+
+                    if (
+                        !silent
+                    ) {
+                        toast.error(
+                            "Failed to refresh cart"
+                        );
+                    }
                 }
-            }
-        },
-        [
-            backendUrl,
-            getAuthHeaders,
-            calculateCartCount,
-            clearAuthData,
-        ]
-    );
+            },
+            [
+                backendUrl,
+                getAuthHeaders,
+                calculateCartCount,
+                clearAuthData,
+            ]
+        );
 
     /* =====================================================
        CART POLLING
@@ -623,7 +773,9 @@ const ShopContextProvider = ({
 
     const startCartPolling =
         useCallback(() => {
-            if (pollingRef.current) {
+            if (
+                pollingRef.current
+            ) {
                 clearInterval(
                     pollingRef.current
                 );
@@ -646,13 +798,15 @@ const ShopContextProvider = ({
                 }, 4000);
         }, [
             token,
-            user,
+            user?._id,
             fetchCart,
         ]);
 
     const stopCartPolling =
         useCallback(() => {
-            if (pollingRef.current) {
+            if (
+                pollingRef.current
+            ) {
                 clearInterval(
                     pollingRef.current
                 );
@@ -666,189 +820,220 @@ const ShopContextProvider = ({
        ADD TO CART
     ===================================================== */
 
-    const addToCart = useCallback(
-        async (
-            itemId,
-            size,
-            quantity = 1
-        ) => {
-            if (
-                !token ||
-                !user?._id
-            ) {
-                toast.error(
-                    "Please login to add items to cart"
-                );
-
-                navigate("/login");
-
-                return false;
-            }
-
-            if (!size) {
-                toast.error(
-                    "Please select a size"
-                );
-
-                return false;
-            }
-
-            const normalizedSize =
-                String(
-                    size
-                ).toUpperCase();
-
-            const qty = Number(
-                quantity || 1
-            );
-
-            const product =
-                products.find(
-                    (p) =>
-                        String(
-                            p._id
-                        ) ===
-                        String(itemId)
-                );
-
-            if (!product) {
-                toast.error(
-                    "Product not found"
-                );
-
-                return false;
-            }
-
-            const {
-                availableStock,
-                isPreorderSize,
-            } =
-                getAvailableStockForSize(
-                    product,
-                    normalizedSize
-                );
-
-            const currentQty =
-                Number(
-                    cartItems[itemId]?.[
-                        normalizedSize
-                    ] || 0
-                );
-
-            if (
-                currentQty + qty >
-                availableStock
-            ) {
-                toast.error(
-                    isPreorderSize
-                        ? "Cannot exceed available pre-order slots"
-                        : "Cannot exceed available stock"
-                );
-
-                return false;
-            }
-
-            try {
-                const response =
-                    await axios.post(
-                        `${backendUrl}/api/cart/add`,
-                        {
-                            itemId,
-                            size: normalizedSize,
-                            quantity: qty,
-                        },
-                        {
-                            headers:
-                                getAuthHeaders(
-                                    token
-                                ),
-                            timeout: 20000,
-                        }
-                    );
-
+    const addToCart =
+        useCallback(
+            async (
+                itemId,
+                size,
+                quantity = 1
+            ) => {
                 if (
-                    response.data?.success
+                    !token ||
+                    !user?._id
                 ) {
-                    const updatedCart =
-                        response.data
-                            .cartData || {};
-
-                    setCartItems(
-                        updatedCart
-                    );
-
-                    setCartCount(
-                        calculateCartCount(
-                            updatedCart
-                        )
-                    );
-
-                    localStorage.setItem(
-                        `cart_${user._id}`,
-                        JSON.stringify(
-                            updatedCart
-                        )
-                    );
-
-                    toast.success(
-                        isPreorderSize
-                            ? "Pre-order added to cart"
-                            : "Added to cart"
-                    );
-
-                    return true;
-                }
-
-                toast.error(
-                    response.data
-                        ?.message ||
-                        "Failed to add to cart"
-                );
-
-                return false;
-            } catch (error) {
-                console.log(
-                    "Add to cart error:",
-                    error.response?.data ||
-                        error.message
-                );
-
-                if (
-                    error.response?.status ===
-                    401
-                ) {
-                    clearAuthData();
-
                     toast.error(
-                        "Session expired. Please login again."
+                        "Please login to add items to cart"
                     );
 
-                    navigate("/login");
+                    navigate(
+                        "/login"
+                    );
 
                     return false;
                 }
 
-                toast.error(
-                    error.response?.data
-                        ?.message ||
-                        "Failed to add to cart"
-                );
+                if (!size) {
+                    toast.error(
+                        "Please select a size"
+                    );
 
-                return false;
-            }
-        },
-        [
-            token,
-            user,
-            products,
-            cartItems,
-            backendUrl,
-            navigate,
-            getAuthHeaders,
-            calculateCartCount,
-            clearAuthData,
-        ]
-    );
+                    return false;
+                }
+
+                const normalizedSize =
+                    String(
+                        size
+                    ).toUpperCase();
+
+                const qty =
+                    Number(
+                        quantity || 1
+                    );
+
+                if (
+                    !Number.isFinite(
+                        qty
+                    ) ||
+                    qty <= 0
+                ) {
+                    toast.error(
+                        "Invalid quantity"
+                    );
+
+                    return false;
+                }
+
+                const product =
+                    products.find(
+                        (p) =>
+                            String(
+                                p._id
+                            ) ===
+                            String(
+                                itemId
+                            )
+                    );
+
+                if (!product) {
+                    toast.error(
+                        "Product not found"
+                    );
+
+                    return false;
+                }
+
+                const {
+                    availableStock,
+                    isPreorderSize,
+                } =
+                    getAvailableStockForSize(
+                        product,
+                        normalizedSize
+                    );
+
+                const currentQty =
+                    Number(
+                        cartItems[
+                            itemId
+                        ]?.[
+                            normalizedSize
+                        ] || 0
+                    );
+
+                if (
+                    currentQty + qty >
+                    availableStock
+                ) {
+                    toast.error(
+                        isPreorderSize
+                            ? "Cannot exceed available pre-order slots"
+                            : "Cannot exceed available stock"
+                    );
+
+                    return false;
+                }
+
+                try {
+                    const response =
+                        await axios.post(
+                            `${backendUrl}/api/cart/add`,
+                            {
+                                itemId,
+                                size:
+                                    normalizedSize,
+                                quantity:
+                                    qty,
+                            },
+                            {
+                                headers:
+                                    getAuthHeaders(
+                                        token
+                                    ),
+                                timeout: 20000,
+                            }
+                        );
+
+                    if (
+                        response.data
+                            ?.success
+                    ) {
+                        const updatedCart =
+                            response
+                                .data
+                                .cartData ||
+                            {};
+
+                        setCartItems(
+                            updatedCart
+                        );
+
+                        setCartCount(
+                            calculateCartCount(
+                                updatedCart
+                            )
+                        );
+
+                        localStorage.setItem(
+                            `cart_${user._id}`,
+                            JSON.stringify(
+                                updatedCart
+                            )
+                        );
+
+                        toast.success(
+                            isPreorderSize
+                                ? "Pre-order added to cart"
+                                : "Added to cart"
+                        );
+
+                        return true;
+                    }
+
+                    toast.error(
+                        response.data
+                            ?.message ||
+                            "Failed to add to cart"
+                    );
+
+                    return false;
+                } catch (error) {
+                    console.log(
+                        "Add to cart error:",
+                        error.response
+                            ?.data ||
+                            error.message
+                    );
+
+                    if (
+                        error.response
+                            ?.status ===
+                        401
+                    ) {
+                        clearAuthData();
+
+                        toast.error(
+                            "Session expired. Please login again."
+                        );
+
+                        navigate(
+                            "/login"
+                        );
+
+                        return false;
+                    }
+
+                    toast.error(
+                        error.response
+                            ?.data
+                            ?.message ||
+                            "Failed to add to cart"
+                    );
+
+                    return false;
+                }
+            },
+            [
+                token,
+                user?._id,
+                products,
+                cartItems,
+                backendUrl,
+                navigate,
+                getAuthHeaders,
+                calculateCartCount,
+                clearAuthData,
+            ]
+        );
 
     /* =====================================================
        UPDATE CART
@@ -877,6 +1062,19 @@ const ShopContextProvider = ({
                     Number(
                         quantity || 0
                     );
+
+                if (
+                    !Number.isFinite(
+                        nextQuantity
+                    ) ||
+                    nextQuantity < 0
+                ) {
+                    toast.error(
+                        "Invalid quantity"
+                    );
+
+                    return;
+                }
 
                 const product =
                     products.find(
@@ -921,7 +1119,8 @@ const ShopContextProvider = ({
                             `${backendUrl}/api/cart/update`,
                             {
                                 itemId,
-                                size: normalizedSize,
+                                size:
+                                    normalizedSize,
                                 quantity:
                                     nextQuantity,
                             },
@@ -939,7 +1138,8 @@ const ShopContextProvider = ({
                             ?.success
                     ) {
                         const updatedCart =
-                            response.data
+                            response
+                                .data
                                 .cartData ||
                             {};
 
@@ -1003,7 +1203,7 @@ const ShopContextProvider = ({
             },
             [
                 token,
-                user,
+                user?._id,
                 products,
                 backendUrl,
                 getAuthHeaders,
@@ -1067,7 +1267,9 @@ const ShopContextProvider = ({
                 } catch (error) {
                     console.log(
                         "Clear cart error:",
-                        error
+                        error.response
+                            ?.data ||
+                            error.message
                     );
 
                     if (
@@ -1098,7 +1300,7 @@ const ShopContextProvider = ({
             },
             [
                 token,
-                user,
+                user?._id,
                 backendUrl,
                 getAuthHeaders,
                 clearAuthData,
@@ -1108,10 +1310,6 @@ const ShopContextProvider = ({
 
     /* =====================================================
        INITIAL APP LOAD
-
-       IMPORTANT:
-       This is the ONLY place where initial
-       authentication is checked.
     ===================================================== */
 
     useEffect(() => {
@@ -1120,10 +1318,29 @@ const ShopContextProvider = ({
         const initializeApp =
             async () => {
                 try {
+                    console.log(
+                        "================================"
+                    );
+
+                    console.log(
+                        "INITIALIZING SHOP CONTEXT"
+                    );
+
+                    console.log(
+                        "Backend:",
+                        backendUrl
+                    );
+
+                    console.log(
+                        "================================"
+                    );
+
                     const savedToken =
-                        localStorage.getItem(
-                            "token"
-                        );
+                        String(
+                            localStorage.getItem(
+                                "token"
+                            ) || ""
+                        ).trim();
 
                     const savedUser =
                         localStorage.getItem(
@@ -1133,17 +1350,38 @@ const ShopContextProvider = ({
                     let activeUser =
                         null;
 
-                    /* ---------------------------------
-                       RESTORE AUTH
-                    --------------------------------- */
+                    /* =====================================
+                       NO TOKEN
+                    ===================================== */
+
+                    if (!savedToken) {
+                        console.log(
+                            "No saved authentication token."
+                        );
+
+                        setToken("");
+                        setUser(null);
+                    }
+
+                    /* =====================================
+                       TOKEN EXISTS
+                    ===================================== */
 
                     if (
                         savedToken
                     ) {
+                        console.log(
+                            "Saved token found. Verifying..."
+                        );
+
                         setToken(
                             savedToken
                         );
 
+                        /*
+                         * Restore cached user temporarily.
+                         * This allows the UI to render quickly.
+                         */
                         if (
                             savedUser
                         ) {
@@ -1153,12 +1391,17 @@ const ShopContextProvider = ({
                                         savedUser
                                     );
 
-                                setUser(
-                                    parsedUser
-                                );
+                                if (
+                                    parsedUser &&
+                                    parsedUser._id
+                                ) {
+                                    setUser(
+                                        parsedUser
+                                    );
 
-                                activeUser =
-                                    parsedUser;
+                                    activeUser =
+                                        parsedUser;
+                                }
                             } catch (
                                 error
                             ) {
@@ -1173,100 +1416,73 @@ const ShopContextProvider = ({
                             }
                         }
 
-                        /* -----------------------------
-                           VERIFY TOKEN
-                        ----------------------------- */
-
-                        try {
-                            const response =
-                                await axios.post(
-                                    `${backendUrl}/api/user/me`,
-                                    {},
-                                    {
-                                        headers:
-                                            getAuthHeaders(
-                                                savedToken
-                                            ),
-                                        timeout: 20000,
-                                    }
-                                );
-
-                            if (
-                                response
-                                    .data
-                                    ?.success &&
-                                response
-                                    .data
-                                    ?.user
-                            ) {
-                                activeUser =
-                                    response
-                                        .data
-                                        .user;
-
-                                setUser(
-                                    activeUser
-                                );
-
-                                localStorage.setItem(
-                                    "user",
-                                    JSON.stringify(
-                                        activeUser
-                                    )
-                                );
-                            } else {
-                                clearAuthData();
-
-                                activeUser =
-                                    null;
-                            }
-                        } catch (
-                            error
-                        ) {
-                            console.log(
-                                "Authentication verification error:",
-                                error
-                                    .response
-                                    ?.data ||
-                                    error.message
+                        /*
+                         * VERIFY TOKEN AGAINST
+                         * THE CURRENT BACKEND.
+                         */
+                        const verifiedUser =
+                            await fetchCurrentUser(
+                                savedToken,
+                                {
+                                    clearOn401:
+                                        true,
+                                    silent: true,
+                                }
                             );
 
-                            if (
-                                error
-                                    .response
-                                    ?.status ===
-                                401
-                            ) {
-                                clearAuthData();
-
-                                activeUser =
-                                    null;
-                            }
+                        if (
+                            verifiedUser
+                        ) {
+                            activeUser =
+                                verifiedUser;
+                        } else {
+                            /*
+                             * fetchCurrentUser()
+                             * already clears auth
+                             * on 401.
+                             */
+                            activeUser =
+                                null;
                         }
-                    } else {
-                        setToken("");
-                        setUser(null);
                     }
 
-                    /* ---------------------------------
+                    /* =====================================
                        LOAD PRODUCTS
-                    --------------------------------- */
+                    ===================================== */
 
-                    await getProductsData();
+                    if (
+                        mounted
+                    ) {
+                        await getProductsData();
+                    }
 
-                    /* ---------------------------------
-                       LOAD CART
-                    --------------------------------- */
+                    /* =====================================
+                       LOAD CART ONLY IF TOKEN
+                       WAS SUCCESSFULLY VERIFIED
+                    ===================================== */
 
                     if (
                         savedToken &&
                         activeUser?._id
                     ) {
-                        await fetchCart(
-                            savedToken,
-                            activeUser._id,
-                            true
-                        );
+                        /*
+                         * Only fetch cart if the
+                         * token is still active.
+                         */
+                        const currentToken =
+                            localStorage.getItem(
+                                "token"
+                            );
+
+                        if (
+                            currentToken
+                        ) {
+                            await fetchCart(
+                                currentToken,
+                                activeUser._id,
+                                true
+                            );
+                        }
                     }
                 } catch (error) {
                     console.log(
@@ -1289,16 +1505,21 @@ const ShopContextProvider = ({
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [
+        backendUrl,
+        fetchCurrentUser,
+        getProductsData,
+        fetchCart,
+    ]);
 
     /* =====================================================
        AUTH / CART EFFECT
-
-       Runs AFTER authentication is ready.
     ===================================================== */
 
     useEffect(() => {
-        if (!authReady) {
+        if (
+            !authReady
+        ) {
             return;
         }
 
@@ -1316,8 +1537,13 @@ const ShopContextProvider = ({
         } else {
             stopCartPolling();
 
-            setCartItems({});
-            setCartCount(0);
+            setCartItems(
+                {}
+            );
+
+            setCartCount(
+                0
+            );
         }
 
         return () => {
@@ -1360,16 +1586,33 @@ const ShopContextProvider = ({
 
         const handleStorage =
             () => {
+                /*
+                 * Read the latest token from
+                 * localStorage instead of relying
+                 * entirely on an old closure.
+                 */
+                const latestToken =
+                    String(
+                        localStorage.getItem(
+                            "token"
+                        ) || ""
+                    ).trim();
+
                 if (
-                    token &&
+                    latestToken &&
                     user?._id
                 ) {
                     fetchCurrentUser(
-                        token
+                        latestToken,
+                        {
+                            clearOn401:
+                                true,
+                            silent: true,
+                        }
                     );
 
                     fetchCart(
-                        token,
+                        latestToken,
                         user._id,
                         true
                     );
@@ -1442,7 +1685,9 @@ const ShopContextProvider = ({
                                 )
                         );
 
-                    if (!product) {
+                    if (
+                        !product
+                    ) {
                         return total;
                     }
 
