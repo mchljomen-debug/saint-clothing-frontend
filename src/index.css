@@ -1,11 +1,14 @@
-/* Fonts - Combined for better performance */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Outfit:wght@100..900&family=Prata&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Universal Reset */
+
+/* =========================================================
+   UNIVERSAL RESET
+========================================================= */
+
 * {
     margin: 0;
     padding: 0;
@@ -13,53 +16,62 @@
     font-family: 'Outfit', sans-serif;
 }
 
-/* ================= GLOBAL CORNERS (SAFE) ================= */
 * {
     border-radius: 5px;
 }
 
-/* KEEP circles */
 .rounded-full {
     border-radius: 9999px !important;
 }
 
-/* ================= BODY ================= */
-body {
-    overflow-x: hidden; 
+
+/* =========================================================
+   BODY
+========================================================= */
+
+html {
     width: 100%;
-    background-color: #ffffff; 
+    overflow-x: hidden;
 }
 
-/* ================= SCROLLBAR (VISIBLE RIGHT SIDE) ================= */
+body {
+    overflow-x: hidden;
+    width: 100%;
+    background-color: #ffffff;
+}
 
-/* Enable scrollbar */
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
 ::-webkit-scrollbar {
     width: 8px;
 }
 
-/* Track */
 ::-webkit-scrollbar-track {
     background: transparent;
 }
 
-/* Thumb */
 ::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.25);
     border-radius: 5px;
 }
 
-/* Hover */
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.45);
 }
 
-/* Firefox */
 * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0,0,0,0.3) transparent;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 }
 
-/* ================= TYPOGRAPHY ================= */
+
+/* =========================================================
+   TYPOGRAPHY
+========================================================= */
+
 .montserrat-black {
     font-family: 'Montserrat', sans-serif;
     font-weight: 900;
@@ -71,7 +83,11 @@ body {
     font-style: normal;
 }
 
-/* Navigation State */
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
 a.active hr {
     display: block;
 }
@@ -83,7 +99,11 @@ a.active hr {
     }
 }
 
-/* ================= ANT DESIGN FIX ================= */
+
+/* =========================================================
+   ANT DESIGN CAROUSEL
+========================================================= */
+
 .ant-carousel .slick-slider,
 .ant-carousel .slick-list,
 .ant-carousel .slick-track,
@@ -103,29 +123,290 @@ a.active hr {
     z-index: 20;
 }
 
-/* ================= ANIMATIONS ================= */
 
-/* Fade In Up */
+/* =========================================================
+   GENERAL ANIMATIONS
+========================================================= */
+
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animate-fadeInUp {
-  animation: fadeInUp 0.6s ease forwards;
+    animation: fadeInUp 0.6s ease forwards;
 }
 
-/* Racing Animation */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.4s ease forwards;
+}
+
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scaleIn {
+    animation: scaleIn 0.35s ease forwards;
+}
+
+
+/* =========================================================
+   🛍️ FLYING PRODUCT CIRCLE
+========================================================= */
+
+.flying-cart-product {
+    position: fixed !important;
+
+    z-index: 999999 !important;
+
+    width: 72px !important;
+    height: 72px !important;
+
+    border-radius: 50% !important;
+
+    object-fit: contain !important;
+
+    background: #ffffff !important;
+
+    padding: 8px !important;
+
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.20),
+        0 3px 10px rgba(0, 0, 0, 0.10);
+
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+
+    pointer-events: none !important;
+
+    opacity: 1;
+
+    will-change:
+        left,
+        top,
+        width,
+        height,
+        transform,
+        opacity;
+
+    transition:
+        left 0.72s cubic-bezier(0.22, 1, 0.36, 1),
+        top 0.72s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.72s cubic-bezier(0.22, 1, 0.36, 1),
+        height 0.72s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.72s ease,
+        transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+
+/* =========================================================
+   INITIAL PRODUCT POP
+========================================================= */
+
+@keyframes flyingProductPop {
+
+    0% {
+        opacity: 0;
+        transform: scale(0.25);
+    }
+
+    55% {
+        opacity: 1;
+        transform: scale(1.12);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.flying-cart-product-pop {
+    animation:
+        flyingProductPop
+        0.25s
+        cubic-bezier(0.34, 1.56, 0.64, 1)
+        forwards;
+}
+
+
+/* =========================================================
+   NAVBAR CART BOUNCE
+========================================================= */
+
+@keyframes navbarCartBounce {
+
+    0% {
+        transform: scale(1);
+    }
+
+    20% {
+        transform: scale(1.25);
+    }
+
+    40% {
+        transform: scale(0.86);
+    }
+
+    60% {
+        transform: scale(1.12);
+    }
+
+    80% {
+        transform: scale(0.96);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.navbar-cart-bounce {
+    animation:
+        navbarCartBounce
+        0.55s
+        cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+/* =========================================================
+   CART COUNT POP
+========================================================= */
+
+@keyframes navbarCartCountPop {
+
+    0% {
+        transform: scale(1);
+    }
+
+    35% {
+        transform: scale(1.4);
+    }
+
+    65% {
+        transform: scale(0.88);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.navbar-cart-count-pop {
+    animation:
+        navbarCartCountPop
+        0.45s
+        ease-out;
+}
+
+
+/* =========================================================
+   ADD TO BAG BUTTON PRESS
+========================================================= */
+
+@keyframes addToBagPress {
+
+    0% {
+        transform: scale(1);
+    }
+
+    40% {
+        transform: scale(0.96);
+    }
+
+    70% {
+        transform: scale(1.02);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.add-to-bag-press {
+    animation:
+        addToBagPress
+        0.35s
+        ease;
+}
+
+
+/* =========================================================
+   RACING ANIMATION
+========================================================= */
+
 @keyframes race {
-  0% { transform: translateX(-100px) scaleX(1); }
-  48% { transform: translateX(100vw) scaleX(1); }
-  50% { transform: translateX(100vw) scaleX(-1); } 
-  98% { transform: translateX(-100px) scaleX(-1); }
-  100% { transform: translateX(-100px) scaleX(1); }
+
+    0% {
+        transform:
+            translateX(-100px)
+            scaleX(1);
+    }
+
+    48% {
+        transform:
+            translateX(100vw)
+            scaleX(1);
+    }
+
+    50% {
+        transform:
+            translateX(100vw)
+            scaleX(-1);
+    }
+
+    98% {
+        transform:
+            translateX(-100px)
+            scaleX(-1);
+    }
+
+    100% {
+        transform:
+            translateX(-100px)
+            scaleX(1);
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

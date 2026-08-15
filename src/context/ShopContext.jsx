@@ -55,9 +55,7 @@ const normalizeStockObject = (stock = {}) => {
             typeof stockObj !== "object" ||
             Array.isArray(stockObj)
         ) {
-            throw new Error(
-                "Invalid stock object"
-            );
+            throw new Error("Invalid stock object");
         }
 
         const normalized = {};
@@ -111,9 +109,7 @@ const getAvailableStockForSize = (
     );
 
     const preorderStock = Number(
-        product?.preorderStock?.[
-            normalizedSize
-        ] || 0
+        product?.preorderStock?.[normalizedSize] || 0
     );
 
     const preorderEnabled =
@@ -220,7 +216,8 @@ const ShopContextProvider = ({
             }
 
             return {
-                Authorization: `Bearer ${cleanToken}`,
+                Authorization:
+                    `Bearer ${cleanToken}`,
             };
         }, []);
 
@@ -234,13 +231,8 @@ const ShopContextProvider = ({
                 "Clearing invalid authentication data."
             );
 
-            localStorage.removeItem(
-                "token"
-            );
-
-            localStorage.removeItem(
-                "user"
-            );
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
 
             setToken("");
             setUser(null);
@@ -252,8 +244,7 @@ const ShopContextProvider = ({
                     pollingRef.current
                 );
 
-                pollingRef.current =
-                    null;
+                pollingRef.current = null;
             }
         }, []);
 
@@ -276,25 +267,19 @@ const ShopContextProvider = ({
                         );
 
                     if (
-                        response.data
-                            ?.success
+                        response.data?.success
                     ) {
                         const backendCategories =
                             (
-                                response
-                                    .data
+                                response.data
                                     .categories ||
                                 []
                             )
                                 .map(
-                                    (
-                                        item
-                                    ) =>
+                                    (item) =>
                                         item.name
                                 )
-                                .filter(
-                                    Boolean
-                                );
+                                .filter(Boolean);
 
                         const productCategories =
                             (
@@ -302,14 +287,10 @@ const ShopContextProvider = ({
                                 []
                             )
                                 .map(
-                                    (
-                                        item
-                                    ) =>
+                                    (item) =>
                                         item.category
                                 )
-                                .filter(
-                                    Boolean
-                                );
+                                .filter(Boolean);
 
                         setCategoryOptions(
                             Array.from(
@@ -335,14 +316,10 @@ const ShopContextProvider = ({
                             []
                         )
                             .map(
-                                (
-                                    item
-                                ) =>
+                                (item) =>
                                     item.category
                             )
-                            .filter(
-                                Boolean
-                            );
+                            .filter(Boolean);
 
                     setCategoryOptions(
                         Array.from(
@@ -382,10 +359,6 @@ const ShopContextProvider = ({
                 }
 
                 try {
-                    console.log(
-                        "Verifying user token..."
-                    );
-
                     const response =
                         await axios.post(
                             `${backendUrl}/api/user/me`,
@@ -402,12 +375,10 @@ const ShopContextProvider = ({
                     if (
                         response.data
                             ?.success &&
-                        response.data
-                            ?.user
+                        response.data?.user
                     ) {
                         const currentUser =
-                            response.data
-                                .user;
+                            response.data.user;
 
                         setUser(
                             currentUser
@@ -418,10 +389,6 @@ const ShopContextProvider = ({
                             JSON.stringify(
                                 currentUser
                             )
-                        );
-
-                        console.log(
-                            "User token verified successfully."
                         );
 
                         return currentUser;
@@ -440,23 +407,13 @@ const ShopContextProvider = ({
                             error.message
                     );
 
-                    /*
-                     * IMPORTANT:
-                     *
-                     * 401 means the token is no
-                     * longer accepted by the backend.
-                     *
-                     * This is NOT a CORS error.
-                     */
                     if (
                         status === 401 &&
                         clearOn401
                     ) {
                         clearAuthData();
 
-                        if (
-                            !silent
-                        ) {
+                        if (!silent) {
                             toast.error(
                                 "Your session has expired. Please login again."
                             );
@@ -490,8 +447,7 @@ const ShopContextProvider = ({
                         );
 
                     if (
-                        response.data
-                            ?.success
+                        response.data?.success
                     ) {
                         const productsData =
                             (
@@ -560,9 +516,7 @@ const ShopContextProvider = ({
                             reversedProducts
                         );
                     } else {
-                        setProducts(
-                            []
-                        );
+                        setProducts([]);
 
                         await getCategoriesData(
                             []
@@ -581,9 +535,7 @@ const ShopContextProvider = ({
                             error.message
                     );
 
-                    setProducts(
-                        []
-                    );
+                    setProducts([]);
 
                     await getCategoriesData(
                         []
@@ -612,17 +564,18 @@ const ShopContextProvider = ({
                     ) => {
                         const sizeTotal =
                             Object.values(
-                                sizes ||
-                                    {}
+                                sizes || {}
                             ).reduce(
                                 (
                                     sum,
                                     qty
                                 ) =>
                                     sum +
-                                    (Number(
-                                        qty
-                                    ) || 0),
+                                    (
+                                        Number(
+                                            qty
+                                        ) || 0
+                                    ),
                                 0
                             );
 
@@ -684,9 +637,7 @@ const ShopContextProvider = ({
                             {};
 
                         setCartItems(
-                            (
-                                previous
-                            ) => {
+                            (previous) => {
                                 const previousString =
                                     JSON.stringify(
                                         previous
@@ -741,18 +692,10 @@ const ShopContextProvider = ({
                         401
                     ) {
                         clearAuthData();
-
-                        /*
-                         * Don't repeatedly show
-                         * session-expired errors
-                         * from cart polling.
-                         */
                         return;
                     }
 
-                    if (
-                        !silent
-                    ) {
+                    if (!silent) {
                         toast.error(
                             "Failed to refresh cart"
                         );
@@ -835,9 +778,7 @@ const ShopContextProvider = ({
                         "Please login to add items to cart"
                     );
 
-                    navigate(
-                        "/login"
-                    );
+                    navigate("/login");
 
                     return false;
                 }
@@ -861,9 +802,7 @@ const ShopContextProvider = ({
                     );
 
                 if (
-                    !Number.isFinite(
-                        qty
-                    ) ||
+                    !Number.isFinite(qty) ||
                     qty <= 0
                 ) {
                     toast.error(
@@ -903,11 +842,10 @@ const ShopContextProvider = ({
 
                 const currentQty =
                     Number(
-                        cartItems[
-                            itemId
-                        ]?.[
-                            normalizedSize
-                        ] || 0
+                        cartItems[itemId]
+                            ?.[
+                                normalizedSize
+                            ] || 0
                     );
 
                 if (
@@ -948,10 +886,15 @@ const ShopContextProvider = ({
                             ?.success
                     ) {
                         const updatedCart =
-                            response
-                                .data
+                            response.data
                                 .cartData ||
                             {};
+
+                        /*
+                         * Update React state immediately.
+                         * This means the cart icon/count
+                         * changes without waiting for polling.
+                         */
 
                         setCartItems(
                             updatedCart
@@ -963,12 +906,27 @@ const ShopContextProvider = ({
                             )
                         );
 
+                        /*
+                         * Keep localStorage synchronized.
+                         */
+
                         localStorage.setItem(
                             `cart_${user._id}`,
                             JSON.stringify(
                                 updatedCart
                             )
                         );
+
+                        /*
+                         * IMPORTANT:
+                         *
+                         * Product.jsx receives TRUE
+                         * from this function and can
+                         * trigger the flying-image
+                         * animation only after the
+                         * backend successfully adds
+                         * the item.
+                         */
 
                         toast.success(
                             isPreorderSize
@@ -1005,9 +963,7 @@ const ShopContextProvider = ({
                             "Session expired. Please login again."
                         );
 
-                        navigate(
-                            "/login"
-                        );
+                        navigate("/login");
 
                         return false;
                     }
@@ -1138,8 +1094,7 @@ const ShopContextProvider = ({
                             ?.success
                     ) {
                         const updatedCart =
-                            response
-                                .data
+                            response.data
                                 .cartData ||
                             {};
 
@@ -1161,8 +1116,7 @@ const ShopContextProvider = ({
                         );
                     } else {
                         toast.error(
-                            response
-                                .data
+                            response.data
                                 ?.message ||
                                 "Failed to update cart"
                         );
@@ -1186,9 +1140,7 @@ const ShopContextProvider = ({
                             "Session expired. Please login again."
                         );
 
-                        navigate(
-                            "/login"
-                        );
+                        navigate("/login");
 
                         return;
                     }
@@ -1245,21 +1197,16 @@ const ShopContextProvider = ({
                         response.data
                             ?.success
                     ) {
-                        setCartItems(
-                            {}
-                        );
+                        setCartItems({});
 
-                        setCartCount(
-                            0
-                        );
+                        setCartCount(0);
 
                         localStorage.removeItem(
                             `cart_${user._id}`
                         );
                     } else {
                         toast.error(
-                            response
-                                .data
+                            response.data
                                 ?.message ||
                                 "Failed to clear cart"
                         );
@@ -1283,9 +1230,7 @@ const ShopContextProvider = ({
                             "Session expired. Please login again."
                         );
 
-                        navigate(
-                            "/login"
-                        );
+                        navigate("/login");
 
                         return;
                     }
@@ -1318,23 +1263,6 @@ const ShopContextProvider = ({
         const initializeApp =
             async () => {
                 try {
-                    console.log(
-                        "================================"
-                    );
-
-                    console.log(
-                        "INITIALIZING SHOP CONTEXT"
-                    );
-
-                    console.log(
-                        "Backend:",
-                        backendUrl
-                    );
-
-                    console.log(
-                        "================================"
-                    );
-
                     const savedToken =
                         String(
                             localStorage.getItem(
@@ -1350,38 +1278,16 @@ const ShopContextProvider = ({
                     let activeUser =
                         null;
 
-                    /* =====================================
-                       NO TOKEN
-                    ===================================== */
-
                     if (!savedToken) {
-                        console.log(
-                            "No saved authentication token."
-                        );
-
                         setToken("");
                         setUser(null);
                     }
 
-                    /* =====================================
-                       TOKEN EXISTS
-                    ===================================== */
-
-                    if (
-                        savedToken
-                    ) {
-                        console.log(
-                            "Saved token found. Verifying..."
-                        );
-
+                    if (savedToken) {
                         setToken(
                             savedToken
                         );
 
-                        /*
-                         * Restore cached user temporarily.
-                         * This allows the UI to render quickly.
-                         */
                         if (
                             savedUser
                         ) {
@@ -1416,10 +1322,6 @@ const ShopContextProvider = ({
                             }
                         }
 
-                        /*
-                         * VERIFY TOKEN AGAINST
-                         * THE CURRENT BACKEND.
-                         */
                         const verifiedUser =
                             await fetchCurrentUser(
                                 savedToken,
@@ -1436,39 +1338,19 @@ const ShopContextProvider = ({
                             activeUser =
                                 verifiedUser;
                         } else {
-                            /*
-                             * fetchCurrentUser()
-                             * already clears auth
-                             * on 401.
-                             */
                             activeUser =
                                 null;
                         }
                     }
 
-                    /* =====================================
-                       LOAD PRODUCTS
-                    ===================================== */
-
-                    if (
-                        mounted
-                    ) {
+                    if (mounted) {
                         await getProductsData();
                     }
-
-                    /* =====================================
-                       LOAD CART ONLY IF TOKEN
-                       WAS SUCCESSFULLY VERIFIED
-                    ===================================== */
 
                     if (
                         savedToken &&
                         activeUser?._id
                     ) {
-                        /*
-                         * Only fetch cart if the
-                         * token is still active.
-                         */
                         const currentToken =
                             localStorage.getItem(
                                 "token"
@@ -1490,12 +1372,8 @@ const ShopContextProvider = ({
                         error
                     );
                 } finally {
-                    if (
-                        mounted
-                    ) {
-                        setAuthReady(
-                            true
-                        );
+                    if (mounted) {
+                        setAuthReady(true);
                     }
                 }
             };
@@ -1517,9 +1395,7 @@ const ShopContextProvider = ({
     ===================================================== */
 
     useEffect(() => {
-        if (
-            !authReady
-        ) {
+        if (!authReady) {
             return;
         }
 
@@ -1537,13 +1413,8 @@ const ShopContextProvider = ({
         } else {
             stopCartPolling();
 
-            setCartItems(
-                {}
-            );
-
-            setCartCount(
-                0
-            );
+            setCartItems({});
+            setCartCount(0);
         }
 
         return () => {
@@ -1586,11 +1457,6 @@ const ShopContextProvider = ({
 
         const handleStorage =
             () => {
-                /*
-                 * Read the latest token from
-                 * localStorage instead of relying
-                 * entirely on an old closure.
-                 */
                 const latestToken =
                     String(
                         localStorage.getItem(
@@ -1685,9 +1551,7 @@ const ShopContextProvider = ({
                                 )
                         );
 
-                    if (
-                        !product
-                    ) {
+                    if (!product) {
                         return total;
                     }
 
@@ -1708,8 +1572,10 @@ const ShopContextProvider = ({
                         salePercent > 0
                             ? Math.max(
                                   basePrice -
-                                      (basePrice *
-                                          salePercent) /
+                                      (
+                                          basePrice *
+                                          salePercent
+                                      ) /
                                           100,
                                   0
                               )
@@ -1725,8 +1591,7 @@ const ShopContextProvider = ({
                             ) =>
                                 sum +
                                 Number(
-                                    qty ||
-                                        0
+                                    qty || 0
                                 ) *
                                     finalPrice,
                             0

@@ -1,5 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import { toast } from "react-toastify";
@@ -7,6 +13,11 @@ import { toast } from "react-toastify";
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+
+  const [menuOrigin, setMenuOrigin] = useState({
+    x: "95%",
+    y: "28px",
+  });
 
   const {
     setShowSearch,
@@ -23,12 +34,15 @@ const Navbar = () => {
   /* =========================================================
      CART COUNT
   ========================================================= */
+
   useEffect(() => {
     let count = 0;
 
     for (const productId in cartItems || {}) {
       for (const size in cartItems[productId] || {}) {
-        count += cartItems[productId][size] || 0;
+        count += Number(
+          cartItems[productId][size] || 0
+        );
       }
     }
 
@@ -38,16 +52,39 @@ const Navbar = () => {
   /* =========================================================
      CLOSE MOBILE MENU WHEN ROUTE CHANGES
   ========================================================= */
+
   useEffect(() => {
     setVisible(false);
   }, [location.pathname]);
 
   /* =========================================================
-     PROFILE NAVIGATION
-     
-     Logged in     -> /profile
-     Not logged in -> /login
+     MOBILE MENU ORIGIN
   ========================================================= */
+
+  const openMobileMenu = (event) => {
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+
+    setMenuOrigin({
+      x: `${rect.left + rect.width / 2}px`,
+      y: `${rect.top + rect.height / 2}px`,
+    });
+
+    setVisible(true);
+  };
+
+  /* =========================================================
+     CLOSE MOBILE MENU
+  ========================================================= */
+
+  const closeMobileMenu = () => {
+    setVisible(false);
+  };
+
+  /* =========================================================
+     PROFILE
+  ========================================================= */
+
   const goToProfile = () => {
     if (token) {
       navigate("/profile");
@@ -59,11 +96,9 @@ const Navbar = () => {
   };
 
   /* =========================================================
-     ORDERS NAVIGATION
-     
-     Logged in     -> /orders
-     Not logged in -> /login
+     ORDERS
   ========================================================= */
+
   const goToOrders = () => {
     if (token) {
       navigate("/orders");
@@ -75,11 +110,9 @@ const Navbar = () => {
   };
 
   /* =========================================================
-     CART NAVIGATION
-     
-     Logged in     -> /cart
-     Not logged in -> /login
+     CART
   ========================================================= */
+
   const goToCart = () => {
     if (token) {
       navigate("/cart");
@@ -93,6 +126,7 @@ const Navbar = () => {
   /* =========================================================
      LOGOUT
   ========================================================= */
+
   const logout = () => {
     setUser(null);
     setToken("");
@@ -108,8 +142,9 @@ const Navbar = () => {
   };
 
   /* =========================================================
-     NAVIGATION ITEMS
+     NAVIGATION
   ========================================================= */
+
   const navItems = [
     {
       label: "HOME",
@@ -144,6 +179,7 @@ const Navbar = () => {
       {/* =====================================================
           MAIN NAVBAR
       ===================================================== */}
+
       <div
         data-navbar="true"
         className="fixed left-0 top-0 z-[100] w-full border-b border-white/5 backdrop-blur-xl"
@@ -157,6 +193,7 @@ const Navbar = () => {
           {/* =================================================
               LOGO
           ================================================= */}
+
           <Link
             to="/"
             className="group flex items-center gap-1"
@@ -175,6 +212,7 @@ const Navbar = () => {
           {/* =================================================
               DESKTOP NAVIGATION
           ================================================= */}
+
           <ul className="mx-auto hidden items-center gap-8 md:flex">
             {navItems.map((item) => (
               <NavLink
@@ -209,11 +247,11 @@ const Navbar = () => {
           {/* =================================================
               RIGHT SIDE
           ================================================= */}
+
           <div className="flex items-center gap-4">
 
-            {/* =================================================
-                SEARCH
-            ================================================= */}
+            {/* SEARCH */}
+
             <button
               type="button"
               onClick={() => {
@@ -231,9 +269,8 @@ const Navbar = () => {
               />
             </button>
 
-            {/* =================================================
-                PROFILE
-            ================================================= */}
+            {/* PROFILE */}
+
             <div className="group relative hidden md:block">
               <button
                 type="button"
@@ -248,9 +285,6 @@ const Navbar = () => {
                 />
               </button>
 
-              {/* PROFILE DROPDOWN
-                  ONLY WHEN LOGGED IN
-              */}
               {token && (
                 <div className="absolute right-0 hidden pt-3 group-hover:block">
                   <div className="w-48 rounded-md border border-white/10 bg-[#111] py-3 shadow-xl">
@@ -287,12 +321,16 @@ const Navbar = () => {
             </div>
 
             {/* =================================================
-                CART
+                CART TARGET
+                IMPORTANT:
+                Product.jsx searches for this exact ID.
             ================================================= */}
+
             <button
+              id="cart-icon-target"
               type="button"
               onClick={goToCart}
-              className="relative cursor-pointer p-1"
+              className="relative z-[101] cursor-pointer p-1"
               aria-label="Cart"
             >
               <img
@@ -308,12 +346,11 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* =================================================
-                MOBILE MENU BUTTON
-            ================================================= */}
+            {/* MOBILE MENU */}
+
             <button
               type="button"
-              onClick={() => setVisible(true)}
+              onClick={openMobileMenu}
               className="cursor-pointer p-1 md:hidden"
               aria-label="Open menu"
             >
@@ -331,17 +368,20 @@ const Navbar = () => {
       {/* =====================================================
           MOBILE MENU
       ===================================================== */}
+
       <div
-        className={`fixed inset-0 z-[120] transition-all duration-300 md:hidden ${
+        className={`fixed inset-0 z-[120] md:hidden ${
           visible
             ? "pointer-events-auto"
             : "pointer-events-none"
         }`}
       >
+
         {/* BACKDROP */}
+
         <div
-          onClick={() => setVisible(false)}
-          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
+          onClick={closeMobileMenu}
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-500 ease-out ${
             visible
               ? "opacity-100"
               : "opacity-0"
@@ -349,32 +389,53 @@ const Navbar = () => {
         />
 
         {/* MENU PANEL */}
+
         <div
-          className={`absolute right-0 top-0 h-full w-[82%] max-w-[320px] border-l border-white/10 bg-[#0A0A0A] transition-transform duration-300 ${
-            visible
-              ? "translate-x-0"
-              : "translate-x-full"
-          }`}
+          className="absolute inset-0 overflow-hidden bg-[#0A0A0A]"
+          style={{
+            clipPath: visible
+              ? `circle(150% at ${menuOrigin.x} ${menuOrigin.y})`
+              : `circle(0% at ${menuOrigin.x} ${menuOrigin.y})`,
+            transition:
+              "clip-path 650ms cubic-bezier(0.77, 0, 0.175, 1)",
+          }}
         >
+
           {/* HEADER */}
+
           <div className="flex h-14 items-center justify-between border-b border-white/10 px-6">
+
             <h2 className="text-xs font-black uppercase tracking-[0.22em] text-white">
               Saint Clothing
             </h2>
 
             <button
               type="button"
-              onClick={() => setVisible(false)}
-              className="cursor-pointer text-2xl text-white"
+              onClick={closeMobileMenu}
+              className="cursor-pointer text-2xl text-white transition-transform duration-300 hover:rotate-90"
+              aria-label="Close menu"
             >
               ×
             </button>
+
           </div>
 
           {/* MOBILE NAV */}
-          <div className="px-6 py-5">
 
-            {navItems.map((item) => (
+          <div
+            className={`px-6 py-5 transition-all duration-500 ${
+              visible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-3 opacity-0"
+            }`}
+            style={{
+              transitionDelay: visible
+                ? "250ms"
+                : "0ms",
+            }}
+          >
+
+            {navItems.map((item, index) => (
               <button
                 type="button"
                 key={item.label}
@@ -382,45 +443,54 @@ const Navbar = () => {
                   navigate(item.path);
                   setVisible(false);
                 }}
-                className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
+                className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white transition-all duration-300 hover:pl-2 hover:text-gray-300"
+                style={{
+                  transitionDelay: visible
+                    ? `${300 + index * 50}ms`
+                    : "0ms",
+                }}
               >
                 {item.label}
               </button>
             ))}
 
             {/* PROFILE */}
+
             <button
               type="button"
               onClick={goToProfile}
-              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
+              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white transition-all duration-300 hover:pl-2 hover:text-gray-300"
             >
               PROFILE
             </button>
 
             {/* CART */}
+
             <button
               type="button"
               onClick={goToCart}
-              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
+              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white transition-all duration-300 hover:pl-2 hover:text-gray-300"
             >
               CART
             </button>
 
             {/* ORDERS */}
+
             <button
               type="button"
               onClick={goToOrders}
-              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white"
+              className="block w-full cursor-pointer border-b border-white/5 py-4 text-left text-sm uppercase tracking-[0.18em] text-white transition-all duration-300 hover:pl-2 hover:text-gray-300"
             >
               ORDERS
             </button>
 
             {/* LOGOUT */}
+
             {token && (
               <button
                 type="button"
                 onClick={logout}
-                className="block w-full cursor-pointer py-4 text-left text-sm uppercase tracking-[0.18em] text-red-400"
+                className="block w-full cursor-pointer py-4 text-left text-sm uppercase tracking-[0.18em] text-red-400 transition-all duration-300 hover:pl-2 hover:text-red-300"
               >
                 LOGOUT
               </button>

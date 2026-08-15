@@ -8,6 +8,7 @@ import useRecommendations from "../hooks/useRecommendations";
 
 const getMediaUrl = (value, backendUrl) => {
   if (!value) return "";
+
   const stringValue = String(value).trim();
 
   if (
@@ -41,12 +42,20 @@ const Cart = () => {
   const [cartData, setCartData] = useState([]);
   const [selectedItems, setSelectedItems] = useState({});
 
+  /* ------------------------------------------------------------
+     AUTH
+  ------------------------------------------------------------ */
+
   useEffect(() => {
     if (authReady && !token) {
       toast.error("Please login to view your cart");
       navigate("/login");
     }
   }, [token, navigate, authReady]);
+
+  /* ------------------------------------------------------------
+     BUILD CART DATA
+  ------------------------------------------------------------ */
 
   useEffect(() => {
     if (!authReady || products.length === 0) return;
@@ -55,6 +64,7 @@ const Cart = () => {
 
     for (const productId in cartItems) {
       const product = products.find((p) => p._id === productId);
+
       if (!product) continue;
 
       for (const size in cartItems[productId]) {
@@ -74,16 +84,30 @@ const Cart = () => {
     setCartData(tempData);
   }, [cartItems, products, authReady]);
 
+  /* ------------------------------------------------------------
+     DEFAULT SELECT ALL CART ITEMS
+  ------------------------------------------------------------ */
+
   useEffect(() => {
     setSelectedItems((prev) => {
       const next = {};
+
       cartData.forEach((item) => {
         const key = `${item._id}_${item.size}`;
-        next[key] = prev[key] !== undefined ? prev[key] : true;
+
+        next[key] =
+          prev[key] !== undefined
+            ? prev[key]
+            : true;
       });
+
       return next;
     });
   }, [cartData]);
+
+  /* ------------------------------------------------------------
+     HELPERS
+  ------------------------------------------------------------ */
 
   const getItemKey = (item) => `${item._id}_${item.size}`;
 
@@ -92,35 +116,54 @@ const Cart = () => {
     const salePercent = Number(item.salePercent || 0);
 
     if (item.onSale && salePercent > 0) {
-      return Math.max(basePrice - (basePrice * salePercent) / 100, 0);
+      return Math.max(
+        basePrice - (basePrice * salePercent) / 100,
+        0
+      );
     }
 
     return basePrice;
   };
 
+  /* ------------------------------------------------------------
+     SELECTED ITEMS
+  ------------------------------------------------------------ */
+
   const selectedCartData = useMemo(() => {
-    return cartData.filter((item) => selectedItems[getItemKey(item)]);
+    return cartData.filter(
+      (item) => selectedItems[getItemKey(item)]
+    );
   }, [cartData, selectedItems]);
 
   const allSelected =
     cartData.length > 0 &&
-    cartData.every((item) => selectedItems[getItemKey(item)]);
+    cartData.every(
+      (item) => selectedItems[getItemKey(item)]
+    );
 
   const selectedItemsCount = selectedCartData.length;
 
   const selectedSubtotal = useMemo(() => {
     return selectedCartData.reduce(
-      (sum, item) => sum + getFinalPrice(item) * Number(item.quantity || 0),
+      (sum, item) =>
+        sum +
+        getFinalPrice(item) *
+          Number(item.quantity || 0),
       0
     );
   }, [selectedCartData]);
 
   const selectedTotalQuantity = useMemo(() => {
     return selectedCartData.reduce(
-      (sum, item) => sum + Number(item.quantity || 0),
+      (sum, item) =>
+        sum + Number(item.quantity || 0),
       0
     );
   }, [selectedCartData]);
+
+  /* ------------------------------------------------------------
+     RECOMMENDATIONS
+  ------------------------------------------------------------ */
 
   const selectedProductIds = useMemo(() => {
     return selectedCartData.map((item) => item._id);
@@ -128,17 +171,27 @@ const Cart = () => {
 
   const selectedCategories = useMemo(() => {
     return [
-      ...new Set(selectedCartData.map((item) => item.category).filter(Boolean)),
+      ...new Set(
+        selectedCartData
+          .map((item) => item.category)
+          .filter(Boolean)
+      ),
     ];
   }, [selectedCartData]);
 
   const selectedColors = useMemo(() => {
     return [
-      ...new Set(selectedCartData.map((item) => item.color).filter(Boolean)),
+      ...new Set(
+        selectedCartData
+          .map((item) => item.color)
+          .filter(Boolean)
+      ),
     ];
   }, [selectedCartData]);
 
-  const { recommendations: recommendedProducts } = useRecommendations({
+  const {
+    recommendations: recommendedProducts,
+  } = useRecommendations({
     backendUrl,
     products,
     productIds: selectedProductIds,
@@ -149,8 +202,13 @@ const Cart = () => {
     enabled: selectedCartData.length > 0,
   });
 
+  /* ------------------------------------------------------------
+     ITEM SELECTION
+  ------------------------------------------------------------ */
+
   const handleToggleItem = (item) => {
     const key = getItemKey(item);
+
     setSelectedItems((prev) => ({
       ...prev,
       [key]: !prev[key],
@@ -159,11 +217,17 @@ const Cart = () => {
 
   const handleSelectAll = () => {
     const next = {};
+
     cartData.forEach((item) => {
       next[getItemKey(item)] = !allSelected;
     });
+
     setSelectedItems(next);
   };
+
+  /* ------------------------------------------------------------
+     CHECKOUT
+  ------------------------------------------------------------ */
 
   const handleCheckout = () => {
     if (selectedCartData.length === 0) {
@@ -171,10 +235,21 @@ const Cart = () => {
       return;
     }
 
-    localStorage.setItem("checkout_cart", JSON.stringify(selectedCartData));
-    toast.success("Selected items are ready for checkout");
+    localStorage.setItem(
+      "checkout_cart",
+      JSON.stringify(selectedCartData)
+    );
+
+    toast.success(
+      "Selected items are ready for checkout"
+    );
+
     navigate("/place-order");
   };
+
+  /* ------------------------------------------------------------
+     QUANTITY
+  ------------------------------------------------------------ */
 
   const handleQtyChange = (item, nextQty) => {
     const qty = Number(nextQty);
@@ -184,14 +259,23 @@ const Cart = () => {
       return;
     }
 
-    updateQuantity(item._id, item.size, qty);
+    updateQuantity(
+      item._id,
+      item.size,
+      qty
+    );
   };
+
+  /* ------------------------------------------------------------
+     LOADING
+  ------------------------------------------------------------ */
 
   if (!authReady) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F7F7F4]">
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F7F4]">
         <div className="flex flex-col items-center gap-4">
           <div className="h-8 w-8 animate-spin rounded-[5px] border-2 border-gray-200 border-t-black" />
+
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
             Loading Cart
           </p>
@@ -199,6 +283,10 @@ const Cart = () => {
       </div>
     );
   }
+
+  /* ------------------------------------------------------------
+     EMPTY CART
+  ------------------------------------------------------------ */
 
   if (!cartData.length) {
     return (
@@ -208,13 +296,17 @@ const Cart = () => {
             Saint Clothing
           </p>
 
-          <Title text1={"YOUR"} text2={"CART"} />
+          <Title
+            text1="YOUR"
+            text2="CART"
+          />
 
           <p className="mt-5 text-sm font-semibold text-gray-500">
             Your cart is empty.
           </p>
 
           <button
+            type="button"
             onClick={() => navigate("/collection")}
             className="mt-8 rounded-[5px] border border-black bg-black px-8 py-4 text-[10px] font-black uppercase tracking-[0.24em] text-white transition hover:bg-white hover:text-black"
           >
@@ -225,9 +317,14 @@ const Cart = () => {
     );
   }
 
+  /* ------------------------------------------------------------
+     CART
+  ------------------------------------------------------------ */
+
   return (
     <div className="min-h-screen bg-[#F7F7F4] px-3 pb-12 pt-4 font-['Outfit'] sm:px-5 md:px-8 lg:px-10 xl:px-12">
       <div className="mx-auto max-w-7xl">
+
         {/* HEADER */}
         <div className="mb-5 rounded-[5px] border border-black/10 bg-white px-4 py-5 shadow-sm sm:px-5 md:px-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -236,7 +333,10 @@ const Cart = () => {
                 Saint Clothing Checkout
               </p>
 
-              <Title text1={"SHOPPING"} text2={"BAG"} />
+              <Title
+                text1="SHOPPING"
+                text2="BAG"
+              />
 
               <p className="mt-3 text-[11px] font-black uppercase tracking-[0.22em] text-gray-500">
                 Review and choose what to checkout
@@ -245,36 +345,47 @@ const Cart = () => {
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="rounded-[5px] border border-black/10 bg-[#F7F7F4] px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-gray-600">
-                {cartData.length} item{cartData.length > 1 ? "s" : ""}
+                {cartData.length} item
+                {cartData.length > 1 ? "s" : ""}
               </div>
 
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="w-[150px] text-center rounded-[5px] border border-black bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
+                className="w-[150px] rounded-[5px] border border-black bg-white px-5 py-3 text-center text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:bg-black hover:text-white"
               >
-                {allSelected ? "Unselect All" : "Select All"}
+                {allSelected
+                  ? "Unselect All"
+                  : "Select All"}
               </button>
             </div>
           </div>
         </div>
 
+        {/* MAIN CONTENT */}
         <div className="grid items-start gap-5 lg:grid-cols-[1.55fr_0.7fr] lg:gap-6">
+
           {/* CART ITEMS */}
           <div className="overflow-hidden rounded-[5px] border border-black/10 bg-white shadow-sm">
+
+            {/* DESKTOP HEADER */}
             <div className="hidden grid-cols-[0.45fr_3fr_1fr_1fr_0.65fr] gap-4 border-b border-black/10 bg-[#FCFCFA] px-5 py-4 md:grid">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
                 Pick
               </p>
+
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
                 Product
               </p>
+
               <p className="text-center text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
                 Quantity
               </p>
+
               <p className="text-center text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
                 Price
               </p>
+
               <p className="text-right text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
                 Remove
               </p>
@@ -284,29 +395,46 @@ const Cart = () => {
               {cartData.map((item) => {
                 const key = getItemKey(item);
                 const isSelected = !!selectedItems[key];
+
                 const imageSrc = item.images?.length
-                  ? getMediaUrl(item.images[0], backendUrl)
+                  ? getMediaUrl(
+                      item.images[0],
+                      backendUrl
+                    )
                   : item.image
-                    ? getMediaUrl(item.image, backendUrl)
+                    ? getMediaUrl(
+                        item.image,
+                        backendUrl
+                      )
                     : "";
-                const finalPrice = getFinalPrice(item);
+
+                const finalPrice =
+                  getFinalPrice(item);
 
                 return (
                   <div
                     key={key}
-                    className={`border-b border-black/10 last:border-b-0 transition ${isSelected ? "bg-[#FCFCFA]" : "bg-white opacity-80"
-                      }`}
+                    className={`border-b border-black/10 last:border-b-0 transition ${
+                      isSelected
+                        ? "bg-[#FCFCFA]"
+                        : "bg-white opacity-80"
+                    }`}
                   >
                     <div className="grid gap-4 px-4 py-4 md:grid-cols-[0.45fr_3fr_1fr_1fr_0.65fr] md:items-center md:px-5">
+
+                      {/* CHECKBOX */}
                       <div className="flex md:justify-center">
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => handleToggleItem(item)}
+                          onChange={() =>
+                            handleToggleItem(item)
+                          }
                           className="h-4 w-4 cursor-pointer accent-black"
                         />
                       </div>
 
+                      {/* PRODUCT */}
                       <div className="flex min-w-0 items-start gap-4">
                         <div className="h-32 w-24 shrink-0 overflow-hidden rounded-[5px] border border-black/10 bg-[radial-gradient(circle_at_center,#ffffff_0%,#f6f6f3_48%,#ededeb_100%)]">
                           {imageSrc ? (
@@ -340,21 +468,26 @@ const Cart = () => {
                               Ref {item._id.slice(-6)}
                             </span>
 
-                            {item.onSale && Number(item.salePercent) > 0 && (
-                              <span className="rounded-[5px] bg-red-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
-                                {item.salePercent}% Off
-                              </span>
-                            )}
+                            {item.onSale &&
+                              Number(item.salePercent) > 0 && (
+                                <span className="rounded-[5px] bg-red-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white">
+                                  {item.salePercent}% Off
+                                </span>
+                              )}
                           </div>
                         </div>
                       </div>
 
+                      {/* QUANTITY */}
                       <div className="flex md:justify-center">
                         <div className="inline-flex overflow-hidden rounded-[5px] border border-black/10 bg-white">
                           <button
                             type="button"
                             onClick={() =>
-                              handleQtyChange(item, item.quantity - 1)
+                              handleQtyChange(
+                                item,
+                                item.quantity - 1
+                              )
                             }
                             className="h-10 w-10 text-lg font-black transition hover:bg-black hover:text-white"
                           >
@@ -366,7 +499,10 @@ const Cart = () => {
                             min={1}
                             value={item.quantity}
                             onChange={(e) =>
-                              handleQtyChange(item, e.target.value)
+                              handleQtyChange(
+                                item,
+                                e.target.value
+                              )
                             }
                             className="h-10 w-12 border-x border-black/10 text-center text-sm font-black outline-none"
                           />
@@ -374,7 +510,10 @@ const Cart = () => {
                           <button
                             type="button"
                             onClick={() =>
-                              handleQtyChange(item, item.quantity + 1)
+                              handleQtyChange(
+                                item,
+                                item.quantity + 1
+                              )
                             }
                             className="h-10 w-10 text-lg font-black transition hover:bg-black hover:text-white"
                           >
@@ -383,13 +522,18 @@ const Cart = () => {
                         </div>
                       </div>
 
+                      {/* PRICE */}
                       <div className="text-left md:text-center">
-                        {item.onSale && Number(item.salePercent) > 0 ? (
+                        {item.onSale &&
+                        Number(item.salePercent) > 0 ? (
                           <div className="flex flex-col">
                             <span className="text-xs font-bold text-gray-400 line-through">
                               {currency}
-                              {Number(item.price || 0).toFixed(2)}
+                              {Number(
+                                item.price || 0
+                              ).toFixed(2)}
                             </span>
+
                             <span className="text-base font-black text-red-600">
                               {currency}
                               {finalPrice.toFixed(2)}
@@ -398,14 +542,24 @@ const Cart = () => {
                         ) : (
                           <span className="text-base font-black text-black">
                             {currency}
-                            {Number(item.price || 0).toFixed(2)}
+                            {Number(
+                              item.price || 0
+                            ).toFixed(2)}
                           </span>
                         )}
                       </div>
 
+                      {/* REMOVE */}
                       <div className="flex md:justify-end">
                         <button
-                          onClick={() => updateQuantity(item._id, item.size, 0)}
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(
+                              item._id,
+                              item.size,
+                              0
+                            )
+                          }
                           className="group flex h-10 w-10 items-center justify-center rounded-[5px] border border-black/10 bg-white transition hover:border-black hover:bg-black"
                         >
                           <img
@@ -425,6 +579,7 @@ const Cart = () => {
           {/* SUMMARY */}
           <div className="lg:sticky lg:top-24">
             <div className="rounded-[5px] border border-black/10 bg-white p-5 shadow-sm md:p-6">
+
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
                 Checkout Summary
               </p>
@@ -434,8 +589,10 @@ const Cart = () => {
               </h3>
 
               <div className="mt-6 space-y-4">
+
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>Selected items</span>
+
                   <span className="font-black text-black">
                     {selectedItemsCount}
                   </span>
@@ -443,6 +600,7 @@ const Cart = () => {
 
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>Total quantity</span>
+
                   <span className="font-black text-black">
                     {selectedTotalQuantity}
                   </span>
@@ -454,6 +612,7 @@ const Cart = () => {
                       <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
                         Subtotal
                       </p>
+
                       <p className="mt-1 text-xs font-semibold text-gray-400">
                         Only selected items will be checked out
                       </p>
@@ -468,6 +627,7 @@ const Cart = () => {
               </div>
 
               <button
+                type="button"
                 onClick={handleCheckout}
                 className="mt-7 h-12 w-full rounded-[5px] border border-black bg-black text-[10px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white hover:text-black"
               >
@@ -475,6 +635,7 @@ const Cart = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => navigate("/collection")}
                 className="mt-3 h-11 w-full rounded-[5px] border border-black/10 bg-white text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
               >
@@ -487,13 +648,16 @@ const Cart = () => {
         {/* RECOMMENDATIONS */}
         {recommendedProducts.length > 0 && (
           <div className="mt-10 rounded-[5px] border border-black/10 bg-white p-4 shadow-sm sm:p-5">
+
             <div className="mb-5 border-b border-black/10 pb-4 text-center">
               <p className="text-[10px] font-black uppercase tracking-[0.34em] text-gray-400">
                 Complete the Look
               </p>
+
               <h2 className="mt-2 text-2xl font-black uppercase text-[#0A0D17]">
                 Style Recommendations
               </h2>
+
               <p className="mt-2 text-sm font-semibold text-gray-500">
                 Based on the items you selected in your bag
               </p>
