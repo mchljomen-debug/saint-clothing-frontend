@@ -413,42 +413,95 @@ const Login = () => {
 
   const sendOtp = async () => {
     if (!acceptedTerms) {
-      return toast.error("Please read and accept the Terms & Conditions first");
+      return toast.error(
+        "Please read and accept the Terms & Conditions first"
+      );
     }
 
     if (otpTimer > 0) {
-      return toast.error(`Please wait ${otpTimer}s before resending OTP`);
+      return toast.error(
+        `Please wait ${otpTimer}s before resending OTP`
+      );
     }
 
-    if (!formData.email || errors.email) {
+    const email = formData.email.trim().toLowerCase();
+
+    if (!email || errors.email) {
       return toast.error("Please enter a valid email first");
     }
 
-    if (!formData.firstName.trim()) return toast.error("First name is required");
-    if (!formData.lastName.trim()) return toast.error("Last name is required");
+    if (!formData.firstName.trim()) {
+      return toast.error("First name is required");
+    }
+
+    if (!formData.lastName.trim()) {
+      return toast.error("Last name is required");
+    }
 
     if (emailExists) {
       return toast.error("Account already exists");
     }
 
     try {
-      const response = await axios.post(`${backendUrl}/api/user/send-otp`, {
-        email: formData.email,
-      });
+      console.log("=================================");
+      console.log("SENDING SIGNUP OTP");
+      console.log("Backend URL:", backendUrl);
+      console.log("Email:", email);
+      console.log("=================================");
 
-      if (response.data.success) {
+      const response = await axios.post(
+        `${backendUrl}/api/user/send-otp`,
+        {
+          email,
+        },
+        {
+          timeout: 30000,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("OTP RESPONSE:", response.data);
+
+      if (response.data?.success) {
         toast.success("Verification code sent");
+
         setOtpSent(true);
         setOtpTimer(OTP_SECONDS);
         setEmailVerified(false);
         setOtpVerified(false);
         setOtp("");
       } else {
-        toast.error(response.data.message);
+        toast.error(
+          response.data?.message ||
+          "Failed to send verification code"
+        );
       }
     } catch (error) {
+      console.error("=================================");
+      console.error("SEND OTP ERROR");
+      console.error("=================================");
+      console.error("Message:", error.message);
+      console.error("Response:", error.response?.data);
+      console.error("Status:", error.response?.status);
+      console.error("URL:", error.config?.url);
+
+      if (error.code === "ECONNABORTED") {
+        return toast.error(
+          "The server took too long to respond. Please try again."
+        );
+      }
+
+      if (!error.response) {
+        return toast.error(
+          "Cannot connect to the Saint Clothing server."
+        );
+      }
+
       toast.error(
-        error.response?.data?.message || "Failed to send verification code"
+        error.response?.data?.message ||
+        `Failed to send verification code (${error.response.status})`
       );
     }
   };
@@ -766,15 +819,14 @@ const Login = () => {
                       {currentState === "Sign Up" &&
                         formData.password.length > 0 && (
                           <p
-                            className={`px-1 text-[11px] font-semibold leading-5 ${
-                              passwordStrength === "weak"
+                            className={`px-1 text-[11px] font-semibold leading-5 ${passwordStrength === "weak"
                                 ? "text-rose-500"
                                 : passwordStrength === "medium"
-                                ? "text-amber-500"
-                                : passwordStrength === "strong"
-                                ? "text-emerald-600"
-                                : "text-gray-400"
-                            }`}
+                                  ? "text-amber-500"
+                                  : passwordStrength === "strong"
+                                    ? "text-emerald-600"
+                                    : "text-gray-400"
+                              }`}
                           >
                             Your password must be at least 8 characters long and
                             include an uppercase letter, a number, and a symbol.
@@ -851,11 +903,10 @@ const Login = () => {
                                 Shipping Address
                               </p>
                               <p
-                                className={`mt-1 text-[11px] font-bold ${
-                                  isAddressComplete
+                                className={`mt-1 text-[11px] font-bold ${isAddressComplete
                                     ? "text-emerald-600"
                                     : "text-gray-500"
-                                }`}
+                                  }`}
                               >
                                 {isAddressComplete
                                   ? "Address completed"
@@ -937,11 +988,10 @@ const Login = () => {
                                 </p>
 
                                 <span
-                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${
-                                    otpTimer > 0
+                                  className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${otpTimer > 0
                                       ? "bg-black text-white"
                                       : "bg-rose-50 text-rose-600"
-                                  }`}
+                                    }`}
                                 >
                                   {otpTimer > 0 ? `${otpTimer}s left` : "Expired"}
                                 </span>
@@ -1002,8 +1052,8 @@ const Login = () => {
                               {emailExists
                                 ? "Account Already Exists"
                                 : !acceptedTerms
-                                ? "Accept Terms First"
-                                : "Send OTP"}
+                                  ? "Accept Terms First"
+                                  : "Send OTP"}
                             </button>
                           ) : (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
@@ -1024,10 +1074,10 @@ const Login = () => {
                       {currentState === "Login"
                         ? "Login"
                         : !emailVerified
-                        ? "Verify Email First"
-                        : !isAddressComplete
-                        ? "Complete Address First"
-                        : "Create Account"}
+                          ? "Verify Email First"
+                          : !isAddressComplete
+                            ? "Complete Address First"
+                            : "Create Account"}
                     </button>
                   </form>
 
