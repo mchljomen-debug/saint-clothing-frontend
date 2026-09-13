@@ -303,7 +303,7 @@ const Product3DViewer = forwardRef(
             <span className="h-px w-8 bg-black md:w-10" />
 
             <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-black/45 md:text-[9px]">
+              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-black/70 md:text-[9px]">
                 Saint Clothing
               </p>
 
@@ -502,7 +502,7 @@ const Product3DViewer = forwardRef(
                 Unavailable.
               </h2>
 
-              <p className="mt-5 text-xs font-medium leading-6 text-black/45">
+              <p className="mt-5 text-xs font-medium leading-70">
                 The 3D model could not be loaded. Please check the model
                 storage URL or connection.
               </p>

@@ -23,7 +23,7 @@ const About = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="h-px w-10 bg-black" />
-              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/45">
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/70">
                 Saint Clothing
               </p>
             </div>

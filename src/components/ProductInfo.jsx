@@ -134,7 +134,7 @@ const ProductInfo = ({
         <button
           type="button"
           onClick={scrollToReviews}
-          className="text-[10px] font-bold uppercase tracking-[0.1em] text-black/45 underline underline-offset-4 transition hover:text-black"
+          className="text-[10px] font-bold uppercase tracking-[0.1em]70 underline underline-offset-4 transition hover:text-black"
         >
           {reviews.length} Review
           {reviews.length !== 1

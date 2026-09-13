@@ -112,7 +112,7 @@ const Home = () => {
             <div>
               <div className="mb-5 flex items-center gap-3">
                 <span className="h-px w-10 bg-black" />
-                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/45">
+                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/75">
                   Saint / 02
                 </p>
               </div>

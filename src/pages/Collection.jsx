@@ -335,7 +335,7 @@ const Collection = () => {
 
               <span className="h-1.5 w-1.5 rounded-full bg-black" />
 
-              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-black/45">
+              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-black/70">
                 Saint Clothing / Collection
               </span>
 
@@ -486,7 +486,7 @@ const Collection = () => {
                 IT WITH
               </h2>
 
-              <p className="mt-4 max-w-[190px] text-[9px] font-bold uppercase leading-[1.5] tracking-[0.15em] text-black/45">
+              <p className="mt-4 max-w-[190px] text-[9px] font-bold uppercase leading-[1.5] tracking-[0.15em] text-black/70">
                 Curated pieces selected
                 to complement your
                 current archive.
@@ -664,7 +664,7 @@ const Collection = () => {
                           className={`text-[9px] font-black uppercase tracking-[0.15em] transition ${
                             category === ""
                               ? "text-black"
-                              : "text-black/45 group-hover:text-black"
+                              : "text-black/70 group-hover:text-black"
                           }`}
                         >
                           All Pieces
@@ -720,7 +720,7 @@ const Collection = () => {
                                   category ===
                                   cat
                                     ? "text-black"
-                                    : "text-black/45 group-hover:text-black"
+                                    : "text-black/70 group-hover:text-black"
                                 }`}
                               >
                                 {cat}
@@ -819,7 +819,7 @@ const Collection = () => {
                                   className={`text-[9px] font-black uppercase tracking-[0.15em] ${
                                     active
                                       ? "text-black"
-                                      : "text-black/45 group-hover:text-black"
+                                      : "text-black/70 group-hover:text-black"
                                   }`}
                                 >
                                   {color}
@@ -1123,7 +1123,7 @@ const Collection = () => {
                               currentPage ===
                               page
                                 ? "border-black bg-black text-white"
-                                : "border-transparent text-black/45 hover:border-black hover:text-black"
+                                : "border-transparent text-black/70 hover:border-black hover:text-black"
                             }`}
                           >
                             {String(
@@ -1192,7 +1192,7 @@ const Collection = () => {
 
           <div className="flex items-end">
 
-            <p className="max-w-md text-[10px] font-bold uppercase leading-[1.7] tracking-[0.16em] text-black/45">
+            <p className="max-w-md text-[10px] font-bold uppercase leading-[1.7] tracking-[0.16em] text-black/70">
               Explore the complete
               Saint Clothing archive.
               Designed around
