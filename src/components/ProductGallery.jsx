@@ -52,7 +52,7 @@ const ProductGallery = ({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-black/30">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-black/70">
                 No Image
               </p>
             </div>
@@ -61,7 +61,7 @@ const ProductGallery = ({
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/[0.03] via-transparent to-black/[0.05]" />
 
           <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
-            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-black/35">
+            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-black/70">
               Saint / 01
             </p>
           </div>
@@ -96,11 +96,11 @@ const ProductGallery = ({
         )}
 
         <div className="mt-3 flex items-center justify-between">
-          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-black/35">
+          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-black/70">
             {productData.images?.length || 0} Images
           </p>
 
-          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-black/35">
+          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-black/70">
             Scroll to Explore
           </p>
         </div>
@@ -135,7 +135,7 @@ const ProductGallery = ({
           className={`group px-4 py-4 text-left transition ${
             has3DModel
               ? "bg-[#F5F4F0] hover:bg-black hover:text-white"
-              : "cursor-not-allowed bg-[#E9E7E1] text-black/30"
+              : "cursor-not-allowed bg-[#E9E7E1] text-black/70"
           }`}
         >
           <div className="flex items-center justify-between">

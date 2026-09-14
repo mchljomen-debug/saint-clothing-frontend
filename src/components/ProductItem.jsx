@@ -297,7 +297,7 @@ const ProductItem = ({
       {/* ================= DETAILS ================= */}
 
       <div className="pt-5 pb-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">
           Saint Clothing
         </p>
 
@@ -327,7 +327,7 @@ const ProductItem = ({
           {isLoggedIn ? (
             hasDiscount ? (
               <div>
-                <p className="text-sm text-gray-400 line-through">
+                <p className="text-sm text-gray-600 line-through">
                   {currency}
                   {safePrice.toFixed(2)}
                 </p>
@@ -344,7 +344,7 @@ const ProductItem = ({
               </p>
             )
           ) : (
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-600">
               Login to see price
             </p>
           )}

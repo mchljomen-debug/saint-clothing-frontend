@@ -1,4 +1,4 @@
-import React,{useContext,useEffect,useMemo,useState,useCallback}from"react";
+import React,{useContext,useEffect,useMemo,useState,useCallback,useRef}from"react";
 import{Carousel}from"antd";
 import{useNavigate}from"react-router-dom";
 import{ShopContext}from"../context/ShopContext";
@@ -18,6 +18,8 @@ const resolveImage=(img)=>{
 const Hero=()=>{
   const navigate=useNavigate();
   const{user,token}=useContext(ShopContext);
+  const carouselWrapperRef=useRef(null);
+  const[activeSlide,setActiveSlide]=useState(0);
   const[greetingPrefix,setGreetingPrefix]=useState("");
   const[heroData,setHeroData]=useState({
     tickerEnabled:true,
@@ -27,10 +29,43 @@ const Hero=()=>{
     slides:[]
   });
 
+  const syncCarouselAccessibility=useCallback(()=>{
+    const root=carouselWrapperRef.current;
+    if(!root)return;
+
+    const slides=root.querySelectorAll(".slick-slide");
+
+    slides.forEach((slide)=>{
+      const hidden=slide.getAttribute("aria-hidden")==="true";
+      const focusable=slide.querySelectorAll("button,a[href],input,select,textarea,[tabindex]");
+
+      focusable.forEach((element)=>{
+        if(hidden){
+          element.setAttribute("tabindex","-1");
+        }else if(element.classList.contains("hero-cta")){
+          element.setAttribute("tabindex","0");
+        }
+      });
+    });
+  },[]);
+
+  const handleSlideChange=useCallback((current)=>{
+    setActiveSlide(current);
+
+    requestAnimationFrame(()=>{
+      syncCarouselAccessibility();
+    });
+
+    setTimeout(()=>{
+      syncCarouselAccessibility();
+    },750);
+  },[syncCarouselAccessibility]);
+
   const fetchHero=useCallback(async(forceRefresh=false)=>{
     try{
       if(!forceRefresh){
         const cachedHero=sessionStorage.getItem(HERO_CACHE_KEY);
+
         if(cachedHero){
           const parsedHero=JSON.parse(cachedHero);
           setHeroData(parsedHero);
@@ -77,6 +112,16 @@ const Hero=()=>{
     window.addEventListener("hero-refresh",handleRefresh);
     return()=>window.removeEventListener("hero-refresh",handleRefresh);
   },[fetchHero]);
+
+  useEffect(()=>{
+    if(!heroData.slides.length)return;
+
+    const timer=setTimeout(()=>{
+      syncCarouselAccessibility();
+    },100);
+
+    return()=>clearTimeout(timer);
+  },[heroData.slides,syncCarouselAccessibility]);
 
   const isLoggedInUser=Boolean(token&&(user?._id||user?.id||user?.email));
 
@@ -125,18 +170,23 @@ const Hero=()=>{
 
     if(action==="bestseller"){
       const el=document.getElementById("best-seller-section");
-      if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
-      else{
+
+      if(el){
+        el.scrollIntoView({behavior:"smooth",block:"start"});
+      }else{
         navigate("/collection");
         window.scrollTo({top:0,behavior:"smooth"});
       }
+
       return;
     }
 
     if(action==="latest"){
       const el=document.getElementById("latest-collection-section");
-      if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
-      else{
+
+      if(el){
+        el.scrollIntoView({behavior:"smooth",block:"start"});
+      }else{
         navigate("/collection");
         window.scrollTo({top:0,behavior:"smooth"});
       }
@@ -146,10 +196,7 @@ const Hero=()=>{
   if(!heroData.slides.length)return null;
 
   return(
-    <section
-      className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden bg-black"
-      aria-label="Featured Saint Clothing collections"
-    >
+    <section className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden bg-black"aria-label="Featured Saint Clothing collections">
       {isLoggedInUser&&tickerMessage&&(
         <>
           <span className="sr-only">{tickerMessage}</span>
@@ -169,7 +216,7 @@ const Hero=()=>{
         </>
       )}
 
-      <div className="hero-container">
+      <div ref={carouselWrapperRef}className="hero-container">
         <Carousel
           arrows
           infinite
@@ -179,15 +226,13 @@ const Hero=()=>{
           effect="fade"
           dots
           pauseOnHover={false}
+          afterChange={handleSlideChange}
           className="hero-carousel"
         >
           {heroData.slides.map((slide,index)=>(
-            <div
-              key={`${slide.title}-${index}`}
-              className="relative w-full h-[420px] sm:h-[500px] md:h-[620px] lg:h-[640px]"
-            >
+            <div key={`${slide.title}-${index}`}className="relative h-[420px] w-full sm:h-[500px] md:h-[620px] lg:h-[640px]">
               <img
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 src={slide.image}
                 alt={slide.title?`${slide.title} - Saint Clothing collection`:"Saint Clothing featured collection"}
                 width="1920"
@@ -197,20 +242,10 @@ const Hero=()=>{
                 decoding="async"
               />
 
-              <div
-                className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent"
-                aria-hidden="true"
-              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent"aria-hidden="true"/>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"aria-hidden="true"/>
 
-              <div
-                className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
-                aria-hidden="true"
-              />
-
-              <div
-                className="absolute inset-0 opacity-[0.12] mix-blend-overlay"
-                aria-hidden="true"
-              >
+              <div className="absolute inset-0 opacity-[0.12] mix-blend-overlay"aria-hidden="true">
                 <div
                   className="h-full w-full"
                   style={{
@@ -232,11 +267,11 @@ const Hero=()=>{
                   )}
 
                   {index===0?(
-                    <h1 className="max-w-4xl text-white uppercase font-black text-4xl sm:text-7xl md:text-7xl lg:text-[7rem] leading-[0.78] tracking-[-0.08em]">
+                    <h1 className="max-w-4xl text-4xl font-black uppercase leading-[0.78] tracking-[-0.08em] text-white sm:text-7xl md:text-7xl lg:text-[7rem]">
                       {slide.title}
                     </h1>
                   ):(
-                    <h2 className="max-w-4xl text-white uppercase font-black text-4xl sm:text-7xl md:text-7xl lg:text-[7rem] leading-[0.78] tracking-[-0.08em]">
+                    <h2 className="max-w-4xl text-4xl font-black uppercase leading-[0.78] tracking-[-0.08em] text-white sm:text-7xl md:text-7xl lg:text-[7rem]">
                       {slide.title}
                     </h2>
                   )}
@@ -244,29 +279,27 @@ const Hero=()=>{
                   {slide.subtitle&&(
                     <div className="mt-7 flex items-center gap-4">
                       <span className="h-px w-12 bg-white/70"aria-hidden="true"/>
-                      <p className="text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-[0.35em] text-white">
+                      <p className="text-[9px] font-black uppercase tracking-[0.35em] text-white sm:text-[10px] md:text-xs">
                         {slide.subtitle}
                       </p>
                     </div>
                   )}
 
                   {slide.description&&(
-                    <p className="mt-5 max-w-md text-xs sm:text-sm md:text-base leading-6 text-white/80">
+                    <p className="mt-5 max-w-md text-xs leading-6 text-white/80 sm:text-sm md:text-base">
                       {slide.description}
                     </p>
                   )}
 
                   <button
                     type="button"
+                    tabIndex={index===activeSlide?0:-1}
                     aria-label={`${slide.cta||"Explore"} ${slide.title||"Saint Clothing collection"}`}
                     onClick={()=>handleAction(slide.action)}
-                    className="group mt-7 inline-flex items-center gap-8 border border-white/40 bg-white px-7 py-4 text-[9px] font-black uppercase tracking-[0.28em] text-black transition-all duration-300 hover:bg-transparent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    className="hero-cta group mt-7 inline-flex items-center gap-8 border border-white/40 bg-white px-7 py-4 text-[9px] font-black uppercase tracking-[0.28em] text-black transition-all duration-300 hover:bg-transparent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <span>{slide.cta}</span>
-                    <span
-                      className="text-lg transition-transform duration-300 group-hover:translate-x-1"
-                      aria-hidden="true"
-                    >
+                    <span className="text-lg transition-transform duration-300 group-hover:translate-x-1"aria-hidden="true">
                       →
                     </span>
                   </button>
