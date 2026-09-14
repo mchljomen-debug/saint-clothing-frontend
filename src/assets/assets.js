@@ -1,4 +1,4 @@
-import logo from"./logo.png";
+import logo from"./logo-128.webp";
 import cart_icon from"./cart_icon.png";
 import bin_icon from"./bin_icon.png";
 import dropdown_icon from"./dropdown_icon.png";
@@ -17,14 +17,8 @@ import cross_icon from"./cross_icon.png";
 import stripe_logo from"./stripe_logo.png";
 import razorpay_logo from"./razorpay_logo.png";
 import contact_img from"./contact_img.jpg";
-import gcash_qr from"./gcash_qr.jpeg";
-import maya_qr from"./maya_qr.jpeg";
-import gotyme_qr from"./gotyme_qr.jpeg";
-import gcash_logo from"./gcash_logo.png";
-import maya_logo from"./maya_logo.png";
-import gotyme_logo from"./gotyme_logo.png";
 import cod_logo from"./gotyme_logo.png";
-import build_fit_preview from"./build_fit_preview.png";
+import build_fit_preview from"./build_fit_preview.webp";
 import mannequin from"./mannequin.png";
 
 export const assets={
@@ -47,12 +41,6 @@ export const assets={
   stripe_logo,
   razorpay_logo,
   contact_img,
-  gcash_qr,
-  maya_qr,
-  gotyme_qr,
-  gcash_logo,
-  maya_logo,
-  gotyme_logo,
   cod_logo,
   build_fit_preview,
   mannequin
