@@ -1,4 +1,4 @@
-import logo from"./logo-128.webp";
+import logo from"./logo.png";
 import cart_icon from"./cart_icon.png";
 import bin_icon from"./bin_icon.png";
 import dropdown_icon from"./dropdown_icon.png";
@@ -18,7 +18,7 @@ import stripe_logo from"./stripe_logo.png";
 import razorpay_logo from"./razorpay_logo.png";
 import contact_img from"./contact_img.jpg";
 import cod_logo from"./gotyme_logo.png";
-import build_fit_preview from"./build_fit_preview.webp";
+import build_fit_preview from"./build_fit_preview.png";
 import mannequin from"./mannequin.png";
 
 export const assets={

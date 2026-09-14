@@ -162,7 +162,7 @@ const Contact = () => {
                     </h2>
 
                     <p className="mt-3 text-sm font-medium leading-6 text-white/50">
-                      Pasig City, Metro Manila,
+                      Tondo, Metro Manila,
                       <br />
                       Philippines, 1600
                     </p>
