@@ -1,25 +1,50 @@
-import React,{useEffect,useMemo,useState}from"react";
+import React,{lazy,Suspense,useEffect,useMemo,useRef,useState}from"react";
 import{useNavigate}from"react-router-dom";
 import axios from"axios";
-
 import Hero from"../components/Hero";
-import LatestCollection from"../components/LatestCollection";
-import BestSeller from"../components/BestSeller";
-import SocialFeed from"../components/SocialFeed";
-import OurPolicy from"../components/OurPolicy";
-import NewsletterBox from"../components/NewsletterBox";
 import{backendUrl}from"../App";
 import{assets}from"../assets/assets";
 
+const LatestCollection=lazy(()=>import("../components/LatestCollection"));
+const BestSeller=lazy(()=>import("../components/BestSeller"));
+const SocialFeed=lazy(()=>import("../components/SocialFeed"));
+const OurPolicy=lazy(()=>import("../components/OurPolicy"));
+const NewsletterBox=lazy(()=>import("../components/NewsletterBox"));
+
 const CATEGORY_CACHE_KEY="saint_home_categories";
 
-const optimizeCloudinaryImage=(url,width=1600)=>{
+const optimizeCloudinaryImage=(url,width=1280)=>{
   if(!url||!url.includes("res.cloudinary.com"))return url;
   if(!url.includes("/image/upload/"))return url;
+  return url.replace("/image/upload/",`/image/upload/f_auto,q_auto:eco,w_${width},c_limit/`);
+};
 
-  return url.replace(
-    "/image/upload/",
-    `/image/upload/f_auto,q_auto,w_${width},c_limit/`
+const DeferredSection=({children,minHeight="400px",rootMargin="400px"})=>{
+  const ref=useRef(null);
+  const[visible,setVisible]=useState(false);
+
+  useEffect(()=>{
+    if(visible)return;
+
+    const observer=new IntersectionObserver(([entry])=>{
+      if(entry.isIntersecting){
+        setVisible(true);
+        observer.disconnect();
+      }
+    },{rootMargin:`${rootMargin} 0px`});
+
+    const element=ref.current;
+    if(element)observer.observe(element);
+
+    return()=>{
+      observer.disconnect();
+    };
+  },[visible,rootMargin]);
+
+  return(
+    <div ref={ref} style={{minHeight}}>
+      {visible?children:null}
+    </div>
   );
 };
 
@@ -71,25 +96,29 @@ const Home=()=>{
           setCategories([]);
         }
       }finally{
-        if(!cancelled){
-          setLoadingCategories(false);
-        }
+        if(!cancelled)setLoadingCategories(false);
       }
     };
 
     const startCategoryLoad=()=>{
       if(cancelled)return;
-      fetchCategories();
+
+      if("requestIdleCallback"in window){
+        idleId=window.requestIdleCallback(fetchCategories,{timeout:5000});
+      }else{
+        timerId=window.setTimeout(fetchCategories,3000);
+      }
     };
 
-    if("requestIdleCallback"in window){
-      idleId=window.requestIdleCallback(startCategoryLoad,{timeout:2000});
+    if(document.readyState==="complete"){
+      startCategoryLoad();
     }else{
-      timerId=window.setTimeout(startCategoryLoad,800);
+      window.addEventListener("load",startCategoryLoad,{once:true});
     }
 
     return()=>{
       cancelled=true;
+      window.removeEventListener("load",startCategoryLoad);
 
       if(idleId!==null&&"cancelIdleCallback"in window){
         window.cancelIdleCallback(idleId);
@@ -120,9 +149,7 @@ const Home=()=>{
 
   return(
     <div className="min-h-screen overflow-x-hidden bg-[#f8f7f4]">
-      <section className="relative min-h-[calc(100vh-72px)] overflow-hidden md:min-h-[calc(100vh-80px)] [&>*]:min-h-[calc(100vh-72px)] md:[&>*]:min-h-[calc(100vh-100px)]">
-        <Hero/>
-      </section>
+      <Hero/>
 
       <section className="relative mt-[-1px] overflow-hidden bg-[#f8f7f4]">
         <div
@@ -142,12 +169,11 @@ const Home=()=>{
           aria-hidden="true"
         />
 
-        <div className="relative mx-auto max-w-[1600px] px-5 pt-20 pb-8 sm:px-8 sm:pt-20 sm:pb-10 md:px-[7vw] md:pt-28 md:pb-12 lg:px-[8vw] lg:pt-36 lg:pb-5">
+        <div className="relative mx-auto max-w-[1600px] px-5 pb-8 pt-20 sm:px-8 sm:pb-10 sm:pt-20 md:px-[7vw] md:pb-12 md:pt-28 lg:px-[8vw] lg:pb-5 lg:pt-36">
           <div className="mb-14 flex items-end justify-between gap-8 md:mb-20">
             <div>
               <div className="mb-5 flex items-center gap-3">
                 <span className="h-px w-10 bg-black" aria-hidden="true"/>
-
                 <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/75">
                   Saint / 02
                 </p>
@@ -272,6 +298,8 @@ const Home=()=>{
                 <img
                   src={assets.build_fit_preview}
                   alt="Build Fit Preview"
+                  width="345"
+                  height="486"
                   loading="lazy"
                   decoding="async"
                   className="relative z-10 h-full w-full object-contain p-5 transition duration-1000 ease-out group-hover:scale-[1.06]"
@@ -302,25 +330,10 @@ const Home=()=>{
                 </div>
               </div>
 
-              <span
-                className="absolute left-3 top-3 h-5 w-5 border-l border-t border-black/20"
-                aria-hidden="true"
-              />
-
-              <span
-                className="absolute right-3 top-3 h-5 w-5 border-r border-t border-black/20"
-                aria-hidden="true"
-              />
-
-              <span
-                className="absolute bottom-3 left-3 h-5 w-5 border-b border-l border-black/20"
-                aria-hidden="true"
-              />
-
-              <span
-                className="absolute bottom-3 right-3 h-5 w-5 border-b border-r border-black/20"
-                aria-hidden="true"
-              />
+              <span className="absolute left-3 top-3 h-5 w-5 border-l border-t border-black/20" aria-hidden="true"/>
+              <span className="absolute right-3 top-3 h-5 w-5 border-r border-t border-black/20" aria-hidden="true"/>
+              <span className="absolute bottom-3 left-3 h-5 w-5 border-b border-l border-black/20" aria-hidden="true"/>
+              <span className="absolute bottom-3 right-3 h-5 w-5 border-b border-r border-black/20" aria-hidden="true"/>
             </div>
           </div>
 
@@ -361,10 +374,15 @@ const Home=()=>{
         </div>
 
         {loadingCategories?(
-          <div className="flex h-[60vh] items-center justify-center">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-600">
-              Loading categories...
-            </p>
+          <div className="min-h-[300vh] bg-[#e8e2d7]" aria-hidden="true">
+            {[0,1,2].map((item)=>(
+              <div
+                key={item}
+                className="relative min-h-screen overflow-hidden border-b border-black/5 bg-[#e8e2d7]"
+              >
+                <div className="absolute inset-0 animate-pulse bg-[#e8e2d7]"/>
+              </div>
+            ))}
           </div>
         ):visibleCategories.length>0?(
           <div className="snap-y snap-mandatory">
@@ -382,7 +400,7 @@ const Home=()=>{
                   {cat.image?(
                     <img
                       src={categoryImage1280}
-                      srcSet={`${categoryImage640} 640w, ${categoryImage960} 960w, ${categoryImage1280} 1280w, ${categoryImage1600} 1600w`}
+                      srcSet={`${categoryImage640} 640w,${categoryImage960} 960w,${categoryImage1280} 1280w,${categoryImage1600} 1600w`}
                       sizes="100vw"
                       alt={cat.name}
                       loading="lazy"
@@ -432,7 +450,7 @@ const Home=()=>{
             })}
           </div>
         ):(
-          <div className="flex h-[60vh] items-center justify-center text-center">
+          <div className="flex min-h-[60vh] items-center justify-center text-center">
             <p className="text-sm font-black uppercase tracking-widest text-gray-600">
               No categories available
             </p>
@@ -440,25 +458,45 @@ const Home=()=>{
         )}
       </section>
 
-      <div className="mt-10">
-        <LatestCollection/>
-      </div>
+      <DeferredSection minHeight="620px" rootMargin="500px">
+        <div className="mt-10">
+          <Suspense fallback={null}>
+            <LatestCollection/>
+          </Suspense>
+        </div>
+      </DeferredSection>
 
-      <div className="mt-10">
-        <BestSeller/>
-      </div>
+      <DeferredSection minHeight="620px" rootMargin="500px">
+        <div className="mt-10">
+          <Suspense fallback={null}>
+            <BestSeller/>
+          </Suspense>
+        </div>
+      </DeferredSection>
 
-      <div className="mt-10">
-        <SocialFeed/>
-      </div>
+      <DeferredSection minHeight="500px" rootMargin="400px">
+        <div className="mt-10">
+          <Suspense fallback={null}>
+            <SocialFeed/>
+          </Suspense>
+        </div>
+      </DeferredSection>
 
-      <div className="mt-8">
-        <OurPolicy/>
-      </div>
+      <DeferredSection minHeight="300px" rootMargin="400px">
+        <div className="mt-8">
+          <Suspense fallback={null}>
+            <OurPolicy/>
+          </Suspense>
+        </div>
+      </DeferredSection>
 
-      <div className="px-5 pb-20 pt-12 sm:px-8 md:px-[7vw] lg:px-[10vw] lg:pb-20 lg:pt-16">
-        <NewsletterBox/>
-      </div>
+      <DeferredSection minHeight="300px" rootMargin="400px">
+        <div className="px-5 pb-20 pt-12 sm:px-8 md:px-[7vw] lg:px-[10vw] lg:pb-20 lg:pt-16">
+          <Suspense fallback={null}>
+            <NewsletterBox/>
+          </Suspense>
+        </div>
+      </DeferredSection>
     </div>
   );
 };
