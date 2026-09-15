@@ -46,6 +46,8 @@ const ShopContextProvider=({children})=>{
   const[cartItems,setCartItems]=useState({});
   const[cartCount,setCartCount]=useState(0);
   const[products,setProducts]=useState([]);
+  const[productsLoading,setProductsLoading]=useState(true);
+  const[productsError,setProductsError]=useState("");
   const[categoryOptions,setCategoryOptions]=useState(DEFAULT_CATEGORIES);
   const[token,setToken]=useState("");
   const[user,setUser]=useState(null);
@@ -74,6 +76,7 @@ const ShopContextProvider=({children})=>{
     setUser(null);
     setCartItems({});
     setCartCount(0);
+
     if(pollingRef.current){
       clearInterval(pollingRef.current);
       pollingRef.current=null;
@@ -83,50 +86,116 @@ const ShopContextProvider=({children})=>{
   const getCategoriesData=useCallback(async(currentProducts=[])=>{
     try{
       const response=await axios.get(`${backendUrl}/api/category/list`,{timeout:20000});
+
       if(response.data?.success){
         const backendCategories=(response.data.categories||[]).map((item)=>item.name).filter(Boolean);
         const productCategories=(currentProducts||[]).map((item)=>item.category).filter(Boolean);
-        setCategoryOptions(Array.from(new Set([...DEFAULT_CATEGORIES,...backendCategories,...productCategories])));
+
+        setCategoryOptions(
+          Array.from(
+            new Set([
+              ...DEFAULT_CATEGORIES,
+              ...backendCategories,
+              ...productCategories
+            ])
+          )
+        );
+
+        return response.data.categories||[];
       }
-    }catch(error){
-      console.log("Category fetch error:",error.response?.data||error.message);
+
       const productCategories=(currentProducts||[]).map((item)=>item.category).filter(Boolean);
       setCategoryOptions(Array.from(new Set([...DEFAULT_CATEGORIES,...productCategories])));
+      return[];
+    }catch(error){
+      console.log("Category fetch error:",error.response?.data||error.message);
+
+      const productCategories=(currentProducts||[]).map((item)=>item.category).filter(Boolean);
+      setCategoryOptions(Array.from(new Set([...DEFAULT_CATEGORIES,...productCategories])));
+
+      return[];
     }
   },[backendUrl]);
 
   const fetchCurrentUser=useCallback(async(userToken,options={})=>{
     const{clearOn401=true,silent=true}=options;
     const cleanToken=String(userToken||"").trim();
+
     if(!cleanToken)return null;
+
     try{
       const response=await axios.post(`${backendUrl}/api/user/me`,{},{
         headers:getAuthHeaders(cleanToken),
         timeout:20000
       });
+
       if(response.data?.success&&response.data?.user){
         const currentUser=response.data.user;
+
         setUser(currentUser);
         localStorage.setItem("user",JSON.stringify(currentUser));
+
         return currentUser;
       }
+
       return null;
     }catch(error){
       const status=error.response?.status;
+
       console.log("Fetch current user error:",error.response?.data||error.message);
+
       if(status===401&&clearOn401){
         clearAuthData();
-        if(!silent)toast.error("Your session has expired. Please login again.");
+
+        if(!silent){
+          toast.error("Your session has expired. Please login again.");
+        }
       }
+
       return null;
     }
   },[backendUrl,getAuthHeaders,clearAuthData]);
 
   const getProductsData=useCallback(async()=>{
+    setProductsLoading(true);
+    setProductsError("");
+
     try{
-      const response=await axios.get(`${backendUrl}/api/product/list`,{timeout:20000});
-      if(response.data?.success){
-        const productsData=(response.data.products||[]).map((p)=>({
+      console.log("[SHOP] Loading products from:",`${backendUrl}/api/product/list`);
+
+      const response=await axios.get(`${backendUrl}/api/product/list`,{
+        timeout:30000,
+        headers:{
+          Accept:"application/json"
+        }
+      });
+
+      console.log("[SHOP] Product API status:",response.status);
+      console.log("[SHOP] Product API response:",response.data);
+
+      let rawProducts=[];
+
+      if(Array.isArray(response.data)){
+        rawProducts=response.data;
+      }else if(Array.isArray(response.data?.products)){
+        rawProducts=response.data.products;
+      }else if(Array.isArray(response.data?.data)){
+        rawProducts=response.data.data;
+      }else if(Array.isArray(response.data?.data?.products)){
+        rawProducts=response.data.data.products;
+      }
+
+      if(response.data?.success===false){
+        throw new Error(response.data?.message||"Backend returned success false.");
+      }
+
+      if(!Array.isArray(rawProducts)){
+        throw new Error("Invalid product response format.");
+      }
+
+      const productsData=rawProducts
+        .filter(Boolean)
+        .map((p)=>({
           ...p,
           stock:normalizeStockObject(p.stock),
           preorderStock:normalizeStockObject(p.preorderStock),
@@ -136,55 +205,114 @@ const ShopContextProvider=({children})=>{
           preorderNote:p.preorderNote||"",
           onSale:!!p.onSale,
           salePercent:Number(p.salePercent||0),
-          price:Number(p.price||0)
+          price:Number(p.price||0),
+          category:p.category||"",
+          images:Array.isArray(p.images)?p.images:p.images?[p.images]:Array.isArray(p.image)?p.image:p.image?[p.image]:[],
+          outfitImage:p.outfitImage||""
         }));
-        const reversedProducts=[...productsData].reverse();
-        setProducts(reversedProducts);
-        const productCategories=reversedProducts.map((item)=>item.category).filter(Boolean);
-        setCategoryOptions(Array.from(new Set([...DEFAULT_CATEGORIES,...productCategories])));
-        return reversedProducts;
+
+      const activeProducts=productsData.filter((product)=>!product.isDeleted);
+      const reversedProducts=[...activeProducts].reverse();
+
+      console.log("[SHOP] Products received:",rawProducts.length);
+      console.log("[SHOP] Active products:",reversedProducts.length);
+
+      setProducts(reversedProducts);
+
+      const productCategories=reversedProducts
+        .map((item)=>item.category)
+        .filter(Boolean);
+
+      setCategoryOptions(
+        Array.from(
+          new Set([
+            ...DEFAULT_CATEGORIES,
+            ...productCategories
+          ])
+        )
+      );
+
+      getCategoriesData(reversedProducts);
+
+      if(reversedProducts.length===0){
+        setProductsError("No active products were returned by the backend.");
       }
-      setProducts([]);
-      setCategoryOptions(DEFAULT_CATEGORIES);
-      return[];
+
+      return reversedProducts;
     }catch(error){
-      console.log("Products fetch error:",error.response?.data||error.message);
+      const status=error.response?.status;
+      const backendMessage=error.response?.data?.message;
+      const message=backendMessage||error.message||"Failed to load products.";
+
+      console.error("[SHOP] Products fetch failed.");
+      console.error("[SHOP] URL:",`${backendUrl}/api/product/list`);
+      console.error("[SHOP] Status:",status);
+      console.error("[SHOP] Error:",error.response?.data||error.message);
+
       setProducts([]);
       setCategoryOptions(DEFAULT_CATEGORIES);
+
+      if(status===404){
+        setProductsError("Product API route was not found.");
+      }else if(status>=500){
+        setProductsError("Product server is currently unavailable.");
+      }else if(error.code==="ECONNABORTED"){
+        setProductsError("Product request timed out. Please refresh.");
+      }else{
+        setProductsError(message);
+      }
+
       return[];
+    }finally{
+      setProductsLoading(false);
     }
-  },[backendUrl]);
+  },[backendUrl,getCategoriesData]);
 
   const fetchCart=useCallback(async(userToken,userId,silent=true)=>{
     const cleanToken=String(userToken||"").trim();
+
     if(!cleanToken||!userId)return null;
+
     try{
       const response=await axios.post(`${backendUrl}/api/cart/get`,{},{
         headers:getAuthHeaders(cleanToken),
         timeout:20000
       });
+
       if(response.data?.success){
         const backendCart=response.data.cartData||{};
+
         setCartItems(backendCart);
         setCartCount(calculateCartCount(backendCart));
         localStorage.setItem(`cart_${userId}`,JSON.stringify(backendCart));
+
         return backendCart;
       }
+
       return null;
     }catch(error){
       console.log("Failed to fetch cart:",error.response?.data||error.message);
+
       if(error.response?.status===401){
         clearAuthData();
         return null;
       }
-      if(!silent)toast.error("Failed to refresh cart");
+
+      if(!silent){
+        toast.error("Failed to refresh cart");
+      }
+
       return null;
     }
   },[backendUrl,getAuthHeaders,calculateCartCount,clearAuthData]);
 
   const startCartPolling=useCallback(()=>{
-    if(pollingRef.current)clearInterval(pollingRef.current);
+    if(pollingRef.current){
+      clearInterval(pollingRef.current);
+    }
+
     if(!token||!user?._id)return;
+
     pollingRef.current=setInterval(()=>{
       fetchCart(token,user._id,true);
     },4000);
@@ -244,14 +372,18 @@ const ShopContextProvider=({children})=>{
 
       if(response.data?.success){
         const updatedCart=response.data.cartData||{};
+
         setCartItems(updatedCart);
         setCartCount(calculateCartCount(updatedCart));
         localStorage.setItem(`cart_${user._id}`,JSON.stringify(updatedCart));
+
         toast.success(isPreorderSize?"Pre-order added to cart":"Added to cart");
+
         return true;
       }
 
       toast.error(response.data?.message||"Failed to add to cart");
+
       return false;
     }catch(error){
       console.log("Add to cart error:",error.response?.data||error.message);
@@ -264,6 +396,7 @@ const ShopContextProvider=({children})=>{
       }
 
       toast.error(error.response?.data?.message||"Failed to add to cart");
+
       return false;
     }
   },[token,user?._id,products,cartItems,backendUrl,navigate,getAuthHeaders,calculateCartCount,clearAuthData]);
@@ -302,13 +435,16 @@ const ShopContextProvider=({children})=>{
 
       if(response.data?.success){
         const updatedCart=response.data.cartData||{};
+
         setCartItems(updatedCart);
         setCartCount(calculateCartCount(updatedCart));
         localStorage.setItem(`cart_${user._id}`,JSON.stringify(updatedCart));
+
         return true;
       }
 
       toast.error(response.data?.message||"Failed to update cart");
+
       return false;
     }catch(error){
       console.log("Update cart error:",error.response?.data||error.message);
@@ -321,6 +457,7 @@ const ShopContextProvider=({children})=>{
       }
 
       toast.error(error.response?.data?.message||"Failed to update cart");
+
       return false;
     }
   },[token,user?._id,products,backendUrl,getAuthHeaders,calculateCartCount,clearAuthData,navigate]);
@@ -375,6 +512,7 @@ const ShopContextProvider=({children})=>{
       return true;
     }catch(error){
       console.log("REMOVE PURCHASED ITEMS ERROR:",error.response?.data||error.message);
+
       return false;
     }finally{
       startCartPolling();
@@ -403,10 +541,12 @@ const ShopContextProvider=({children})=>{
         setCartItems({});
         setCartCount(0);
         localStorage.removeItem(`cart_${user._id}`);
+
         return true;
       }
 
       toast.error(response.data?.message||"Failed to clear cart");
+
       return false;
     }catch(error){
       console.log("Clear cart error:",error.response?.data||error.message);
@@ -419,6 +559,7 @@ const ShopContextProvider=({children})=>{
       }
 
       toast.error(error.response?.data?.message||"Failed to clear cart");
+
       return false;
     }
   },[token,user?._id,backendUrl,getAuthHeaders,clearAuthData,navigate]);
@@ -457,7 +598,9 @@ const ShopContextProvider=({children})=>{
             silent:true
           });
 
-          if(verifiedUser)activeUser=verifiedUser;
+          if(verifiedUser){
+            activeUser=verifiedUser;
+          }
         }
 
         if(savedToken&&activeUser?._id&&mounted){
@@ -470,7 +613,9 @@ const ShopContextProvider=({children})=>{
       }catch(error){
         console.log("Initial app load error:",error);
       }finally{
-        if(mounted)setAuthReady(true);
+        if(mounted){
+          setAuthReady(true);
+        }
       }
     };
 
@@ -482,32 +627,7 @@ const ShopContextProvider=({children})=>{
   },[fetchCurrentUser,fetchCart]);
 
   useEffect(()=>{
-    let cancelled=false;
-    let idleId=null;
-    let timerId=null;
-
-    const loadProducts=()=>{
-      if(cancelled)return;
-      getProductsData();
-    };
-
-    if("requestIdleCallback"in window){
-      idleId=window.requestIdleCallback(loadProducts,{timeout:1800});
-    }else{
-      timerId=window.setTimeout(loadProducts,700);
-    }
-
-    return()=>{
-      cancelled=true;
-
-      if(idleId!==null&&"cancelIdleCallback"in window){
-        window.cancelIdleCallback(idleId);
-      }
-
-      if(timerId!==null){
-        window.clearTimeout(timerId);
-      }
-    };
+    getProductsData();
   },[getProductsData]);
 
   useEffect(()=>{
@@ -531,6 +651,10 @@ const ShopContextProvider=({children})=>{
     const handleVisibility=()=>{
       if(document.visibilityState!=="visible")return;
 
+      if(products.length===0){
+        getProductsData();
+      }
+
       if(token&&user?._id){
         fetchCart(token,user._id,true);
       }
@@ -538,6 +662,10 @@ const ShopContextProvider=({children})=>{
 
     const handleStorage=()=>{
       const latestToken=String(localStorage.getItem("token")||"").trim();
+
+      if(latestToken!==token){
+        setToken(latestToken);
+      }
 
       if(latestToken&&user?._id){
         fetchCurrentUser(latestToken,{
@@ -556,7 +684,14 @@ const ShopContextProvider=({children})=>{
       document.removeEventListener("visibilitychange",handleVisibility);
       window.removeEventListener("storage",handleStorage);
     };
-  },[token,user?._id,fetchCurrentUser,fetchCart]);
+  },[
+    token,
+    user?._id,
+    products.length,
+    fetchCurrentUser,
+    fetchCart,
+    getProductsData
+  ]);
 
   const getCartAmount=useCallback(()=>{
     return Object.entries(cartItems||{}).reduce((total,[itemId,sizes])=>{
@@ -582,6 +717,8 @@ const ShopContextProvider=({children})=>{
 
   const value={
     products,
+    productsLoading,
+    productsError,
     categoryOptions,
     currency,
     delivery_fee,
