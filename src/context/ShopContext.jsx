@@ -32,14 +32,7 @@ const getAvailableStockForSize=(product,size)=>{
   const preorderEnabled=product?.preorderEnabled!==false;
   const preorderThreshold=Number(product?.preorderThreshold??5);
   const isPreorderSize=preorderEnabled&&actualStock<=preorderThreshold&&preorderStock>0;
-  return{
-    availableStock:isPreorderSize?preorderStock:actualStock,
-    isPreorderSize,
-    actualStock,
-    preorderStock,
-    preorderEnabled,
-    preorderThreshold
-  };
+  return{availableStock:isPreorderSize?preorderStock:actualStock,isPreorderSize,actualStock,preorderStock,preorderEnabled,preorderThreshold};
 };
 
 const ShopContextProvider=({children})=>{
@@ -66,6 +59,13 @@ const ShopContextProvider=({children})=>{
     return{Authorization:`Bearer ${cleanToken}`};
   },[]);
 
+  const calculateCartCount=useCallback((cart)=>{
+    return Object.values(cart||{}).reduce((acc,sizes)=>{
+      const sizeTotal=Object.values(sizes||{}).reduce((sum,qty)=>sum+(Number(qty)||0),0);
+      return acc+sizeTotal;
+    },0);
+  },[]);
+
   const clearAuthData=useCallback(()=>{
     console.log("Clearing invalid authentication data.");
     localStorage.removeItem("token");
@@ -86,19 +86,12 @@ const ShopContextProvider=({children})=>{
       if(response.data?.success){
         const backendCategories=(response.data.categories||[]).map((item)=>item.name).filter(Boolean);
         const productCategories=(currentProducts||[]).map((item)=>item.category).filter(Boolean);
-        setCategoryOptions(Array.from(new Set([
-          ...DEFAULT_CATEGORIES,
-          ...backendCategories,
-          ...productCategories
-        ])));
+        setCategoryOptions(Array.from(new Set([...DEFAULT_CATEGORIES,...backendCategories,...productCategories])));
       }
     }catch(error){
       console.log("Category fetch error:",error.response?.data||error.message);
       const productCategories=(currentProducts||[]).map((item)=>item.category).filter(Boolean);
-      setCategoryOptions(Array.from(new Set([
-        ...DEFAULT_CATEGORIES,
-        ...productCategories
-      ])));
+      setCategoryOptions(Array.from(new Set([...DEFAULT_CATEGORIES,...productCategories])));
     }
   },[backendUrl]);
 
@@ -148,10 +141,7 @@ const ShopContextProvider=({children})=>{
         const reversedProducts=[...productsData].reverse();
         setProducts(reversedProducts);
         const productCategories=reversedProducts.map((item)=>item.category).filter(Boolean);
-        setCategoryOptions(Array.from(new Set([
-          ...DEFAULT_CATEGORIES,
-          ...productCategories
-        ])));
+        setCategoryOptions(Array.from(new Set([...DEFAULT_CATEGORIES,...productCategories])));
         return reversedProducts;
       }
       setProducts([]);
@@ -165,16 +155,9 @@ const ShopContextProvider=({children})=>{
     }
   },[backendUrl]);
 
-  const calculateCartCount=useCallback((cart)=>{
-    return Object.values(cart||{}).reduce((acc,sizes)=>{
-      const sizeTotal=Object.values(sizes||{}).reduce((sum,qty)=>sum+(Number(qty)||0),0);
-      return acc+sizeTotal;
-    },0);
-  },[]);
-
   const fetchCart=useCallback(async(userToken,userId,silent=true)=>{
     const cleanToken=String(userToken||"").trim();
-    if(!cleanToken||!userId)return;
+    if(!cleanToken||!userId)return null;
     try{
       const response=await axios.post(`${backendUrl}/api/cart/get`,{},{
         headers:getAuthHeaders(cleanToken),
@@ -182,25 +165,20 @@ const ShopContextProvider=({children})=>{
       });
       if(response.data?.success){
         const backendCart=response.data.cartData||{};
-        setCartItems((previous)=>{
-          const previousString=JSON.stringify(previous);
-          const nextString=JSON.stringify(backendCart);
-          if(previousString!==nextString){
-            localStorage.setItem(`cart_${userId}`,JSON.stringify(backendCart));
-            setCartCount(calculateCartCount(backendCart));
-            return backendCart;
-          }
-          setCartCount(calculateCartCount(previous));
-          return previous;
-        });
+        setCartItems(backendCart);
+        setCartCount(calculateCartCount(backendCart));
+        localStorage.setItem(`cart_${userId}`,JSON.stringify(backendCart));
+        return backendCart;
       }
+      return null;
     }catch(error){
       console.log("Failed to fetch cart:",error.response?.data||error.message);
       if(error.response?.status===401){
         clearAuthData();
-        return;
+        return null;
       }
       if(!silent)toast.error("Failed to refresh cart");
+      return null;
     }
   },[backendUrl,getAuthHeaders,calculateCartCount,clearAuthData]);
 
@@ -288,37 +266,28 @@ const ShopContextProvider=({children})=>{
       toast.error(error.response?.data?.message||"Failed to add to cart");
       return false;
     }
-  },[
-    token,
-    user?._id,
-    products,
-    cartItems,
-    backendUrl,
-    navigate,
-    getAuthHeaders,
-    calculateCartCount,
-    clearAuthData
-  ]);
+  },[token,user?._id,products,cartItems,backendUrl,navigate,getAuthHeaders,calculateCartCount,clearAuthData]);
 
   const updateQuantity=useCallback(async(itemId,size,quantity)=>{
-    if(!token||!user?._id)return;
+    if(!token||!user?._id)return false;
 
     const normalizedSize=String(size).toUpperCase();
     const nextQuantity=Number(quantity||0);
 
     if(!Number.isFinite(nextQuantity)||nextQuantity<0){
       toast.error("Invalid quantity");
-      return;
+      return false;
     }
 
     const product=products.find((p)=>String(p._id)===String(itemId));
-    if(!product)return;
 
-    const{availableStock,isPreorderSize}=getAvailableStockForSize(product,normalizedSize);
+    if(product&&nextQuantity>0){
+      const{availableStock,isPreorderSize}=getAvailableStockForSize(product,normalizedSize);
 
-    if(nextQuantity>availableStock){
-      toast.error(isPreorderSize?"Cannot exceed available pre-order slots":"Cannot exceed available stock");
-      return;
+      if(nextQuantity>availableStock){
+        toast.error(isPreorderSize?"Cannot exceed available pre-order slots":"Cannot exceed available stock");
+        return false;
+      }
     }
 
     try{
@@ -336,9 +305,11 @@ const ShopContextProvider=({children})=>{
         setCartItems(updatedCart);
         setCartCount(calculateCartCount(updatedCart));
         localStorage.setItem(`cart_${user._id}`,JSON.stringify(updatedCart));
-      }else{
-        toast.error(response.data?.message||"Failed to update cart");
+        return true;
       }
+
+      toast.error(response.data?.message||"Failed to update cart");
+      return false;
     }catch(error){
       console.log("Update cart error:",error.response?.data||error.message);
 
@@ -346,24 +317,81 @@ const ShopContextProvider=({children})=>{
         clearAuthData();
         toast.error("Session expired. Please login again.");
         navigate("/login");
-        return;
+        return false;
       }
 
       toast.error(error.response?.data?.message||"Failed to update cart");
+      return false;
+    }
+  },[token,user?._id,products,backendUrl,getAuthHeaders,calculateCartCount,clearAuthData,navigate]);
+
+  const removePurchasedItems=useCallback(async(items=[])=>{
+    if(!token||!user?._id)return false;
+    if(!Array.isArray(items)||items.length===0)return true;
+
+    stopCartPolling();
+
+    try{
+      const uniqueItems=[];
+      const seen=new Set();
+
+      for(const item of items){
+        const itemId=item?._id||item?.productId;
+        const size=String(item?.size||"").toUpperCase();
+
+        if(!itemId||!size)continue;
+
+        const key=`${itemId}_${size}`;
+
+        if(seen.has(key))continue;
+
+        seen.add(key);
+        uniqueItems.push({itemId,size});
+      }
+
+      for(const item of uniqueItems){
+        const response=await axios.post(`${backendUrl}/api/cart/update`,{
+          itemId:item.itemId,
+          size:item.size,
+          quantity:0
+        },{
+          headers:getAuthHeaders(token),
+          timeout:20000
+        });
+
+        if(!response.data?.success){
+          throw new Error(response.data?.message||"Failed to remove purchased item");
+        }
+      }
+
+      const refreshedCart=await fetchCart(token,user._id,true);
+
+      if(refreshedCart){
+        setCartItems(refreshedCart);
+        setCartCount(calculateCartCount(refreshedCart));
+        localStorage.setItem(`cart_${user._id}`,JSON.stringify(refreshedCart));
+      }
+
+      return true;
+    }catch(error){
+      console.log("REMOVE PURCHASED ITEMS ERROR:",error.response?.data||error.message);
+      return false;
+    }finally{
+      startCartPolling();
     }
   },[
     token,
     user?._id,
-    products,
     backendUrl,
     getAuthHeaders,
+    fetchCart,
     calculateCartCount,
-    clearAuthData,
-    navigate
+    stopCartPolling,
+    startCartPolling
   ]);
 
   const clearCart=useCallback(async()=>{
-    if(!token||!user?._id)return;
+    if(!token||!user?._id)return false;
 
     try{
       const response=await axios.post(`${backendUrl}/api/cart/clear`,{},{
@@ -375,9 +403,11 @@ const ShopContextProvider=({children})=>{
         setCartItems({});
         setCartCount(0);
         localStorage.removeItem(`cart_${user._id}`);
-      }else{
-        toast.error(response.data?.message||"Failed to clear cart");
+        return true;
       }
+
+      toast.error(response.data?.message||"Failed to clear cart");
+      return false;
     }catch(error){
       console.log("Clear cart error:",error.response?.data||error.message);
 
@@ -385,19 +415,13 @@ const ShopContextProvider=({children})=>{
         clearAuthData();
         toast.error("Session expired. Please login again.");
         navigate("/login");
-        return;
+        return false;
       }
 
       toast.error(error.response?.data?.message||"Failed to clear cart");
+      return false;
     }
-  },[
-    token,
-    user?._id,
-    backendUrl,
-    getAuthHeaders,
-    clearAuthData,
-    navigate
-  ]);
+  },[token,user?._id,backendUrl,getAuthHeaders,clearAuthData,navigate]);
 
   useEffect(()=>{
     let mounted=true;
@@ -501,14 +525,7 @@ const ShopContextProvider=({children})=>{
     return()=>{
       stopCartPolling();
     };
-  },[
-    authReady,
-    token,
-    user?._id,
-    fetchCart,
-    startCartPolling,
-    stopCartPolling
-  ]);
+  },[authReady,token,user?._id,fetchCart,startCartPolling,stopCartPolling]);
 
   useEffect(()=>{
     const handleVisibility=()=>{
@@ -539,12 +556,7 @@ const ShopContextProvider=({children})=>{
       document.removeEventListener("visibilitychange",handleVisibility);
       window.removeEventListener("storage",handleStorage);
     };
-  },[
-    token,
-    user?._id,
-    fetchCurrentUser,
-    fetchCart
-  ]);
+  },[token,user?._id,fetchCurrentUser,fetchCart]);
 
   const getCartAmount=useCallback(()=>{
     return Object.entries(cartItems||{}).reduce((total,[itemId,sizes])=>{
@@ -582,6 +594,7 @@ const ShopContextProvider=({children})=>{
     setCartItems,
     addToCart,
     updateQuantity,
+    removePurchasedItems,
     clearCart,
     getCartCount:()=>cartCount,
     getCartAmount,

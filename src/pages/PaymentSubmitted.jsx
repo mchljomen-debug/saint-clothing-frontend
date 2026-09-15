@@ -1,122 +1,223 @@
-import React, {
-  useContext,
-  useEffect,
-} from "react";
-import { useNavigate } from "react-router-dom";
-import { ShopContext } from "../context/ShopContext";
-import ProductItem from "../components/ProductItem";
-import useRecommendations from "../hooks/useRecommendations";
-import axios from "axios";
+import React,{useContext,useEffect,useMemo,useRef,useState}from"react";
+import{useLocation,useNavigate}from"react-router-dom";
+import{ShopContext}from"../context/ShopContext";
+import ProductItem from"../components/ProductItem";
+import useRecommendations from"../hooks/useRecommendations";
+import axios from"axios";
 
-const PaymentSubmitted = () => {
-  const navigate = useNavigate();
+const PaymentSubmitted=()=>{
+  const navigate=useNavigate();
+  const location=useLocation();
 
-  const {
+  const{
     backendUrl,
     user,
     token,
     products,
-  } = useContext(ShopContext);
+    removePurchasedItems,
+    fetchCart,
+    getProductsData
+  }=useContext(ShopContext);
 
-  const checkoutCart = JSON.parse(
-    localStorage.getItem("checkout_cart") || "[]"
-  );
+  const cleanupStartedRef=useRef(false);
+  const trackingStartedRef=useRef(false);
 
-  const checkoutProductIds =
-    Array.isArray(checkoutCart)
-      ? checkoutCart
-          .map((item) => item?._id)
-          .filter(Boolean)
-      : [];
+  const[cleanupFinished,setCleanupFinished]=useState(false);
 
-  const checkoutCategory =
-    Array.isArray(checkoutCart) &&
-    checkoutCart.length > 0
-      ? checkoutCart[0]?.category || "Tshirt"
-      : "Tshirt";
+  const isCOD=location.state?.paymentMethod==="COD";
 
-  const checkoutColor =
-    Array.isArray(checkoutCart) &&
-    checkoutCart.length > 0
-      ? checkoutCart[0]?.color || ""
-      : "";
+  const checkoutCart=useMemo(()=>{
+    try{
+      const pendingPaymongoCart=JSON.parse(
+        localStorage.getItem("pending_paymongo_cart")||"[]"
+      );
 
-  const {
-    recommendations: recommendedProducts,
-  } = useRecommendations({
+      if(Array.isArray(pendingPaymongoCart)&&pendingPaymongoCart.length>0){
+        return pendingPaymongoCart;
+      }
+
+      const normalCheckoutCart=JSON.parse(
+        localStorage.getItem("checkout_cart")||"[]"
+      );
+
+      return Array.isArray(normalCheckoutCart)
+        ?normalCheckoutCart
+        :[];
+    }catch(error){
+      console.log("CHECKOUT CART PARSE ERROR:",error);
+      return[];
+    }
+  },[]);
+
+  const checkoutProductIds=useMemo(()=>{
+    return checkoutCart
+      .map((item)=>item?._id||item?.productId)
+      .filter(Boolean);
+  },[checkoutCart]);
+
+  const checkoutCategory=
+    checkoutCart.length>0
+      ?checkoutCart[0]?.category||"Tshirt"
+      :"Tshirt";
+
+  const checkoutColor=
+    checkoutCart.length>0
+      ?checkoutCart[0]?.color||""
+      :"";
+
+  const{recommendations:recommendedProducts}=useRecommendations({
     backendUrl,
     products,
-    productIds: checkoutProductIds,
-    category: checkoutCategory,
-    color: checkoutColor,
-    userId: user?._id || null,
-    limit: 4,
-    enabled: !!products?.length,
+    productIds:checkoutProductIds,
+    category:checkoutCategory,
+    color:checkoutColor,
+    userId:user?._id||null,
+    limit:4,
+    enabled:!!products?.length
   });
 
-  useEffect(() => {
-    const trackOrderSignals = async () => {
-      try {
-        if (!token || !user?._id) return;
+  useEffect(()=>{
+    const finishPaymongoCheckout=async()=>{
+      if(cleanupStartedRef.current)return;
+      if(!token||!user?._id)return;
 
-        const checkoutCartData =
-          JSON.parse(
-            localStorage.getItem(
-              "checkout_cart"
-            ) || "[]"
+      cleanupStartedRef.current=true;
+
+      if(isCOD){
+        localStorage.removeItem("checkout_cart");
+        setCleanupFinished(true);
+        return;
+      }
+
+      try{
+        const pendingOrderId=localStorage.getItem("pending_paymongo_order");
+
+        let purchasedItems=[];
+
+        try{
+          const storedPendingCart=JSON.parse(
+            localStorage.getItem("pending_paymongo_cart")||"[]"
           );
 
-        if (
-          !Array.isArray(checkoutCartData) ||
-          checkoutCartData.length === 0
-        ) {
-          return;
+          if(Array.isArray(storedPendingCart)&&storedPendingCart.length>0){
+            purchasedItems=storedPendingCart;
+          }else{
+            const storedCheckoutCart=JSON.parse(
+              localStorage.getItem("checkout_cart")||"[]"
+            );
+
+            if(Array.isArray(storedCheckoutCart)){
+              purchasedItems=storedCheckoutCart;
+            }
+          }
+        }catch(error){
+          console.log("PURCHASED CART PARSE ERROR:",error);
         }
 
-        for (const item of checkoutCartData) {
-          if (!item?._id) continue;
+        console.log("PAYMONGO RETURN DETECTED");
+        console.log("PENDING PAYMONGO ORDER:",pendingOrderId);
+        console.log("PURCHASED CART ITEMS:",purchasedItems);
 
-          try {
+        if(purchasedItems.length>0){
+          const removed=await removePurchasedItems(purchasedItems);
+
+          if(!removed){
+            console.warn(
+              "Payment returned successfully but purchased cart items could not be removed."
+            );
+          }
+        }
+
+        if(fetchCart){
+          await fetchCart(token,user._id,true);
+        }
+
+        if(getProductsData){
+          await getProductsData();
+        }
+
+        localStorage.removeItem("checkout_cart");
+        localStorage.removeItem("pending_paymongo_cart");
+        localStorage.removeItem("pending_paymongo_order");
+        localStorage.removeItem("pending_paymongo_created_at");
+
+        setCleanupFinished(true);
+      }catch(error){
+        console.error(
+          "PAYMENT SUCCESS CART CLEANUP ERROR:",
+          error.response?.data||error.message
+        );
+
+        setCleanupFinished(true);
+      }
+    };
+
+    finishPaymongoCheckout();
+  },[
+    token,
+    user?._id,
+    isCOD,
+    removePurchasedItems,
+    fetchCart,
+    getProductsData
+  ]);
+
+  useEffect(()=>{
+    const trackOrderSignals=async()=>{
+      if(trackingStartedRef.current)return;
+      if(!token||!user?._id)return;
+      if(!checkoutCart.length)return;
+
+      trackingStartedRef.current=true;
+
+      try{
+        for(const item of checkoutCart){
+          const productId=item?._id||item?.productId;
+
+          if(!productId)continue;
+
+          try{
             await axios.post(
               `${backendUrl}/api/recommendation/track`,
               {
-                userId: user._id,
-                productId: item._id,
-                signalType: "order",
+                userId:user._id,
+                productId,
+                signalType:"order"
               },
               {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
+                headers:{
+                  Authorization:`Bearer ${token}`
+                }
               }
             );
-          } catch (error) {
-            if (
-              error?.response?.status !== 404
-            ) {
+          }catch(error){
+            if(error?.response?.status!==404){
               console.error(
                 "TRACK ORDER SIGNAL ERROR:",
-                error
+                error.response?.data||error.message
               );
             }
           }
         }
-      } catch (error) {
+      }catch(error){
         console.error(
           "TRACK ORDER SIGNAL ERROR:",
-          error
+          error.response?.data||error.message
         );
       }
     };
 
     trackOrderSignals();
-  }, [backendUrl, token, user]);
+  },[
+    backendUrl,
+    token,
+    user?._id,
+    checkoutCart
+  ]);
 
-  return (
+  return(
     <div className="min-h-screen bg-[#F6F6F3] px-3 pb-16 pt-5 font-['Outfit'] sm:px-5 md:px-8 lg:px-10 xl:px-12">
       <div className="mx-auto max-w-7xl">
-
-        {/* HEADER */}
         <div className="mb-5 border-b border-black/10 bg-white px-5 py-6 sm:px-6 md:px-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -129,7 +230,7 @@ const PaymentSubmitted = () => {
                   Order
                 </span>
 
-                <span className="h-px w-8 bg-black/20" />
+                <span className="h-px w-8 bg-black/20"/>
 
                 <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">
                   Complete
@@ -163,10 +264,7 @@ const PaymentSubmitted = () => {
           </div>
         </div>
 
-        {/* MAIN CONTENT */}
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-
-          {/* LEFT */}
           <section className="border border-black/10 bg-white">
             <div className="border-b border-black/10 px-5 py-5 sm:px-6">
               <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
@@ -180,8 +278,6 @@ const PaymentSubmitted = () => {
 
             <div className="px-5 py-8 sm:px-8 sm:py-10">
               <div className="flex flex-col items-center text-center">
-
-                {/* SUCCESS ICON */}
                 <div className="flex h-20 w-20 items-center justify-center border border-black bg-black">
                   <span className="text-3xl font-black text-white">
                     ✓
@@ -197,17 +293,30 @@ const PaymentSubmitted = () => {
                 </h2>
 
                 <p className="mx-auto mt-4 max-w-xl text-sm font-semibold leading-6 text-gray-500">
-                  Your payment proof has been
-                  submitted successfully. Please
-                  wait while we verify your payment
-                  and process your order.
+                  Your order has been submitted successfully. Purchased items are removed from your shopping cart while any products you did not checkout remain in your cart.
                 </p>
+
+                {!cleanupFinished&&(
+                  <div className="mt-5 flex items-center gap-3">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-black"/>
+
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
+                      Updating Your Cart
+                    </p>
+                  </div>
+                )}
+
+                {cleanupFinished&&(
+                  <div className="mt-5 border border-black/10 bg-[#F6F6F3] px-4 py-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-black">
+                      Cart Updated
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* ORDER STATUS */}
               <div className="mt-8 border border-black/10 bg-[#F6F6F3]">
                 <div className="grid sm:grid-cols-3">
-
                   <div className="border-b border-black/10 px-5 py-5 sm:border-b-0 sm:border-r">
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
                       Status
@@ -220,11 +329,11 @@ const PaymentSubmitted = () => {
 
                   <div className="border-b border-black/10 px-5 py-5 sm:border-b-0 sm:border-r">
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
-                      Verification
+                      Payment
                     </p>
 
                     <p className="mt-2 text-sm font-black uppercase text-black">
-                      Pending
+                      {isCOD?"Cash on Delivery":"Online Payment"}
                     </p>
                   </div>
 
@@ -237,42 +346,34 @@ const PaymentSubmitted = () => {
                       Order Processing
                     </p>
                   </div>
-
                 </div>
               </div>
 
-              {/* MESSAGE */}
               <div className="mt-4 border border-black/10 bg-white px-5 py-5">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
                   What happens next?
                 </p>
 
                 <p className="mt-2 text-xs font-semibold leading-6 text-gray-500">
-                  Our team will verify your payment
-                  and update your order status.
-                  You can check your order anytime
-                  from your Orders page.
+                  Your order has been received. You can monitor the order status anytime from your Orders page.
                 </p>
               </div>
 
-              {/* ACTIONS */}
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate("/orders")
-                  }
-                  className="h-12 border border-black bg-black px-6 text-[10px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white hover:text-black"
+                  onClick={()=>navigate("/orders")}
+                  disabled={!cleanupFinished}
+                  className="h-12 border border-black bg-black px-6 text-[10px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Go to Orders
                 </button>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate("/collection")
-                  }
-                  className="h-12 border border-black/10 bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
+                  onClick={()=>navigate("/collection")}
+                  disabled={!cleanupFinished}
+                  className="h-12 border border-black/10 bg-white px-6 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Continue Shopping
                 </button>
@@ -280,10 +381,7 @@ const PaymentSubmitted = () => {
             </div>
           </section>
 
-          {/* RIGHT */}
           <aside className="space-y-5">
-
-            {/* ORDER COMPLETE */}
             <section className="border border-black/10 bg-white">
               <div className="border-b border-black/10 px-5 py-5">
                 <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
@@ -303,7 +401,7 @@ const PaymentSubmitted = () => {
 
                   <div>
                     <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">
-                      Payment
+                      Order
                     </p>
 
                     <p className="mt-1 text-xs font-black uppercase text-black">
@@ -314,20 +412,17 @@ const PaymentSubmitted = () => {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate("/orders")
-                  }
-                  className="mt-4 h-11 w-full border border-black/10 bg-white text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black"
+                  onClick={()=>navigate("/orders")}
+                  disabled={!cleanupFinished}
+                  className="mt-4 h-11 w-full border border-black/10 bg-white text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   View My Orders
                 </button>
               </div>
             </section>
 
-            {/* TRUST */}
             <div className="border border-black/10 bg-white px-5 py-4">
               <div className="grid grid-cols-3 divide-x divide-black/10 text-center">
-
                 <div className="px-2">
                   <p className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-400">
                     Secure
@@ -357,16 +452,13 @@ const PaymentSubmitted = () => {
                     Order Updates
                   </p>
                 </div>
-
               </div>
             </div>
           </aside>
         </div>
 
-        {/* RECOMMENDATIONS */}
-        {recommendedProducts.length > 0 && (
+        {recommendedProducts.length>0&&(
           <section className="mt-5 border border-black/10 bg-white">
-
             <div className="border-b border-black/10 px-5 py-6 text-center sm:px-6">
               <p className="text-[9px] font-black uppercase tracking-[0.34em] text-gray-400">
                 Saint Styling
@@ -377,51 +469,36 @@ const PaymentSubmitted = () => {
               </h2>
 
               <p className="mx-auto mt-2 max-w-lg text-xs font-semibold text-gray-500">
-                Complete your look with pieces
-                selected based on your order.
+                Complete your look with pieces selected based on your order.
               </p>
             </div>
 
             <div className="p-5 sm:p-6">
               <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 md:gap-6">
-                {recommendedProducts.map(
-                  (item) => (
-                    <ProductItem
-                      key={item._id}
-                      id={item._id}
-                      name={item.name}
-                      images={item.images}
-                      price={item.price}
-                      bestseller={
-                        item.bestseller
-                      }
-                      newArrival={
-                        item.newArrival
-                      }
-                      groupCode={
-                        item.groupCode
-                      }
-                      color={item.color}
-                      colorHex={
-                        item.colorHex
-                      }
-                      onSale={item.onSale}
-                      salePercent={
-                        item.salePercent
-                      }
-                      stock={item.stock}
-                      branch={item.branch}
-                      badgeMode="none"
-                    />
-                  )
-                )}
+                {recommendedProducts.map((item)=>(
+                  <ProductItem
+                    key={item._id}
+                    id={item._id}
+                    name={item.name}
+                    images={item.images}
+                    price={item.price}
+                    bestseller={item.bestseller}
+                    newArrival={item.newArrival}
+                    groupCode={item.groupCode}
+                    color={item.color}
+                    colorHex={item.colorHex}
+                    onSale={item.onSale}
+                    salePercent={item.salePercent}
+                    stock={item.stock}
+                    branch={item.branch}
+                    badgeMode="none"
+                  />
+                ))}
               </div>
             </div>
-
           </section>
         )}
 
-        {/* BOTTOM BRAND MESSAGE */}
         <div className="mt-5 border border-black/10 bg-black px-5 py-5 text-center sm:px-6">
           <p className="text-[9px] font-black uppercase tracking-[0.35em] text-white/50">
             Saint Clothing
@@ -431,7 +508,6 @@ const PaymentSubmitted = () => {
             Thank you for shopping with us.
           </p>
         </div>
-
       </div>
     </div>
   );
