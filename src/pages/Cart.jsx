@@ -680,7 +680,7 @@ const Cart = () => {
                   salePercent={item.salePercent}
                   stock={item.stock}
                   branch={item.branch}
-                  badgeMode="none"
+                  badgeMode="none"  
                 />
               ))}
             </div>

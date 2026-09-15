@@ -14,17 +14,31 @@ const PaymentSubmitted=()=>{
     user,
     token,
     products,
-    removePurchasedItems,
     fetchCart,
     getProductsData
   }=useContext(ShopContext);
 
   const cleanupStartedRef=useRef(false);
   const trackingStartedRef=useRef(false);
+  const mountedRef=useRef(true);
 
   const[cleanupFinished,setCleanupFinished]=useState(false);
+  const[paymentWaiting,setPaymentWaiting]=useState(false);
+  const[paymentError,setPaymentError]=useState("");
 
   const isCOD=location.state?.paymentMethod==="COD";
+
+  const urlOrderId=useMemo(()=>{
+    const params=new URLSearchParams(location.search);
+    return params.get("orderId")||"";
+  },[location.search]);
+
+  const pendingOrderId=useMemo(()=>{
+    return urlOrderId||
+      location.state?.orderId||
+      localStorage.getItem("pending_paymongo_order")||
+      "";
+  },[urlOrderId,location.state?.orderId]);
 
   const checkoutCart=useMemo(()=>{
     try{
@@ -40,9 +54,7 @@ const PaymentSubmitted=()=>{
         localStorage.getItem("checkout_cart")||"[]"
       );
 
-      return Array.isArray(normalCheckoutCart)
-        ?normalCheckoutCart
-        :[];
+      return Array.isArray(normalCheckoutCart)?normalCheckoutCart:[];
     }catch(error){
       console.log("CHECKOUT CART PARSE ERROR:",error);
       return[];
@@ -55,15 +67,13 @@ const PaymentSubmitted=()=>{
       .filter(Boolean);
   },[checkoutCart]);
 
-  const checkoutCategory=
-    checkoutCart.length>0
-      ?checkoutCart[0]?.category||"Tshirt"
-      :"Tshirt";
+  const checkoutCategory=checkoutCart.length>0
+    ?checkoutCart[0]?.category||"Tshirt"
+    :"Tshirt";
 
-  const checkoutColor=
-    checkoutCart.length>0
-      ?checkoutCart[0]?.color||""
-      :"";
+  const checkoutColor=checkoutCart.length>0
+    ?checkoutCart[0]?.color||""
+    :"";
 
   const{recommendations:recommendedProducts}=useRecommendations({
     backendUrl,
@@ -76,57 +86,142 @@ const PaymentSubmitted=()=>{
     enabled:!!products?.length
   });
 
+  const clearCheckoutStorage=()=>{
+    localStorage.removeItem("checkout_cart");
+    localStorage.removeItem("pending_paymongo_cart");
+    localStorage.removeItem("pending_paymongo_order");
+    localStorage.removeItem("pending_paymongo_created_at");
+  };
+
+  const sleep=(ms)=>new Promise((resolve)=>setTimeout(resolve,ms));
+
   useEffect(()=>{
-    const finishPaymongoCheckout=async()=>{
+    mountedRef.current=true;
+
+    return()=>{
+      mountedRef.current=false;
+    };
+  },[]);
+
+  useEffect(()=>{
+    const finishCheckout=async()=>{
       if(cleanupStartedRef.current)return;
       if(!token||!user?._id)return;
 
       cleanupStartedRef.current=true;
+      setPaymentError("");
 
       if(isCOD){
-        localStorage.removeItem("checkout_cart");
-        setCleanupFinished(true);
+        try{
+          if(fetchCart){
+            await fetchCart(token,user._id,true);
+          }
+
+          if(getProductsData){
+            await getProductsData();
+          }
+
+          localStorage.removeItem("checkout_cart");
+
+          if(mountedRef.current){
+            setCleanupFinished(true);
+          }
+        }catch(error){
+          console.error(
+            "COD CART REFRESH ERROR:",
+            error.response?.data||error.message
+          );
+
+          if(mountedRef.current){
+            setCleanupFinished(true);
+          }
+        }
+
         return;
       }
 
+      if(!pendingOrderId){
+        console.error("PAYMONGO RETURN: Missing order ID");
+
+        if(mountedRef.current){
+          setPaymentError("Unable to verify the PayMongo order.");
+          setCleanupFinished(true);
+        }
+
+        return;
+      }
+
+      setPaymentWaiting(true);
+
       try{
-        const pendingOrderId=localStorage.getItem("pending_paymongo_order");
+        let paid=false;
+        let lastStatus="pending";
 
-        let purchasedItems=[];
-
-        try{
-          const storedPendingCart=JSON.parse(
-            localStorage.getItem("pending_paymongo_cart")||"[]"
-          );
-
-          if(Array.isArray(storedPendingCart)&&storedPendingCart.length>0){
-            purchasedItems=storedPendingCart;
-          }else{
-            const storedCheckoutCart=JSON.parse(
-              localStorage.getItem("checkout_cart")||"[]"
+        for(let attempt=0;attempt<20;attempt++){
+          try{
+            const response=await axios.post(
+              `${backendUrl}/api/order/payment-status`,
+              {
+                orderId:pendingOrderId
+              },
+              {
+                headers:{
+                  Authorization:`Bearer ${token}`
+                },
+                timeout:20000
+              }
             );
 
-            if(Array.isArray(storedCheckoutCart)){
-              purchasedItems=storedCheckoutCart;
+            if(response.data?.success){
+              lastStatus=String(
+                response.data.paymentStatus||"pending"
+              ).toLowerCase();
+
+              console.log(
+                "PAYMONGO PAYMENT STATUS:",
+                lastStatus,
+                "ATTEMPT:",
+                attempt+1
+              );
+
+              if(response.data.paid===true||lastStatus==="paid"){
+                paid=true;
+                break;
+              }
+
+              if(lastStatus==="failed"){
+                break;
+              }
+            }
+          }catch(error){
+            console.error(
+              "PAYMONGO STATUS CHECK ERROR:",
+              error.response?.data||error.message
+            );
+
+            if(error.response?.status===401||
+              error.response?.status===403||
+              error.response?.status===404){
+              throw error;
             }
           }
-        }catch(error){
-          console.log("PURCHASED CART PARSE ERROR:",error);
-        }
 
-        console.log("PAYMONGO RETURN DETECTED");
-        console.log("PENDING PAYMONGO ORDER:",pendingOrderId);
-        console.log("PURCHASED CART ITEMS:",purchasedItems);
-
-        if(purchasedItems.length>0){
-          const removed=await removePurchasedItems(purchasedItems);
-
-          if(!removed){
-            console.warn(
-              "Payment returned successfully but purchased cart items could not be removed."
-            );
+          if(attempt<19){
+            await sleep(1500);
           }
         }
+
+        if(!paid){
+          if(lastStatus==="failed"){
+            throw new Error("PayMongo payment was not completed.");
+          }
+
+          throw new Error(
+            "Payment confirmation is taking longer than expected. Please check your Orders page."
+          );
+        }
+
+        console.log("PAYMONGO PAYMENT CONFIRMED:",pendingOrderId);
 
         if(fetchCart){
           await fetchCart(token,user._id,true);
@@ -136,28 +231,48 @@ const PaymentSubmitted=()=>{
           await getProductsData();
         }
 
-        localStorage.removeItem("checkout_cart");
-        localStorage.removeItem("pending_paymongo_cart");
-        localStorage.removeItem("pending_paymongo_order");
-        localStorage.removeItem("pending_paymongo_created_at");
+        clearCheckoutStorage();
 
-        setCleanupFinished(true);
+        if(mountedRef.current){
+          setPaymentWaiting(false);
+          setCleanupFinished(true);
+        }
       }catch(error){
         console.error(
-          "PAYMENT SUCCESS CART CLEANUP ERROR:",
+          "PAYMONGO PAYMENT CONFIRMATION ERROR:",
           error.response?.data||error.message
         );
 
-        setCleanupFinished(true);
+        if(fetchCart){
+          try{
+            await fetchCart(token,user._id,true);
+          }catch(fetchError){
+            console.error(
+              "PAYMONGO CART REFRESH ERROR:",
+              fetchError.response?.data||fetchError.message
+            );
+          }
+        }
+
+        if(mountedRef.current){
+          setPaymentWaiting(false);
+          setPaymentError(
+            error.response?.data?.message||
+            error.message||
+            "Unable to confirm payment."
+          );
+          setCleanupFinished(true);
+        }
       }
     };
 
-    finishPaymongoCheckout();
+    finishCheckout();
   },[
     token,
     user?._id,
     isCOD,
-    removePurchasedItems,
+    pendingOrderId,
+    backendUrl,
     fetchCart,
     getProductsData
   ]);
@@ -187,7 +302,8 @@ const PaymentSubmitted=()=>{
               {
                 headers:{
                   Authorization:`Bearer ${token}`
-                }
+                },
+                timeout:15000
               }
             );
           }catch(error){
@@ -207,12 +323,16 @@ const PaymentSubmitted=()=>{
       }
     };
 
-    trackOrderSignals();
+    if(cleanupFinished&&!paymentError){
+      trackOrderSignals();
+    }
   },[
     backendUrl,
     token,
     user?._id,
-    checkoutCart
+    checkoutCart,
+    cleanupFinished,
+    paymentError
   ]);
 
   return(
@@ -242,7 +362,11 @@ const PaymentSubmitted=()=>{
               </h1>
 
               <p className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                Your order is being processed
+                {paymentWaiting
+                  ?"Confirming your payment"
+                  :paymentError
+                    ?"Payment confirmation"
+                    :"Your order is being processed"}
               </p>
             </div>
 
@@ -253,11 +377,11 @@ const PaymentSubmitted=()=>{
 
               <div className="mt-2 flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center bg-black text-[10px] font-black text-white">
-                  ✓
+                  {paymentWaiting?"…":"✓"}
                 </span>
 
                 <p className="text-sm font-black uppercase text-black">
-                  Submitted
+                  {paymentWaiting?"Confirming":"Submitted"}
                 </p>
               </div>
             </div>
@@ -279,9 +403,13 @@ const PaymentSubmitted=()=>{
             <div className="px-5 py-8 sm:px-8 sm:py-10">
               <div className="flex flex-col items-center text-center">
                 <div className="flex h-20 w-20 items-center justify-center border border-black bg-black">
-                  <span className="text-3xl font-black text-white">
-                    ✓
-                  </span>
+                  {paymentWaiting?(
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/30 border-t-white"/>
+                  ):(
+                    <span className="text-3xl font-black text-white">
+                      ✓
+                    </span>
+                  )}
                 </div>
 
                 <p className="mt-6 text-[9px] font-black uppercase tracking-[0.32em] text-gray-400">
@@ -289,11 +417,15 @@ const PaymentSubmitted=()=>{
                 </p>
 
                 <h2 className="mt-2 text-2xl font-black uppercase tracking-[0.04em] text-[#0A0D17] sm:text-3xl">
-                  Payment Submitted
+                  {paymentWaiting
+                    ?"Confirming Payment"
+                    :"Payment Submitted"}
                 </h2>
 
                 <p className="mx-auto mt-4 max-w-xl text-sm font-semibold leading-6 text-gray-500">
-                  Your order has been submitted successfully. Purchased items are removed from your shopping cart while any products you did not checkout remain in your cart.
+                  {paymentWaiting
+                    ?"Your payment was submitted to PayMongo. We are waiting for secure payment confirmation before updating your order and shopping cart."
+                    :"Your order has been submitted successfully. Purchased items are removed from your shopping cart while products you did not checkout remain in your cart."}
                 </p>
 
                 {!cleanupFinished&&(
@@ -301,16 +433,38 @@ const PaymentSubmitted=()=>{
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-black"/>
 
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">
-                      Updating Your Cart
+                      {paymentWaiting
+                        ?"Confirming Payment"
+                        :"Updating Your Cart"}
                     </p>
                   </div>
                 )}
 
-                {cleanupFinished&&(
+                {cleanupFinished&&!paymentError&&(
                   <div className="mt-5 border border-black/10 bg-[#F6F6F3] px-4 py-3">
                     <p className="text-[9px] font-black uppercase tracking-[0.18em] text-black">
                       Cart Updated
                     </p>
+                  </div>
+                )}
+
+                {paymentError&&(
+                  <div className="mt-5 max-w-xl border border-black/10 bg-[#F6F6F3] px-5 py-4">
+                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">
+                      Payment Status
+                    </p>
+
+                    <p className="mt-2 text-xs font-semibold leading-5 text-black">
+                      {paymentError}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={()=>navigate("/orders")}
+                      className="mt-4 border border-black bg-black px-5 py-3 text-[9px] font-black uppercase tracking-[0.18em] text-white"
+                    >
+                      Check My Orders
+                    </button>
                   </div>
                 )}
               </div>
@@ -323,7 +477,7 @@ const PaymentSubmitted=()=>{
                     </p>
 
                     <p className="mt-2 text-sm font-black uppercase text-black">
-                      Submitted
+                      {paymentWaiting?"Confirming":"Submitted"}
                     </p>
                   </div>
 
@@ -333,7 +487,7 @@ const PaymentSubmitted=()=>{
                     </p>
 
                     <p className="mt-2 text-sm font-black uppercase text-black">
-                      {isCOD?"Cash on Delivery":"Online Payment"}
+                      {isCOD?"Cash on Delivery":"PayMongo"}
                     </p>
                   </div>
 
@@ -396,7 +550,7 @@ const PaymentSubmitted=()=>{
               <div className="p-5">
                 <div className="flex items-center gap-3 border border-black/10 bg-[#F6F6F3] px-4 py-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-black text-sm font-black text-white">
-                    ✓
+                    {paymentWaiting?"…":"✓"}
                   </div>
 
                   <div>
@@ -405,7 +559,9 @@ const PaymentSubmitted=()=>{
                     </p>
 
                     <p className="mt-1 text-xs font-black uppercase text-black">
-                      Successfully Submitted
+                      {paymentWaiting
+                        ?"Confirming Payment"
+                        :"Successfully Submitted"}
                     </p>
                   </div>
                 </div>
