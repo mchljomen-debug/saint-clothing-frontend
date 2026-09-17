@@ -7,9 +7,7 @@ import{assets}from"../assets/assets";
 
 const LatestCollection=lazy(()=>import("../components/LatestCollection"));
 const BestSeller=lazy(()=>import("../components/BestSeller"));
-const SocialFeed=lazy(()=>import("../components/SocialFeed"));
 const OurPolicy=lazy(()=>import("../components/OurPolicy"));
-const NewsletterBox=lazy(()=>import("../components/NewsletterBox"));
 
 const CATEGORY_CACHE_KEY="saint_home_categories";
 
@@ -19,7 +17,7 @@ const optimizeCloudinaryImage=(url,width=1280)=>{
   return url.replace("/image/upload/",`/image/upload/f_auto,q_auto:eco,w_${width},c_limit/`);
 };
 
-const DeferredSection=({children,minHeight="400px",rootMargin="400px"})=>{
+const DeferredSection=({children,minHeight="0px",rootMargin="400px"})=>{
   const ref=useRef(null);
   const[visible,setVisible]=useState(false);
 
@@ -174,6 +172,7 @@ const Home=()=>{
             <div>
               <div className="mb-5 flex items-center gap-3">
                 <span className="h-px w-10 bg-black" aria-hidden="true"/>
+
                 <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/75">
                   Saint / 02
                 </p>
@@ -458,7 +457,7 @@ const Home=()=>{
         )}
       </section>
 
-      <DeferredSection minHeight="620px" rootMargin="500px">
+      <DeferredSection minHeight="300px" rootMargin="500px">
         <div className="mt-10">
           <Suspense fallback={null}>
             <LatestCollection/>
@@ -466,7 +465,7 @@ const Home=()=>{
         </div>
       </DeferredSection>
 
-      <DeferredSection minHeight="620px" rootMargin="500px">
+      <DeferredSection minHeight="300px" rootMargin="500px">
         <div className="mt-10">
           <Suspense fallback={null}>
             <BestSeller/>
@@ -474,26 +473,10 @@ const Home=()=>{
         </div>
       </DeferredSection>
 
-      <DeferredSection minHeight="500px" rootMargin="400px">
-        <div className="mt-10">
-          <Suspense fallback={null}>
-            <SocialFeed/>
-          </Suspense>
-        </div>
-      </DeferredSection>
-
-      <DeferredSection minHeight="300px" rootMargin="400px">
-        <div className="mt-8">
+      <DeferredSection minHeight="120px" rootMargin="400px">
+        <div className="mt-4">
           <Suspense fallback={null}>
             <OurPolicy/>
-          </Suspense>
-        </div>
-      </DeferredSection>
-
-      <DeferredSection minHeight="300px" rootMargin="400px">
-        <div className="px-5 pb-20 pt-12 sm:px-8 md:px-[7vw] lg:px-[10vw] lg:pb-20 lg:pt-16">
-          <Suspense fallback={null}>
-            <NewsletterBox/>
           </Suspense>
         </div>
       </DeferredSection>
