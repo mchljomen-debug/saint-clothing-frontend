@@ -1,4 +1,4 @@
-import React,{forwardRef,useEffect,useImperativeHandle,useRef,useState}from"react";
+import React,{forwardRef,useCallback,useEffect,useImperativeHandle,useRef,useState}from"react";
 import"@google/model-viewer";
 
 const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName="Product",className=""},ref)=>{
@@ -6,6 +6,7 @@ const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName=
   const[hasError,setHasError]=useState(false);
   const[isLoaded,setIsLoaded]=useState(false);
   const[autoRotate,setAutoRotate]=useState(false);
+  const[textureStatus,setTextureStatus]=useState("checking");
 
   const cleanModelUrl=String(modelUrl||"").trim();
   const cleanVideoUrl=String(videoUrl||"").trim();
@@ -15,46 +16,52 @@ const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName=
   const isVideo=fileName.endsWith(".mp4")||fileName.endsWith(".webm")||fileName.endsWith(".ogg");
   const is3DModel=fileName.endsWith(".glb")||fileName.endsWith(".gltf");
 
-  const setDefaultCamera=()=>{
+  const setDefaultCamera=useCallback(()=>{
     const viewer=viewerRef.current;
     if(!viewer)return;
+
     try{
       viewer.cameraOrbit="0deg 75deg 2.2m";
       viewer.fieldOfView="30deg";
+      viewer.jumpCameraToGoal?.();
     }catch(error){
-      console.error("3D CAMERA ERROR:",error);
+      console.error("[3D] CAMERA ERROR:",error);
     }
-  };
+  },[]);
 
-  const zoomIn=()=>{
+  const zoomIn=useCallback(()=>{
     const viewer=viewerRef.current;
     if(!viewer)return;
+
     try{
       const orbit=viewer.getCameraOrbit();
       const radius=Math.max(Number(orbit.radius)-0.25,0.7);
       viewer.cameraOrbit=`${orbit.theta}rad ${orbit.phi}rad ${radius}m`;
+      viewer.jumpCameraToGoal?.();
     }catch(error){
-      console.error("3D ZOOM IN ERROR:",error);
+      console.error("[3D] ZOOM IN ERROR:",error);
     }
-  };
+  },[]);
 
-  const zoomOut=()=>{
+  const zoomOut=useCallback(()=>{
     const viewer=viewerRef.current;
     if(!viewer)return;
+
     try{
       const orbit=viewer.getCameraOrbit();
       const radius=Math.min(Number(orbit.radius)+0.25,5);
       viewer.cameraOrbit=`${orbit.theta}rad ${orbit.phi}rad ${radius}m`;
+      viewer.jumpCameraToGoal?.();
     }catch(error){
-      console.error("3D ZOOM OUT ERROR:",error);
+      console.error("[3D] ZOOM OUT ERROR:",error);
     }
-  };
+  },[]);
 
-  const resetCamera=()=>{
+  const resetCamera=useCallback(()=>{
     setDefaultCamera();
-  };
+  },[setDefaultCamera]);
 
-  const toggleAutoRotate=()=>{
+  const toggleAutoRotate=useCallback(()=>{
     const viewer=viewerRef.current;
     if(!viewer)return false;
 
@@ -69,7 +76,7 @@ const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName=
     viewer.setAttribute("auto-rotate","");
     setAutoRotate(true);
     return true;
-  };
+  },[]);
 
   useImperativeHandle(ref,()=>({
     zoomIn,
@@ -79,83 +86,162 @@ const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName=
     getViewer(){
       return viewerRef.current;
     }
-  }));
+  }),[zoomIn,zoomOut,resetCamera,toggleAutoRotate]);
 
   useEffect(()=>{
     setHasError(false);
     setIsLoaded(false);
     setAutoRotate(false);
+    setTextureStatus("checking");
 
     const viewer=viewerRef.current;
-    if(viewer)viewer.removeAttribute("auto-rotate");
+
+    if(viewer){
+      viewer.removeAttribute("auto-rotate");
+    }
   },[cleanModelUrl]);
 
-  const inspectModel=async()=>{
+  const inspectModel=useCallback(async()=>{
     const viewer=viewerRef.current;
     if(!viewer)return;
 
     try{
       const model=viewer.model;
 
+      console.log("========================================");
+      console.log("[3D] MODEL INSPECTION");
+      console.log("[3D] URL:",cleanModelUrl);
+      console.log("[3D] FILE TYPE:",fileName.split(".").pop()?.toUpperCase()||"UNKNOWN");
+
       if(!model){
-        console.log("3D MODEL API: unavailable");
+        console.warn("[3D] MODEL API UNAVAILABLE");
+        console.log("========================================");
+        setTextureStatus("unknown");
         return;
       }
 
-      console.log("========== 3D MODEL INSPECTION ==========");
-      console.log("URL:",cleanModelUrl);
-      console.log("Materials:",model.materials?.length||0);
+      const materials=Array.from(model.materials||[]);
 
-      if(model.materials){
-        model.materials.forEach((material,index)=>{
-          try{
-            const pbr=material.pbrMetallicRoughness;
-            console.log(`MATERIAL ${index}:`,{
-              name:material.name,
-              baseColorFactor:pbr?.baseColorFactor,
-              baseColorTexture:pbr?.baseColorTexture?.texture||null,
-              metallicFactor:pbr?.metallicFactor,
-              roughnessFactor:pbr?.roughnessFactor,
-              normalTexture:material.normalTexture?.texture||null,
-              emissiveTexture:material.emissiveTexture?.texture||null,
-              alphaMode:material.alphaMode,
-              doubleSided:material.doubleSided
-            });
-          }catch(error){
-            console.log(`MATERIAL ${index} INSPECTION ERROR:`,error);
-          }
-        });
+      console.log("[3D] MATERIAL COUNT:",materials.length);
+
+      if(materials.length===0){
+        console.warn("[3D] NO MATERIALS FOUND IN MODEL");
+        setTextureStatus("missing");
+        console.log("========================================");
+        return;
       }
 
-      console.log("=========================================");
-    }catch(error){
-      console.error("3D MODEL INSPECTION ERROR:",error);
-    }
-  };
+      let textureCount=0;
 
-  const handleModelLoad=()=>{
-    console.log("========== 3D MODEL LOADED ==========");
-    console.log("URL:",cleanModelUrl);
-    console.log("=====================================");
+      materials.forEach((material,index)=>{
+        try{
+          const pbr=material.pbrMetallicRoughness;
+          const baseColorTexture=pbr?.baseColorTexture?.texture||null;
+          const normalTexture=material.normalTexture?.texture||null;
+          const emissiveTexture=material.emissiveTexture?.texture||null;
+          const metallicRoughnessTexture=pbr?.metallicRoughnessTexture?.texture||null;
+          const occlusionTexture=material.occlusionTexture?.texture||null;
+
+          if(baseColorTexture)textureCount++;
+
+          console.log("----------------------------------------");
+          console.log(`[3D] MATERIAL ${index}`);
+          console.log("[3D] NAME:",material.name||`Material ${index}`);
+          console.log("[3D] BASE COLOR FACTOR:",pbr?.baseColorFactor);
+          console.log("[3D] BASE COLOR TEXTURE:",baseColorTexture);
+          console.log("[3D] METALLIC FACTOR:",pbr?.metallicFactor);
+          console.log("[3D] ROUGHNESS FACTOR:",pbr?.roughnessFactor);
+          console.log("[3D] METALLIC ROUGHNESS TEXTURE:",metallicRoughnessTexture);
+          console.log("[3D] NORMAL TEXTURE:",normalTexture);
+          console.log("[3D] EMISSIVE TEXTURE:",emissiveTexture);
+          console.log("[3D] OCCLUSION TEXTURE:",occlusionTexture);
+          console.log("[3D] ALPHA MODE:",material.alphaMode);
+          console.log("[3D] DOUBLE SIDED:",material.doubleSided);
+
+          if(!baseColorTexture){
+            console.warn(`[3D] MATERIAL ${index} HAS NO BASE COLOR TEXTURE`);
+          }
+        }catch(error){
+          console.error(`[3D] MATERIAL ${index} INSPECTION ERROR:`,error);
+        }
+      });
+
+      console.log("----------------------------------------");
+      console.log("[3D] MATERIALS:",materials.length);
+      console.log("[3D] MATERIALS WITH BASE COLOR TEXTURE:",textureCount);
+
+      if(textureCount>0){
+        console.log("[3D] TEXTURE STATUS: TEXTURE FOUND");
+        setTextureStatus("found");
+      }else{
+        console.warn("[3D] TEXTURE STATUS: NO BASE COLOR TEXTURE FOUND");
+        console.warn("[3D] If this model should have graphics/colors, check the Blender material and GLB export.");
+        setTextureStatus("missing");
+      }
+
+      console.log("========================================");
+    }catch(error){
+      console.error("[3D] MODEL INSPECTION ERROR:",error);
+      setTextureStatus("unknown");
+    }
+  },[cleanModelUrl,fileName]);
+
+  const refreshMaterials=useCallback(async()=>{
+    const viewer=viewerRef.current;
+    if(!viewer?.model)return;
+
+    try{
+      const materials=Array.from(viewer.model.materials||[]);
+
+      for(const material of materials){
+        const pbr=material?.pbrMetallicRoughness;
+
+        try{
+          const baseColorTexture=pbr?.baseColorTexture?.texture;
+
+          if(baseColorTexture){
+            const source=baseColorTexture.source;
+
+            if(source){
+              console.log("[3D] BASE COLOR TEXTURE SOURCE:",source);
+            }
+          }
+        }catch(error){
+          console.log("[3D] TEXTURE REFRESH SKIPPED:",error?.message||error);
+        }
+      }
+    }catch(error){
+      console.error("[3D] MATERIAL REFRESH ERROR:",error);
+    }
+  },[]);
+
+  const handleModelLoad=useCallback(async()=>{
+    console.log("========================================");
+    console.log("[3D] MODEL LOADED");
+    console.log("[3D] URL:",cleanModelUrl);
+    console.log("========================================");
 
     setHasError(false);
     setIsLoaded(true);
     setDefaultCamera();
 
-    window.setTimeout(()=>{
-      inspectModel();
-    },500);
-  };
+    window.setTimeout(async()=>{
+      await refreshMaterials();
+      await inspectModel();
+    },700);
+  },[cleanModelUrl,inspectModel,refreshMaterials,setDefaultCamera]);
 
-  const handleModelError=(event)=>{
-    console.error("========== 3D MODEL ERROR ==========");
-    console.error("URL:",cleanModelUrl);
-    console.error("Event:",event);
-    console.error("====================================");
+  const handleModelError=useCallback((event)=>{
+    console.error("========================================");
+    console.error("[3D] MODEL ERROR");
+    console.error("[3D] URL:",cleanModelUrl);
+    console.error("[3D] EVENT:",event);
+    console.error("========================================");
 
     setHasError(true);
     setIsLoaded(false);
-  };
+    setTextureStatus("unknown");
+  },[cleanModelUrl]);
 
   if(!cleanModelUrl&&!cleanVideoUrl&&!cleanImageUrl){
     return(
@@ -212,6 +298,22 @@ const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName=
             {hasError?"Model Error":isLoaded?"Model Ready":"Connecting"}
           </p>
         </div>
+
+        {isLoaded&&is3DModel&&(
+          <p className={`mt-1 text-[7px] font-black uppercase tracking-[0.18em] ${
+            textureStatus==="missing"
+              ?"text-red-500"
+              :textureStatus==="found"
+                ?"text-black/35"
+                :"text-black/20"
+          }`}>
+            {textureStatus==="found"
+              ?"Texture Detected"
+              :textureStatus==="missing"
+                ?"Texture Missing"
+                :"Checking Material"}
+          </p>
+        )}
       </div>
 
       {isVideo?(
@@ -229,7 +331,7 @@ const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName=
             setIsLoaded(true);
           }}
           onError={(event)=>{
-            console.error("VIDEO ERROR:",event);
+            console.error("[3D] VIDEO ERROR:",event);
             setHasError(true);
             setIsLoaded(false);
           }}
@@ -266,6 +368,26 @@ const Product3DViewer=forwardRef(({modelUrl,videoUrl="",imageUrl="",productName=
           }}
           onLoad={handleModelLoad}
           onError={handleModelError}
+        />
+      ):cleanVideoUrl?(
+        <video
+          src={cleanVideoUrl}
+          controls
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="relative z-10 h-full w-full object-contain"
+          onLoadedData={()=>{
+            setHasError(false);
+            setIsLoaded(true);
+          }}
+          onError={(event)=>{
+            console.error("[3D] VIDEO ERROR:",event);
+            setHasError(true);
+            setIsLoaded(false);
+          }}
         />
       ):cleanImageUrl?(
         <div className="relative z-10 flex h-full w-full items-center justify-center">

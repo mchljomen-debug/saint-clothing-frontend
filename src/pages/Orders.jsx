@@ -829,7 +829,7 @@ const Orders = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent pb-20 pt-4 font-['Outfit']">
+    <div className="min-h-screen bg-[#F6F6F3] pb-20 pt-4 font-['Outfit'] text-[#0A0D17]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* HEADER */}

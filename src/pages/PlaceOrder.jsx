@@ -36,31 +36,15 @@ const addDays=(date,days)=>{
 
 const formatDeliveryRange=(minDays,maxDays)=>{
   const today=new Date();
-
-  const start=addDays(today,minDays).toLocaleDateString("en-US",{
-    month:"short",
-    day:"2-digit"
-  });
-
-  const end=addDays(today,maxDays).toLocaleDateString("en-US",{
-    month:"short",
-    day:"2-digit",
-    year:"numeric"
-  });
-
+  const start=addDays(today,minDays).toLocaleDateString("en-US",{month:"short",day:"2-digit"});
+  const end=addDays(today,maxDays).toLocaleDateString("en-US",{month:"short",day:"2-digit",year:"numeric"});
   return`${start} - ${end}`;
 };
 
 const formatShipDate=(dateValue)=>{
   if(!dateValue)return"After restock confirmation";
-
   const date=addDays(new Date(dateValue),2);
-
-  return date.toLocaleDateString("en-US",{
-    month:"long",
-    day:"2-digit",
-    year:"numeric"
-  });
+  return date.toLocaleDateString("en-US",{month:"long",day:"2-digit",year:"numeric"});
 };
 
 const getEstimatedDelivery=(address)=>{
@@ -100,36 +84,26 @@ const getEstimatedDelivery=(address)=>{
 
 const getFirstName=(user)=>{
   if(user?.firstName?.trim())return user.firstName;
-
-  if(user?.name?.trim()){
-    return user.name.trim().split(" ")[0]||"";
-  }
-
+  if(user?.name?.trim())return user.name.trim().split(" ")[0]||"";
   return"";
 };
 
 const getLastName=(user)=>{
   if(user?.lastName?.trim())return user.lastName;
-
-  if(user?.name?.trim()){
-    return user.name.trim().split(" ").slice(1).join(" ");
-  }
-
+  if(user?.name?.trim())return user.name.trim().split(" ").slice(1).join(" ");
   return"";
 };
 
 const normalizePaymentMethod=(value="")=>{
   const method=String(value).trim().toLowerCase();
-
-  if(method==="cod"||method==="cash on delivery"){
-    return"COD";
-  }
-
-  if(method==="paymongo"||method==="online payment"){
-    return"PayMongo";
-  }
-
+  if(method==="cod"||method==="cash on delivery")return"COD";
+  if(method==="paymongo"||method==="online payment")return"PayMongo";
   return"COD";
+};
+
+const normalizeBranch=(branch)=>{
+  const value=String(branch||"").trim();
+  return value||"branch1";
 };
 
 const PAYMENT_OPTIONS=[
@@ -202,9 +176,7 @@ const PlaceOrder=()=>{
 
     const containsPreorder=savedCart.some((item)=>item.isPreorder);
 
-    if(containsPreorder){
-      setMethod("PayMongo");
-    }
+    if(containsPreorder)setMethod("PayMongo");
 
     if(user){
       const mainAddress={
@@ -270,24 +242,22 @@ const PlaceOrder=()=>{
 
     if(name==="phone"){
       const numbersOnly=value.replace(/\D/g,"");
-
-      setFormData((prev)=>({
-        ...prev,
-        [name]:numbersOnly
-      }));
-
+      setFormData((prev)=>({...prev,[name]:numbersOnly}));
       return;
     }
 
-    setFormData((prev)=>({
-      ...prev,
-      [name]:value
-    }));
+    setFormData((prev)=>({...prev,[name]:value}));
   };
 
   const hasPreorderItems=useMemo(()=>{
     return cartData.some((item)=>item.isPreorder);
   },[cartData]);
+
+  const checkoutBranches=useMemo(()=>{
+    return[...new Set(cartData.map((item)=>normalizeBranch(item.branch)))];
+  },[cartData]);
+
+  const isMultiBranchOrder=checkoutBranches.length>1;
 
   const latestPreorderRestockDate=useMemo(()=>{
     const dates=cartData
@@ -344,19 +314,14 @@ const PlaceOrder=()=>{
   const subtotal=cartData.reduce((acc,item)=>{
     const basePrice=Number(item.price||0);
     const salePercent=Number(item.salePercent||0);
-
-    const finalPrice=
-      item.onSale&&salePercent>0
-        ?Math.max(basePrice-(basePrice*salePercent)/100,0)
-        :basePrice;
+    const finalPrice=item.onSale&&salePercent>0
+      ?Math.max(basePrice-(basePrice*salePercent)/100,0)
+      :basePrice;
 
     return acc+finalPrice*Number(item.quantity||0);
   },0);
 
-  const totalQuantity=cartData.reduce(
-    (acc,item)=>acc+Number(item.quantity||0),
-    0
-  );
+  const totalQuantity=cartData.reduce((acc,item)=>acc+Number(item.quantity||0),0);
 
   const validateAddress=(address)=>{
     if(!address.firstName?.trim())return"First name is required";
@@ -368,10 +333,7 @@ const PlaceOrder=()=>{
     if(!address.barangay?.trim())return"Barangay is required";
     if(!address.city?.trim())return"City is required";
 
-    if(
-      !address.province?.trim()&&
-      address.region!=="National Capital Region (NCR)"
-    ){
+    if(!address.province?.trim()&&address.region!=="National Capital Region (NCR)"){
       return"Province is required";
     }
 
@@ -383,7 +345,6 @@ const PlaceOrder=()=>{
 
   const buildOrderPayload=(finalAddress,selectedMethod)=>({
     userId,
-
     address:{
       firstName:finalAddress.firstName,
       lastName:finalAddress.lastName,
@@ -404,39 +365,31 @@ const PlaceOrder=()=>{
       psgcMunicipalityCode:finalAddress.psgcMunicipalityCode||"",
       psgcBarangayCode:finalAddress.psgcBarangayCode||""
     },
-
     items:cartData.map((item)=>({
       productId:item._id||item.productId,
       name:item.name,
-      image:item.images?.[0]||item.image||null,
-      price:Number(item.price),
-      quantity:Number(item.quantity),
-      size:(item.size||"S").toUpperCase(),
-      onSale:item.onSale||false,
+      image:item.images?.[0]||item.image||"",
+      price:Number(item.price||0),
+      quantity:Number(item.quantity||0),
+      size:String(item.size||"S").trim().toUpperCase(),
+      branch:normalizeBranch(item.branch),
+      onSale:!!item.onSale,
       salePercent:Number(item.salePercent||0),
       category:item.category||"",
       sku:item.sku||"",
       groupCode:item.groupCode||"",
       isPreorder:!!item.isPreorder,
-      expectedRestockDate:
-        item.expectedRestockDate||
-        item.preorderRestockDate||
-        null,
+      expectedRestockDate:item.expectedRestockDate||item.preorderRestockDate||null,
       preorderNote:item.preorderNote||""
     })),
-
     amount:subtotal+delivery_fee,
-
     paymentMethod:normalizePaymentMethod(selectedMethod),
-
     deliveryEstimate:{
       minDays:deliveryEstimate.minDays,
       maxDays:deliveryEstimate.maxDays,
       label:hasPreorderItems?"Pre-order delivery":deliveryEstimate.label,
       range:deliveryEstimate.range,
-      shipsOn:latestPreorderRestockDate
-        ?addDays(latestPreorderRestockDate,2)
-        :null
+      shipsOn:latestPreorderRestockDate?addDays(latestPreorderRestockDate,2):null
     }
   });
 
@@ -449,20 +402,13 @@ const PlaceOrder=()=>{
       const paymongoResponse=await axios.post(
         `${backendUrl}/api/order/create-paymongo-checkout`,
         {orderId},
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
-        }
+        {headers:{Authorization:`Bearer ${token}`}}
       );
 
       console.log("ONLINE PAYMENT RESPONSE:",paymongoResponse?.data);
 
       if(!paymongoResponse?.data?.success){
-        throw new Error(
-          paymongoResponse?.data?.message||
-          "Failed to create online payment checkout"
-        );
+        throw new Error(paymongoResponse?.data?.message||"Failed to create online payment checkout");
       }
 
       if(!paymongoResponse?.data?.checkoutUrl){
@@ -470,25 +416,17 @@ const PlaceOrder=()=>{
       }
 
       toast.success("Redirecting to online payment checkout...");
-
       window.location.assign(paymongoResponse.data.checkoutUrl);
 
       return true;
     }catch(error){
-      console.log(
-        "ONLINE PAYMENT FRONTEND ERROR:",
-        error.response?.data||error.message
-      );
+      console.log("ONLINE PAYMENT FRONTEND ERROR:",error.response?.data||error.message);
 
       localStorage.removeItem("pending_paymongo_order");
       localStorage.removeItem("pending_paymongo_cart");
       localStorage.removeItem("pending_paymongo_created_at");
 
-      toast.error(
-        error.response?.data?.message||
-        error.message||
-        "Online payment checkout failed"
-      );
+      toast.error(error.response?.data?.message||error.message||"Online payment checkout failed");
 
       return false;
     }
@@ -497,18 +435,13 @@ const PlaceOrder=()=>{
   const onSubmitHandler=async(e)=>{
     e.preventDefault();
 
-    if(!cartData.length){
-      return toast.error("Cart is empty");
-    }
-
+    if(!cartData.length)return toast.error("Cart is empty");
     if(loading)return;
 
     const selectedMethod=normalizePaymentMethod(method);
 
     if(hasPreorderItems&&selectedMethod==="COD"){
-      toast.error(
-        "Cash on Delivery is not available for pre-order items. Please choose Online Payment."
-      );
+      toast.error("Cash on Delivery is not available for pre-order items. Please choose Online Payment.");
       return;
     }
 
@@ -519,11 +452,7 @@ const PlaceOrder=()=>{
       firstName:activeAddress.firstName?.trim()||getFirstName(user),
       lastName:activeAddress.lastName?.trim()||getLastName(user),
       email:activeAddress.email?.trim()||user?.email||"",
-      phone:String(
-        activeAddress.phone?.trim()||
-        user?.phone||
-        ""
-      ).replace(/\D/g,"")
+      phone:String(activeAddress.phone?.trim()||user?.phone||"").replace(/\D/g,"")
     };
 
     const validationError=validateAddress(finalAddress);
@@ -538,38 +467,40 @@ const PlaceOrder=()=>{
 
       const orderData=buildOrderPayload(finalAddress,selectedMethod);
 
+      console.log("PLACE ORDER BRANCHES:",checkoutBranches);
+      console.log("PLACE ORDER ITEMS:",orderData.items.map((item)=>({
+        productId:item.productId,
+        name:item.name,
+        branch:item.branch,
+        size:item.size,
+        quantity:item.quantity
+      })));
+
       const response=await axios.post(
         `${backendUrl}/api/order/place`,
         orderData,
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
-        }
+        {headers:{Authorization:`Bearer ${token}`}}
       );
 
       if(!response.data?.success){
-        throw new Error(
-          response.data?.message||
-          "Failed to place order"
-        );
+        throw new Error(response.data?.message||"Failed to place order");
       }
 
       const orderId=response.data?.orderId;
 
-      if(!orderId){
-        throw new Error("Order ID was not returned by the server");
-      }
+      if(!orderId)throw new Error("Order ID was not returned by the server");
 
       if(selectedMethod==="COD"){
-        toast.success("Order placed successfully!");
+        toast.success(
+          isMultiBranchOrder
+            ?`Order placed successfully from ${checkoutBranches.length} branches!`
+            :"Order placed successfully!"
+        );
 
         const removed=await removePurchasedItems(cartData);
 
         if(!removed){
-          console.warn(
-            "COD order succeeded but purchased items could not be removed from cart."
-          );
+          console.warn("COD order succeeded but purchased items could not be removed from cart.");
         }
 
         localStorage.removeItem("checkout_cart");
@@ -577,9 +508,7 @@ const PlaceOrder=()=>{
         localStorage.removeItem("pending_paymongo_cart");
         localStorage.removeItem("pending_paymongo_created_at");
 
-        if(getProductsData){
-          await getProductsData();
-        }
+        if(getProductsData)await getProductsData();
 
         navigate("/payment-submitted",{
           state:{
@@ -596,34 +525,22 @@ const PlaceOrder=()=>{
 
         const redirected=await createPaymongoCheckout(orderId);
 
-        if(!redirected){
-          setLoading(false);
-        }
+        if(!redirected)setLoading(false);
 
         return;
       }
     }catch(error){
-      console.log(
-        "PLACE ORDER ERROR:",
-        error.response?.data||error.message
-      );
+      console.log("PLACE ORDER ERROR:",error.response?.data||error.message);
 
-      toast.error(
-        error.response?.data?.message||
-        error.message||
-        "Failed to place order"
-      );
+      toast.error(error.response?.data?.message||error.message||"Failed to place order");
     }finally{
       setLoading(false);
     }
   };
 
-  const inputStyle=
-    "w-full border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-gray-300 focus:border-black";
+  const inputStyle="w-full border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-[#0A0D17] outline-none transition placeholder:text-gray-300 focus:border-black";
 
-  if(!cartData.length){
-    return null;
-  }
+  if(!cartData.length)return null;
 
   return(
     <div className="min-h-screen bg-[#F6F6F3] px-3 pb-16 pt-5 font-['Outfit'] sm:px-5 md:px-8 lg:px-10 xl:px-12">
@@ -631,47 +548,33 @@ const PlaceOrder=()=>{
         <div className="mb-5 border-b border-black/10 bg-white px-5 py-6 sm:px-6 md:px-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="mb-2 text-[9px] font-black uppercase tracking-[0.38em] text-gray-400">
-                Saint Clothing
-              </p>
-
+              <p className="mb-2 text-[9px] font-black uppercase tracking-[0.38em] text-gray-400">Saint Clothing</p>
               <Title text1="PLACE" text2="ORDER"/>
-
-              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                Secure checkout
-              </p>
+              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Secure checkout</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:flex">
               <div className="border border-black/10 bg-[#F6F6F3] px-5 py-3">
-                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">
-                  Items
-                </p>
-
-                <p className="mt-1 text-sm font-black text-black">
-                  {cartData.length}
-                </p>
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">Items</p>
+                <p className="mt-1 text-sm font-black text-black">{cartData.length}</p>
               </div>
 
               <div className="border border-black/10 bg-[#F6F6F3] px-5 py-3">
-                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">
-                  Quantity
-                </p>
-
-                <p className="mt-1 text-sm font-black text-black">
-                  {totalQuantity}
-                </p>
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">Quantity</p>
+                <p className="mt-1 text-sm font-black text-black">{totalQuantity}</p>
               </div>
+
+              {isMultiBranchOrder&&(
+                <div className="border border-black/10 bg-black px-5 py-3 text-white">
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-white/50">Branches</p>
+                  <p className="mt-1 text-sm font-black">{checkoutBranches.length}</p>
+                </div>
+              )}
 
               {hasPreorderItems&&(
                 <div className="border border-amber-200 bg-amber-50 px-5 py-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-600">
-                    Type
-                  </p>
-
-                  <p className="mt-1 text-sm font-black text-amber-700">
-                    Pre-order
-                  </p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-600">Type</p>
+                  <p className="mt-1 text-sm font-black text-amber-700">Pre-order</p>
                 </div>
               )}
             </div>
@@ -682,32 +585,14 @@ const PlaceOrder=()=>{
           <div className="space-y-5">
             <section className="border border-black/10 bg-white">
               <div className="border-b border-black/10 px-5 py-5 sm:px-6">
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
-                  01
-                </p>
-
-                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">
-                  Delivery Address
-                </h2>
-
-                <p className="mt-2 text-xs font-semibold text-gray-500">
-                  Choose where you want your order delivered.
-                </p>
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">01</p>
+                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">Delivery Address</h2>
+                <p className="mt-2 text-xs font-semibold text-gray-500">Choose where you want your order delivered.</p>
               </div>
 
               <div className="p-5 sm:p-6">
                 <div className="grid gap-2 md:grid-cols-2">
-                  <label
-                    className={`cursor-pointer border p-4 transition ${
-                      addressMode==="saved"
-                        ?"border-black bg-black text-white"
-                        :"border-black/10 bg-white hover:border-black"
-                    } ${
-                      !hasSavedMainAddress
-                        ?"cursor-not-allowed opacity-50"
-                        :""
-                    }`}
-                  >
+                  <label className={`cursor-pointer border p-4 transition ${addressMode==="saved"?"border-black bg-black text-white":"border-black/10 bg-white hover:border-black"} ${!hasSavedMainAddress?"cursor-not-allowed opacity-50":""}`}>
                     <div className="flex items-start gap-3">
                       <input
                         type="radio"
@@ -719,36 +604,13 @@ const PlaceOrder=()=>{
                       />
 
                       <div className="min-w-0">
-                        <p
-                          className={`text-[11px] font-black uppercase tracking-[0.12em] ${
-                            addressMode==="saved"
-                              ?"text-white"
-                              :"text-black"
-                          }`}
-                        >
-                          Main Address
-                        </p>
-
-                        <p
-                          className={`mt-2 text-xs leading-5 ${
-                            addressMode==="saved"
-                              ?"text-white/70"
-                              :"text-gray-500"
-                          }`}
-                        >
-                          {formatSavedAddress()}
-                        </p>
+                        <p className={`text-[11px] font-black uppercase tracking-[0.12em] ${addressMode==="saved"?"text-white":"text-black"}`}>Main Address</p>
+                        <p className={`mt-2 text-xs leading-5 ${addressMode==="saved"?"text-white/70":"text-gray-500"}`}>{formatSavedAddress()}</p>
                       </div>
                     </div>
                   </label>
 
-                  <label
-                    className={`cursor-pointer border p-4 transition ${
-                      addressMode==="other"
-                        ?"border-black bg-black text-white"
-                        :"border-black/10 bg-white hover:border-black"
-                    }`}
-                  >
+                  <label className={`cursor-pointer border p-4 transition ${addressMode==="other"?"border-black bg-black text-white":"border-black/10 bg-white hover:border-black"}`}>
                     <div className="flex items-start gap-3">
                       <input
                         type="radio"
@@ -759,25 +621,8 @@ const PlaceOrder=()=>{
                       />
 
                       <div>
-                        <p
-                          className={`text-[11px] font-black uppercase tracking-[0.12em] ${
-                            addressMode==="other"
-                              ?"text-white"
-                              :"text-black"
-                          }`}
-                        >
-                          Another Address
-                        </p>
-
-                        <p
-                          className={`mt-2 text-xs leading-5 ${
-                            addressMode==="other"
-                              ?"text-white/70"
-                              :"text-gray-500"
-                          }`}
-                        >
-                          Enter a different delivery location.
-                        </p>
+                        <p className={`text-[11px] font-black uppercase tracking-[0.12em] ${addressMode==="other"?"text-white":"text-black"}`}>Another Address</p>
+                        <p className={`mt-2 text-xs leading-5 ${addressMode==="other"?"text-white/70":"text-gray-500"}`}>Enter a different delivery location.</p>
                       </div>
                     </div>
                   </label>
@@ -790,76 +635,18 @@ const PlaceOrder=()=>{
                 )}
 
                 <div className="mt-6">
-                  <p className="mb-3 text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
-                    Contact Information
-                  </p>
+                  <p className="mb-3 text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">Contact Information</p>
 
                   <div className="grid gap-2 md:grid-cols-2">
-                    <input
-                      required
-                      name="firstName"
-                      value={displayedAddress.firstName}
-                      onChange={addressMode==="other"?onChangeHandler:undefined}
-                      readOnly={addressMode==="saved"}
-                      className={`${inputStyle} ${
-                        addressMode==="saved"
-                          ?"cursor-not-allowed bg-gray-50"
-                          :""
-                      }`}
-                      placeholder="First name"
-                    />
-
-                    <input
-                      required
-                      name="lastName"
-                      value={displayedAddress.lastName}
-                      onChange={addressMode==="other"?onChangeHandler:undefined}
-                      readOnly={addressMode==="saved"}
-                      className={`${inputStyle} ${
-                        addressMode==="saved"
-                          ?"cursor-not-allowed bg-gray-50"
-                          :""
-                      }`}
-                      placeholder="Last name"
-                    />
-
-                    <input
-                      required
-                      name="email"
-                      type="email"
-                      value={displayedAddress.email}
-                      onChange={addressMode==="other"?onChangeHandler:undefined}
-                      readOnly={addressMode==="saved"}
-                      className={`${inputStyle} ${
-                        addressMode==="saved"
-                          ?"cursor-not-allowed bg-gray-50"
-                          :""
-                      }`}
-                      placeholder="Email address"
-                    />
-
-                    <input
-                      required
-                      name="phone"
-                      value={displayedAddress.phone}
-                      onChange={addressMode==="other"?onChangeHandler:undefined}
-                      readOnly={addressMode==="saved"}
-                      inputMode="numeric"
-                      maxLength={11}
-                      className={`${inputStyle} ${
-                        addressMode==="saved"
-                          ?"cursor-not-allowed bg-gray-50"
-                          :""
-                      }`}
-                      placeholder="Phone number"
-                    />
+                    <input required name="firstName" value={displayedAddress.firstName} onChange={addressMode==="other"?onChangeHandler:undefined} readOnly={addressMode==="saved"} className={`${inputStyle} ${addressMode==="saved"?"cursor-not-allowed bg-gray-50":""}`} placeholder="First name"/>
+                    <input required name="lastName" value={displayedAddress.lastName} onChange={addressMode==="other"?onChangeHandler:undefined} readOnly={addressMode==="saved"} className={`${inputStyle} ${addressMode==="saved"?"cursor-not-allowed bg-gray-50":""}`} placeholder="Last name"/>
+                    <input required name="email" type="email" value={displayedAddress.email} onChange={addressMode==="other"?onChangeHandler:undefined} readOnly={addressMode==="saved"} className={`${inputStyle} ${addressMode==="saved"?"cursor-not-allowed bg-gray-50":""}`} placeholder="Email address"/>
+                    <input required name="phone" value={displayedAddress.phone} onChange={addressMode==="other"?onChangeHandler:undefined} readOnly={addressMode==="saved"} inputMode="numeric" maxLength={11} className={`${inputStyle} ${addressMode==="saved"?"cursor-not-allowed bg-gray-50":""}`} placeholder="Phone number"/>
                   </div>
                 </div>
 
                 <div className="mt-6 border-t border-black/10 pt-6">
-                  <p className="mb-3 text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">
-                    Shipping Details
-                  </p>
+                  <p className="mb-3 text-[9px] font-black uppercase tracking-[0.25em] text-gray-400">Shipping Details</p>
 
                   <ShippingAddressFields
                     formData={addressMode==="saved"?savedAddress:formData}
@@ -871,126 +658,102 @@ const PlaceOrder=()=>{
               </div>
             </section>
 
-            <section
-              className={`border ${
-                hasPreorderItems
-                  ?"border-amber-200 bg-amber-50"
-                  :"border-black/10 bg-white"
-              }`}
-            >
+            <section className={`border ${hasPreorderItems?"border-amber-200 bg-amber-50":"border-black/10 bg-white"}`}>
               <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
-                  <p
-                    className={`text-[9px] font-black uppercase tracking-[0.28em] ${
-                      hasPreorderItems
-                        ?"text-amber-600"
-                        :"text-gray-400"
-                    }`}
-                  >
+                  <p className={`text-[9px] font-black uppercase tracking-[0.28em] ${hasPreorderItems?"text-amber-600":"text-gray-400"}`}>
                     {hasPreorderItems?"Pre-order Shipping":"Estimated Delivery"}
                   </p>
 
-                  <p
-                    className={`mt-2 text-lg font-black ${
-                      hasPreorderItems
-                        ?"text-amber-700"
-                        :"text-black"
-                    }`}
-                  >
-                    {hasPreorderItems
-                      ?`Ships on ${preorderShipsOn}`
-                      :deliveryEstimate.label}
+                  <p className={`mt-2 text-lg font-black ${hasPreorderItems?"text-amber-700":"text-black"}`}>
+                    {hasPreorderItems?`Ships on ${preorderShipsOn}`:deliveryEstimate.label}
                   </p>
                 </div>
 
-                <div
-                  className={`text-left sm:text-right ${
-                    hasPreorderItems
-                      ?"text-amber-700"
-                      :"text-gray-500"
-                  }`}
-                >
-                  <p className="text-[9px] font-black uppercase tracking-[0.18em]">
-                    Expected Arrival
-                  </p>
-
-                  <p className="mt-1 text-xs font-bold">
-                    {hasPreorderItems
-                      ?"After restock and dispatch"
-                      :deliveryEstimate.range}
-                  </p>
+                <div className={`text-left sm:text-right ${hasPreorderItems?"text-amber-700":"text-gray-500"}`}>
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em]">Expected Arrival</p>
+                  <p className="mt-1 text-xs font-bold">{hasPreorderItems?"After restock and dispatch":deliveryEstimate.range}</p>
                 </div>
               </div>
             </section>
 
+            {isMultiBranchOrder&&(
+              <section className="border border-black bg-[#0A0D17] px-5 py-5 text-white sm:px-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40">Multi-Branch Order</p>
+                    <h2 className="mt-2 text-lg font-black uppercase tracking-[0.05em]">Items From {checkoutBranches.length} Branches</h2>
+                    <p className="mt-2 max-w-xl text-xs font-semibold leading-5 text-white/55">
+                      You can checkout these products together. Stock will be deducted from each product's assigned branch.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {checkoutBranches.map((branch)=>(
+                      <span key={branch} className="border border-white/20 bg-white/10 px-3 py-2 text-[9px] font-black uppercase tracking-[0.15em]">
+                        {branch}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
             <section className="border border-black/10 bg-white">
               <div className="border-b border-black/10 px-5 py-5 sm:px-6">
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
-                  02
-                </p>
-
-                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">
-                  Your Items
-                </h2>
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">02</p>
+                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">Your Items</h2>
               </div>
 
               <div>
                 {cartData.map((item,index)=>{
                   const basePrice=Number(item.price||0);
                   const salePercent=Number(item.salePercent||0);
-
-                  const finalPrice=
-                    item.onSale&&salePercent>0
-                      ?Math.max(basePrice-(basePrice*salePercent)/100,0)
-                      :basePrice;
+                  const finalPrice=item.onSale&&salePercent>0?Math.max(basePrice-(basePrice*salePercent)/100,0):basePrice;
+                  const itemBranch=normalizeBranch(item.branch);
 
                   return(
-                    <div
-                      key={`${item._id}_${item.size}_${index}`}
-                      className="flex gap-4 border-b border-black/10 px-5 py-5 last:border-b-0 sm:px-6"
-                    >
+                    <div key={`${item._id||item.productId}_${item.size}_${index}`} className="flex gap-4 border-b border-black/10 px-5 py-5 last:border-b-0 sm:px-6">
                       <div className="h-20 w-16 shrink-0 bg-[radial-gradient(circle_at_center,#ffffff_0%,#f5f5f2_55%,#ededeb_100%)] sm:h-24 sm:w-20">
                         {item.images?.[0]||item.image?(
-                          <img
-                            src={item.images?.[0]||item.image}
-                            alt={item.name}
-                            className="h-full w-full object-contain p-2"
-                          />
+                          <img src={item.images?.[0]||item.image} alt={item.name} className="h-full w-full object-contain p-2"/>
                         ):(
-                          <div className="flex h-full items-center justify-center text-[8px] font-black uppercase text-gray-400">
-                            No Image
-                          </div>
+                          <div className="flex h-full items-center justify-center text-[8px] font-black uppercase text-gray-400">No Image</div>
                         )}
                       </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-black uppercase text-black">
-                              {item.name}
-                            </p>
+                            <p className="truncate text-sm font-black uppercase text-black">{item.name}</p>
 
-                            <p className="mt-1 text-[9px] font-black uppercase tracking-[0.16em] text-gray-400">
-                              Size {item.size} · Qty {item.quantity}
-                            </p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              <span className="border border-black/10 bg-[#F6F6F3] px-2 py-1 text-[8px] font-black uppercase tracking-[0.12em] text-gray-500">
+                                Size {item.size}
+                              </span>
+
+                              <span className="border border-black/10 bg-[#F6F6F3] px-2 py-1 text-[8px] font-black uppercase tracking-[0.12em] text-gray-500">
+                                Qty {item.quantity}
+                              </span>
+
+                              <span className="border border-black bg-black px-2 py-1 text-[8px] font-black uppercase tracking-[0.12em] text-white">
+                                {itemBranch}
+                              </span>
+                            </div>
 
                             {item.color&&(
-                              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-gray-400">
-                                {item.color}
-                              </p>
+                              <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.12em] text-gray-400">{item.color}</p>
                             )}
                           </div>
 
                           <div className="text-right">
                             <p className="text-sm font-black text-black">
-                              {currency}
-                              {(finalPrice*Number(item.quantity||0)).toFixed(2)}
+                              {currency}{(finalPrice*Number(item.quantity||0)).toFixed(2)}
                             </p>
 
                             {item.onSale&&salePercent>0&&(
                               <p className="mt-0.5 text-[9px] font-bold text-gray-400 line-through">
-                                {currency}
-                                {(basePrice*Number(item.quantity||0)).toFixed(2)}
+                                {currency}{(basePrice*Number(item.quantity||0)).toFixed(2)}
                               </p>
                             )}
                           </div>
@@ -998,16 +761,9 @@ const PlaceOrder=()=>{
 
                         {item.isPreorder&&(
                           <div className="mt-3 border border-amber-200 bg-amber-50 px-3 py-2">
-                            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-700">
-                              Pre-order
-                            </p>
-
+                            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-amber-700">Pre-order</p>
                             <p className="mt-1 text-[10px] font-semibold text-amber-700">
-                              Ships on{" "}
-                              {formatShipDate(
-                                item.expectedRestockDate||
-                                item.preorderRestockDate
-                              )}
+                              Ships on {formatShipDate(item.expectedRestockDate||item.preorderRestockDate)}
                             </p>
                           </div>
                         )}
@@ -1022,13 +778,8 @@ const PlaceOrder=()=>{
           <aside className="space-y-5 xl:sticky xl:top-24">
             <section className="border border-black/10 bg-white">
               <div className="border-b border-black/10 px-5 py-5">
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
-                  Order Summary
-                </p>
-
-                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">
-                  Total
-                </h2>
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">Order Summary</p>
+                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">Total</h2>
               </div>
 
               <div className="p-5">
@@ -1037,30 +788,22 @@ const PlaceOrder=()=>{
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-4">
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
-                    Total Items
-                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Total Items</span>
+                  <span className="text-sm font-black text-black">{totalQuantity}</span>
+                </div>
 
-                  <span className="text-sm font-black text-black">
-                    {totalQuantity}
-                  </span>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">Branches</span>
+                  <span className="text-sm font-black text-black">{checkoutBranches.length}</span>
                 </div>
               </div>
             </section>
 
             <section className="border border-black/10 bg-white">
               <div className="border-b border-black/10 px-5 py-5">
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
-                  03
-                </p>
-
-                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">
-                  Payment
-                </h2>
-
-                <p className="mt-2 text-xs font-semibold text-gray-500">
-                  Select your preferred payment method.
-                </p>
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">03</p>
+                <h2 className="mt-1 text-lg font-black uppercase tracking-[0.08em] text-black">Payment</h2>
+                <p className="mt-2 text-xs font-semibold text-gray-500">Select your preferred payment method.</p>
               </div>
 
               <div className="p-5">
@@ -1082,65 +825,33 @@ const PlaceOrder=()=>{
 
                           setMethod(option.key);
                         }}
-                        className={`relative w-full border p-4 text-left transition ${
-                          option.cardClass
-                        } ${
-                          isActive?option.activeClass:""
-                        } ${
-                          isDisabled?"cursor-not-allowed opacity-45 grayscale":""
-                        }`}
+                        className={`relative w-full border p-4 text-left transition ${option.cardClass} ${isActive?option.activeClass:""} ${isDisabled?"cursor-not-allowed opacity-45 grayscale":""}`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-black/10 bg-white">
                             {option.logo?(
-                              <img
-                                src={option.logo}
-                                alt={option.title}
-                                className="h-7 w-7 object-contain"
-                              />
+                              <img src={option.logo} alt={option.title} className="h-7 w-7 object-contain"/>
                             ):(
-                              <span className="text-[9px] font-black tracking-[0.16em] text-black">
-                                PAY
-                              </span>
+                              <span className="text-[9px] font-black tracking-[0.16em] text-black">PAY</span>
                             )}
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className={`text-sm font-black ${option.titleClass}`}>
-                                {option.title}
-                              </p>
+                              <p className={`text-sm font-black ${option.titleClass}`}>{option.title}</p>
 
-                              <span
-                                className={`px-2 py-1 text-[8px] font-black uppercase tracking-[0.12em] ${option.badgeClass}`}
-                              >
+                              <span className={`px-2 py-1 text-[8px] font-black uppercase tracking-[0.12em] ${option.badgeClass}`}>
                                 {isDisabled?"Disabled":option.badge}
                               </span>
                             </div>
 
-                            <p
-                              className={`mt-1 text-[10px] font-semibold leading-4 ${
-                                isDisabled
-                                  ?"text-red-500"
-                                  :option.subtitleClass
-                              }`}
-                            >
-                              {isDisabled
-                                ?option.preorderSubtitle
-                                :option.subtitle}
+                            <p className={`mt-1 text-[10px] font-semibold leading-4 ${isDisabled?"text-red-500":option.subtitleClass}`}>
+                              {isDisabled?option.preorderSubtitle:option.subtitle}
                             </p>
                           </div>
 
-                          <div
-                            className={`h-4 w-4 shrink-0 rounded-full border ${
-                              isActive
-                                ?"border-black bg-black"
-                                :"border-black/20 bg-white"
-                            }`}
-                          >
-                            {isActive&&(
-                              <div className="m-auto mt-[3px] h-1.5 w-1.5 rounded-full bg-white"/>
-                            )}
+                          <div className={`h-4 w-4 shrink-0 rounded-full border ${isActive?"border-black bg-black":"border-black/20 bg-white"}`}>
+                            {isActive&&<div className="m-auto mt-[3px] h-1.5 w-1.5 rounded-full bg-white"/>}
                           </div>
                         </div>
                       </button>
@@ -1149,21 +860,13 @@ const PlaceOrder=()=>{
                 </div>
 
                 <div className="mt-3 border border-black/10 bg-[#F6F6F3] px-4 py-3">
-                  <p className="text-[8px] font-black uppercase tracking-[0.18em] text-gray-400">
-                    Selected Method
-                  </p>
-
-                  <p className="mt-1 text-xs font-black text-black">
-                    {method==="PayMongo"?"Online Payment":"Cash on Delivery"}
-                  </p>
+                  <p className="text-[8px] font-black uppercase tracking-[0.18em] text-gray-400">Selected Method</p>
+                  <p className="mt-1 text-xs font-black text-black">{method==="PayMongo"?"Online Payment":"Cash on Delivery"}</p>
                 </div>
 
                 {method==="PayMongo"&&(
                   <div className="mt-3 border border-black/10 bg-white px-4 py-3">
-                    <p className="text-[8px] font-black uppercase tracking-[0.18em] text-gray-400">
-                      Online Payment
-                    </p>
-
+                    <p className="text-[8px] font-black uppercase tracking-[0.18em] text-gray-400">Online Payment</p>
                     <p className="mt-1 text-[10px] font-semibold leading-5 text-gray-500">
                       You will be redirected to the online payment checkout to complete your payment securely.
                     </p>
@@ -1172,13 +875,8 @@ const PlaceOrder=()=>{
 
                 {hasPreorderItems&&(
                   <div className="mt-3 border border-amber-200 bg-amber-50 px-4 py-3">
-                    <p className="text-[9px] font-black uppercase tracking-[0.15em] text-amber-700">
-                      Pre-order Payment
-                    </p>
-
-                    <p className="mt-1 text-[10px] font-semibold leading-5 text-amber-700/80">
-                      Pre-order items require online payment.
-                    </p>
+                    <p className="text-[9px] font-black uppercase tracking-[0.15em] text-amber-700">Pre-order Payment</p>
+                    <p className="mt-1 text-[10px] font-semibold leading-5 text-amber-700/80">Pre-order items require online payment.</p>
                   </div>
                 )}
 
@@ -1187,11 +885,7 @@ const PlaceOrder=()=>{
                   disabled={loading||(hasPreorderItems&&method==="COD")}
                   className="mt-5 h-12 w-full border border-black bg-black text-[10px] font-black uppercase tracking-[0.22em] text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {loading
-                    ?"Processing..."
-                    :method==="COD"
-                      ?"Confirm Order"
-                      :"Proceed to Online Payment"}
+                  {loading?"Processing...":method==="COD"?"Confirm Order":"Proceed to Online Payment"}
                 </button>
 
                 <button
@@ -1207,30 +901,18 @@ const PlaceOrder=()=>{
             <div className="border border-black/10 bg-white px-5 py-4">
               <div className="grid grid-cols-3 divide-x divide-black/10 text-center">
                 <div className="px-2">
-                  <p className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-400">
-                    Secure
-                  </p>
-                  <p className="mt-1 text-[9px] font-bold text-black">
-                    Checkout
-                  </p>
+                  <p className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-400">Secure</p>
+                  <p className="mt-1 text-[9px] font-bold text-black">Checkout</p>
                 </div>
 
                 <div className="px-2">
-                  <p className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-400">
-                    Official
-                  </p>
-                  <p className="mt-1 text-[9px] font-bold text-black">
-                    Saint Clothing
-                  </p>
+                  <p className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-400">Official</p>
+                  <p className="mt-1 text-[9px] font-bold text-black">Saint Clothing</p>
                 </div>
 
                 <div className="px-2">
-                  <p className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-400">
-                    Support
-                  </p>
-                  <p className="mt-1 text-[9px] font-bold text-black">
-                    Order Updates
-                  </p>
+                  <p className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-400">Support</p>
+                  <p className="mt-1 text-[9px] font-bold text-black">Order Updates</p>
                 </div>
               </div>
             </div>

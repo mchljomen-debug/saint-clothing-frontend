@@ -89,7 +89,7 @@ const Contact=()=>{
 
           <div className="flex flex-col border border-black/10 bg-white">
             <a
-              href="mailto:mchljmn@gmail.com"
+              href="mailto:saintbrand021@gmail.com"
               className="group border-b border-black/10 p-6 transition-colors duration-300 hover:bg-black hover:text-white md:p-8"
             >
               <div className="flex items-start justify-between gap-6">
@@ -103,7 +103,7 @@ const Contact=()=>{
                   </h2>
 
                   <p className="mt-2 break-all text-sm font-medium text-gray-500 group-hover:text-gray-400">
-                    mchljmn@gmail.com
+                    saintbrand021@gmail.com
                   </p>
                 </div>
 
@@ -114,7 +114,7 @@ const Contact=()=>{
             </a>
 
             <a
-              href="tel:+639753336199"
+              href="tel:+639665404476"
               className="group border-b border-black/10 p-6 transition-colors duration-300 hover:bg-black hover:text-white md:p-8"
             >
               <div className="flex items-start justify-between gap-6">
@@ -128,7 +128,7 @@ const Contact=()=>{
                   </h2>
 
                   <p className="mt-2 text-sm font-medium text-gray-500 group-hover:text-gray-400">
-                    (+63) 975 333 6199
+                    (+63) 966 540 4476
                   </p>
                 </div>
 
