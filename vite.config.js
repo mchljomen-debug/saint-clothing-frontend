@@ -17,8 +17,26 @@ export default defineConfig(({mode})=>({
   },
   build:{
     sourcemap:false,
-    minify:"esbuild",
+    minify:"terser",
     cssMinify:true,
-    reportCompressedSize:true
+    reportCompressedSize:true,
+    terserOptions:{
+      compress:{
+        drop_console:true,
+        drop_debugger:true,
+        passes:2
+      },
+      mangle:true,
+      format:{
+        comments:false
+      }
+    },
+    rollupOptions:{
+      output:{
+        entryFileNames:"assets/[hash].js",
+        chunkFileNames:"assets/[hash].js",
+        assetFileNames:"assets/[hash][extname]"
+      }
+    }
   }
 }));
