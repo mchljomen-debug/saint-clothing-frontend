@@ -85,22 +85,22 @@ const Footer = () => {
               <li className='text-[12px] tracking-widest uppercase'>
                 <span className='text-white mr-2'>T.</span>
                 <a
-                  href='tel:+639753336199'
+                  href='tel:+639665404476'
                   className='hover:text-white transition-colors'
-                  aria-label='Call Saint Clothing at plus 63 975 333 6199'
+                  aria-label='Call Saint Clothing at plus 63 966 540 4476'
                 >
-                  +63 975 333 6199
+                  +63 966 540 4476
                 </a>
               </li>
 
               <li className='text-[12px] tracking-widest uppercase break-all sm:break-normal'>
                 <span className='text-white mr-2'>E.</span>
                 <a
-                  href='mailto:mchljmn@gmail.com'
+                  href='mailto:saintbrand021@gmail.com'
                   className='hover:text-white transition-colors'
-                  aria-label='Email Saint Clothing at mchljmn@gmail.com'
+                  aria-label='Email Saint Clothing at saintbrand021@gmail.com'
                 >
-                  mchljmn@gmail.com
+                  saintbrand021@gmail.com
                 </a>
               </li>
 

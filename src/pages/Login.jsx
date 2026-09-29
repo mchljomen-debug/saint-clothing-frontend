@@ -786,7 +786,7 @@ const Login=()=>{
 
                         <div className="mt-1 rounded-xl border border-black/10 bg-white px-3 py-2.5">
                           <div className="flex items-start gap-3">
-                            <input type="checkbox" checked={acceptedTerms} readOnly className="mt-1 h-4 w-4 accent-black"/>
+                            <input type="checkbox" checked={acceptedTerms} readOnly className="mt-1 h-4 w-4 accent-red"/>
 
                             <span className="text-[11px] font-semibold leading-5 text-gray-600">
                               I agree to the{" "}
@@ -803,7 +803,7 @@ const Login=()=>{
                           </div>
 
                           {!acceptedTerms&&(
-                            <p className="mt-2 pl-7 text-[10px] font-semibold text-gray-500">
+                            <p className="mt-[-4px] pl-7 text-[11px] font-semibold text-red-500">
                               Open the terms, scroll to the bottom, then accept before sending OTP.
                             </p>
                           )}
@@ -836,7 +836,7 @@ const Login=()=>{
                             </div>
                           ):!otpSent?(
                             <button type="button" onClick={sendOtp} disabled={!!errors.email||!formData.email||emailExists||!formData.firstName.trim()||!formData.lastName.trim()||!acceptedTerms||otpTimer>0} className="w-full rounded-xl border border-black/10 bg-white py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black transition hover:border-black hover:shadow-[0_0_0_4px_rgba(0,0,0,0.06)] disabled:cursor-not-allowed disabled:opacity-40">
-                              {emailExists?"Account Already Exists":!acceptedTerms?"Accept Terms First":"Send OTP"}
+                              {emailExists?"Account Already Exists":!acceptedTerms?"Read Terms First":"Send OTP"}
                             </button>
                           ):(
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-center">
